@@ -18,11 +18,10 @@ tasks.withType<KotlinCompile>() {
 }
 
 application {
-    mainClassName = "com.github.mrbean355.zakbot.MainKt"
+    mainClass.set("com.github.mrbean355.zakbot.MainKt")
 }
 
 dependencies {
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("net.dean.jraw:JRAW:1.1.0")
+    implementation("org.telegram:telegrambots:5.0.1.1")
 }

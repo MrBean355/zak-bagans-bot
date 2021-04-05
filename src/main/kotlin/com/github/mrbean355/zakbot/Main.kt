@@ -5,17 +5,14 @@ import kotlin.concurrent.fixedRateTimer
 private val ZakPattern = """(?i)\bzak\b""".toRegex()
 
 fun main() {
-    fixedRateTimer(period = 5_000) {
+    fixedRateTimer(period = 10_000) {
         val lastChecked = getLastChecked()
-        println(lastChecked)
         getRecentComments()
             .filter { it.created.time > lastChecked }
-            .onFirst {
-                setLastChecked(it.created.time)
-            }
+            .onFirst { setLastChecked(it.created.time) }
             .forEach { comment ->
                 if (!comment.author.equals(BotUsername, true) && comment.body.contains(ZakPattern)) {
-                    println(comment.body)
+                    sendTelegramNotification(comment)
                 }
             }
     }
