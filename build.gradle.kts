@@ -13,15 +13,18 @@ repositories {
     jcenter()
 }
 
-tasks.withType<KotlinCompile>() {
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
-}
-
-application {
-    mainClass.set("com.github.mrbean355.zakbot.MainKt")
 }
 
 dependencies {
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:5.0.1.1")
+}
+
+tasks.withType<Jar> {
+    manifest {
+        attributes("Main-Class" to "com.github.mrbean355.zakbot.MainKt")
+    }
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
 }
