@@ -1,24 +1,17 @@
 package com.github.mrbean355.zakbot
 
-import kotlin.concurrent.fixedRateTimer
-
-private val ZakPattern = """(?i)\bzak\b""".toRegex()
+import org.telegram.telegrambots.meta.TelegramBotsApi
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 
 fun main() {
-    fixedRateTimer(period = 10_000) {
-        val lastChecked = getLastChecked()
-        getRecentComments()
-            .filter { it.created.time > lastChecked }
-            .onFirst { setLastChecked(it.created.time) }
-            .forEach { comment ->
-                if (!comment.author.equals(BotUsername, true) && comment.body.contains(ZakPattern)) {
-                    sendTelegramNotification(comment)
-                }
-            }
-    }
-}
+    TelegramBotsApi(DefaultBotSession::class.java)
+        .registerBot(TelegramBot)
 
-private inline fun <T> Iterable<T>.onFirst(action: (T) -> Unit): Iterable<T> {
-    firstOrNull()?.let(action)
-    return this
+    Thread.setDefaultUncaughtExceptionHandler { t, e ->
+        runCatching {
+            TelegramBot.sendMessage("Exception caught in ${t.name}:\n\n${e.stackTraceToString()}")
+        }
+    }
+
+    ZakBot().start()
 }

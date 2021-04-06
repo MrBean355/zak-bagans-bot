@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.32"
+    kotlin("plugin.serialization") version "1.4.32"
     application
 }
 
@@ -18,6 +19,7 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:5.0.1.1")
 }
