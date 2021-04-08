@@ -15,7 +15,7 @@ private const val BotClientId = "OiKI0ZAfWG9BBw"
 @Service
 class RedditService {
     private val client = OAuthHelper.automatic(
-        OkHttpNetworkAdapter(UserAgent("bot", BotUsername, "0.0.1", AuthorUsername)),
+        OkHttpNetworkAdapter(UserAgent("bot", BotUsername, AppVersion, AuthorUsername)),
         Credentials.script(
             BotUsername,
             System.getenv("BOT_ACCOUNT_PASSWORD"),
