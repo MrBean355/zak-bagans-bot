@@ -16,7 +16,7 @@ class ZakBagansBot(
     phrases: List<Phrase>
 ) {
 
-    private val phrases = phrases.sortedByDescending { it.priority }.also { println(it) }
+    private val phrases = phrases.sortedByDescending { it.priority }
 
     @Scheduled(cron = "0 */5 * * * *")
     fun checkComments() {
