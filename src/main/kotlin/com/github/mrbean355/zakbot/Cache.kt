@@ -4,11 +4,13 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.springframework.stereotype.Component
 import java.io.File
 
 private const val FILE_NAME = "cache.json"
 
-object Cache {
+@Component
+class Cache {
     private val data: Data
 
     init {
