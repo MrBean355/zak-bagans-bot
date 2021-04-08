@@ -18,7 +18,7 @@ class ZakBagansBot(
 
     private val phrases = phrases.sortedByDescending { it.priority }
 
-    @Scheduled(cron = "0 */5 * * * *")
+    @Scheduled(fixedRate = 5 * 60 * 1000)
     fun checkComments() {
         val lastChecked = cache.getLastChecked()
         val newComments = redditService.getLatestComments().filter { it.created.time > lastChecked }
