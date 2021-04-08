@@ -12,7 +12,7 @@ class AnswersPhrase : Phrase {
     )
 
     override fun shouldReplyTo(message: String): Boolean {
-        if (!message.contains(Regex("""we\s+want\s+answers"""))) {
+        if (!message.contains(Regex("""\bwe\s+want\s+answers\b"""))) {
             return false
         }
         val words = message.split(Regex("\\b")).count {

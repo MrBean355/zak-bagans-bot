@@ -13,5 +13,6 @@ internal class AnswersPhraseTest : BasePhraseTest() {
     override val negativeCases = listOf(
         "answers answers answers",
         "zak always says: \"we want answers, answers...\", lol",
+        "wwe want answersss",
     )
 }
