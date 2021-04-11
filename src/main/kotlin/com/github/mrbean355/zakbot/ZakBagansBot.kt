@@ -2,6 +2,7 @@ package com.github.mrbean355.zakbot
 
 import com.github.mrbean355.zakbot.phrases.Phrase
 import net.dean.jraw.models.Comment
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
@@ -11,12 +12,15 @@ private val MessagePattern = """(?i)\b(zak|bagans)\b""".toRegex()
 @Component
 class ZakBagansBot(
     private val redditService: RedditService,
-    private val telegramBot: TelegramBot,
+    private val telegramNotifier: TelegramNotifier,
     private val cache: Cache,
     phrases: List<Phrase>
 ) {
 
     private val phrases = phrases.sortedByDescending { it.priority }
+
+    @Value("\${zakbot.replies.enabled:false}")
+    private var sendReplies = false
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     fun checkComments() {
@@ -41,11 +45,13 @@ class ZakBagansBot(
             ?: return
 
         notify(comment, response)
-        redditService.replyToComment(comment, response)
+        if (sendReplies) {
+            redditService.replyToComment(comment, response)
+        }
     }
 
     private fun notify(comment: Comment, response: String) {
-        telegramBot.sendMessage(
+        telegramNotifier.sendMessage(
             "Comment by ${comment.author}:\n" +
                     "${comment.body}\n" +
                     "\n" +
