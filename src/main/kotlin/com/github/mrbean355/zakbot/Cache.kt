@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.util.SystemClock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -10,7 +11,7 @@ import java.io.File
 private const val FILE_NAME = "cache.json"
 
 @Component
-class Cache {
+class Cache(systemClock: SystemClock) {
     private val data: Data
 
     init {
@@ -18,7 +19,7 @@ class Cache {
         data = if (file.exists()) {
             Json.decodeFromString(file.readText())
         } else {
-            Data(lastChecked = System.currentTimeMillis())
+            Data(lastChecked = systemClock.currentTimeMillis)
         }
         save()
     }
@@ -36,6 +37,6 @@ class Cache {
 
     @Serializable
     private data class Data(
-        var lastChecked: Long = 0
+        var lastChecked: Long
     )
 }
