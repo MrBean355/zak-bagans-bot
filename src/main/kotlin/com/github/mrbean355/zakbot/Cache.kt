@@ -18,7 +18,7 @@ class Cache {
         data = if (file.exists()) {
             Json.decodeFromString(file.readText())
         } else {
-            Data()
+            Data(lastChecked = System.currentTimeMillis())
         }
         save()
     }
