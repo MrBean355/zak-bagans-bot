@@ -2,8 +2,7 @@
 # These phrases are sent when none of the other phrases are selected.
 ########################################################################################################################
 
-# Old intro
-I never believed in ghosts until I came face-to-face with one.
+# Old intro:
 Did someone just scratch me?!
 STOP! Stop running!
 You wanted us; you got us!
@@ -12,6 +11,12 @@ You wanted us; you got us!
 There are things in this world we will never fully understand... understand...
 We want answers... answers...
 We have worked years to build our credibility... our reputation...
+
+# Memes:
+Our credi-bili-ty, our reputation.
+Bill Chappell can't give us an explanation.
+IT'S CLIMBING UP YOU!
+The evidence is extremely compelling.
 
 # Generic:
 BRO!
