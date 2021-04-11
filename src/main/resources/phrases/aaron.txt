@@ -1,1 +1,7 @@
+########################################################################################################################
+# These phrases are sometimes sent when a comment mentions Aaron's name.
+# The chance equals 25% multiplied by how many times his name was mentioned.
+# E.g. 1 mention = 25% chance, 3 mentions = 75% chance.
+########################################################################################################################
+
 I'm sending Aaron in alone to investigate.
