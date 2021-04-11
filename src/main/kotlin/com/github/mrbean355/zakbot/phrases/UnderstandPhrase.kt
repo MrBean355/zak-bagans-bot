@@ -7,9 +7,7 @@ class UnderstandPhrase : Phrase {
 
     override val priority = 1
 
-    override val responses = listOf(
-        "... understand...",
-    )
+    override val responses = loadPhrases("understand.txt")
 
     override fun shouldReplyTo(message: String): Boolean {
         if (!message.contains(Regex("""\bunderstand\b"""))) {

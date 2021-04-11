@@ -7,9 +7,7 @@ class AnswersPhrase : Phrase {
 
     override val priority = 1
 
-    override val responses = listOf(
-        "... answers...",
-    )
+    override val responses = loadPhrases("answers.txt")
 
     override fun shouldReplyTo(message: String): Boolean {
         if (!message.contains(Regex("""\bwe\s+want\s+answers\b"""))) {
