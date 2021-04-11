@@ -1,5 +1,7 @@
 package com.github.mrbean355.zakbot.phrases
 
+import com.github.mrbean355.zakbot.util.countOccurrences
+import com.github.mrbean355.zakbot.util.readResourceFileLines
 import org.springframework.stereotype.Component
 
 @Component
@@ -7,15 +9,12 @@ class AnswersPhrase : Phrase {
 
     override val priority = 1
 
-    override val responses = loadPhrases("answers.txt")
+    override val responses = readResourceFileLines("phrases/answers.txt")
 
-    override fun shouldReplyTo(message: String): Boolean {
+    override fun getReplyChance(message: String): Float {
         if (!message.contains(Regex("""\bwe\s+want\s+answers\b"""))) {
-            return false
+            return 0f
         }
-        val words = message.split(Regex("\\b")).count {
-            it == "answers"
-        }
-        return words == 1
+        return if (message.countOccurrences("answers") == 1) 1f else 0f
     }
 }

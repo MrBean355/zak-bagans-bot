@@ -5,6 +5,7 @@ import net.dean.jraw.models.Comment
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import kotlin.random.Random
 
 /** Reply to messages matching this pattern. */
 private val MessagePattern = """(?i)\b(zak|bagans)\b""".toRegex()
@@ -40,7 +41,9 @@ class ZakBagansBot(
     }
 
     private fun processComment(comment: Comment) {
-        val response = phrases.find { it.shouldReplyTo(comment.body.toLowerCase()) }
+        val message = comment.body.toLowerCase()
+        val response = phrases
+            .find { Random.nextFloat() <= it.getReplyChance(message) }
             ?.responses?.randomOrNull()
             ?: return
 

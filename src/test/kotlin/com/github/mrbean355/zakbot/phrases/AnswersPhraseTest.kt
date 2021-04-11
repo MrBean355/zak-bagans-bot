@@ -1,18 +1,53 @@
 package com.github.mrbean355.zakbot.phrases
 
-internal class AnswersPhraseTest : BasePhraseTest() {
+import com.github.mrbean355.zakbot.util.readResourceFileLines
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Test
 
-    override val phrase = AnswersPhrase()
+internal class AnswersPhraseTest {
 
-    override val positiveCases = listOf(
-        "zak always says: \"we want answers\", lol",
-        "we want answers...",
-        "intro: we  want    answers kek",
-    )
+    @Test
+    internal fun testPriority() {
+        assertEquals(1, AnswersPhrase().priority)
+    }
 
-    override val negativeCases = listOf(
-        "answers answers answers",
-        "zak always says: \"we want answers, answers...\", lol",
-        "wwe want answersss",
-    )
+    @Test
+    internal fun testResponses() {
+        val responses = mockk<List<String>>()
+        mockkStatic(::readResourceFileLines)
+        every { readResourceFileLines(any()) } returns responses
+
+        val actual = AnswersPhrase().responses
+
+        assertSame(responses, actual)
+        verify {
+            readResourceFileLines("phrases/answers.txt")
+        }
+    }
+
+    @Test
+    internal fun testGetReplyChance_DoesNotContainPhrase_ReturnsZeroPercent() {
+        val actual = AnswersPhrase().getReplyChance("hello world!")
+
+        assertEquals(0f, actual)
+    }
+
+    @Test
+    internal fun testGetReplyChance_ContainsPhrase_ContainsAnswersOnce_ReturnsOneHundredPercent() {
+        val actual = AnswersPhrase().getReplyChance("we want answers...")
+
+        assertEquals(1f, actual)
+    }
+
+    @Test
+    internal fun testGetReplyChance_ContainsPhrase_ContainsAnswersMultipleTimes_ReturnsZeroPercent() {
+        val actual = AnswersPhrase().getReplyChance("we want answers... answers...")
+
+        assertEquals(0f, actual)
+    }
 }

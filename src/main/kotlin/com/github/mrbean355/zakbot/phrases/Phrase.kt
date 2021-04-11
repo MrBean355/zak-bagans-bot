@@ -1,26 +1,14 @@
 package com.github.mrbean355.zakbot.phrases
 
-import java.io.File
-
 interface Phrase {
 
-    /** Order to check this [Phrase] relative to others. Higher means earlier. */
+    /** Order to check this [Phrase] relative to others. Higher means it will be checked before. */
     val priority: Int
 
-    /** Possible phrases to say if [shouldReplyTo] returns true. */
+    /** Possible messages to send if this [Phrase] is used. A random one will be picked. */
     val responses: List<String>
 
-    /** Analyse the [message] and return true if a phrase should be sent. */
-    fun shouldReplyTo(message: String): Boolean
+    /** Return a chance between 0 and 1, based on the [message], that this [Phrase] should be used. */
+    fun getReplyChance(message: String): Float
 
-}
-
-fun loadPhrases(fileName: String): List<String> {
-    val url = Phrase::class.java.classLoader.getResource("phrases/$fileName")
-    require(url != null) { "Failed to load resource: phrases/$fileName" }
-
-    return File(url.file).readLines().asSequence()
-        .map { it.substringBefore('#').trim() }
-        .filter { it.isNotEmpty() }
-        .toList()
 }
