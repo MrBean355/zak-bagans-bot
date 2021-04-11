@@ -21,28 +21,36 @@ class ZakBagansBot(
     @Scheduled(fixedRate = 5 * 60 * 1000)
     fun checkComments() {
         val lastChecked = cache.getLastChecked()
-        val newComments = redditService.getLatestComments().filter { it.created.time > lastChecked }
+        val newComments = redditService.getLatestComments().filter {
+            it.created.time > lastChecked
+        }
 
         if (newComments.isNotEmpty()) {
             cache.setLastChecked(newComments.first().created.time)
         }
 
-        newComments.forEach { comment ->
-            if (comment.body.contains(MessagePattern)) {
-                val phrase = phrases.find { it.shouldReplyTo(comment.body.toLowerCase()) }?.responses?.randomOrNull()
-                notify(comment, phrase)
-                // TODO: reply to comment.
-            }
-        }
+        newComments
+            .filter { it.author != BotUsername }
+            .filter { it.body.contains(MessagePattern) }
+            .forEach(this::processComment)
     }
 
-    private fun notify(comment: Comment, phrase: String?) {
+    private fun processComment(comment: Comment) {
+        val response = phrases.find { it.shouldReplyTo(comment.body.toLowerCase()) }
+            ?.responses?.randomOrNull()
+            ?: return
+
+        notify(comment, response)
+        redditService.replyToComment(comment, response)
+    }
+
+    private fun notify(comment: Comment, response: String) {
         telegramBot.sendMessage(
             "Comment by ${comment.author}:\n" +
                     "${comment.body}\n" +
                     "\n" +
                     "Respond with:\n" +
-                    "$phrase"
+                    response
         )
     }
 }
