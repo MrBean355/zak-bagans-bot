@@ -7,9 +7,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import kotlin.random.Random
 
-/** Reply to messages matching this pattern. */
-private val MessagePattern = """(?i)\b(zak|bagans)\b""".toRegex()
-
 @Component
 class ZakBagansBot(
     private val redditService: RedditService,
@@ -36,7 +33,6 @@ class ZakBagansBot(
 
         newComments
             .filter { it.author != BotUsername }
-            .filter { it.body.contains(MessagePattern) }
             .forEach(this::processComment)
     }
 
