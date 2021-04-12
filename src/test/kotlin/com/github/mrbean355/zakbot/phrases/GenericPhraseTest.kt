@@ -31,9 +31,23 @@ internal class GenericPhraseTest {
     }
 
     @Test
-    internal fun testGetReplyChance_ReturnsOneHundredPercent() {
-        val actual = GenericPhrase().getReplyChance("hello world!")
+    internal fun testGetReplyChance_MessageContainsZak_ReturnsOneHundredPercent() {
+        val actual = GenericPhrase().getReplyChance("hello zak!")
 
         assertEquals(1f, actual)
+    }
+
+    @Test
+    internal fun testGetReplyChance_MessageContainsBagans_ReturnsOneHundredPercent() {
+        val actual = GenericPhrase().getReplyChance("hello mr bagans!")
+
+        assertEquals(1f, actual)
+    }
+
+    @Test
+    internal fun testGetReplyChance_MessageDoesNotContainZaksName_ReturnsZeroPercent() {
+        val actual = GenericPhrase().getReplyChance("hello aaron!")
+
+        assertEquals(0f, actual)
     }
 }
