@@ -2,9 +2,11 @@ package com.github.mrbean355.zakbot
 
 import com.github.mrbean355.zakbot.phrases.Phrase
 import net.dean.jraw.models.Comment
+import net.dean.jraw.models.Submission
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.util.Date
 import kotlin.random.Random
 
 @Component
@@ -22,40 +24,58 @@ class ZakBagansBot(
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     fun checkComments() {
-        val lastChecked = cache.getLastChecked()
-        val newComments = redditService.getLatestComments().filter {
-            it.created.time > lastChecked
+        redditService.getSubmissionsSince(Date(cache.getLastPost())).apply {
+            firstOrNull()?.created?.time?.let(cache::setLastPost)
+            forEach(::processSubmission)
         }
 
-        if (newComments.isNotEmpty()) {
-            cache.setLastChecked(newComments.first().created.time)
+        redditService.getCommentsSince(Date(cache.getLastComment())).apply {
+            firstOrNull()?.created?.time?.let(cache::setLastComment)
+            forEach(::processComment)
         }
+    }
 
-        newComments
-            .filter { it.author != BotUsername }
-            .forEach(this::processComment)
+    private fun processSubmission(submission: Submission) {
+        val response = findPhrase(submission.title, submission.body)
+            ?: return
+
+        telegramNotifier.sendMessage(
+            "New submission:\n" +
+                    "${submission.author}: ${submission.title}\n" +
+                    "Response: $response"
+        )
+        if (sendReplies) {
+            redditService.replyToSubmission(submission, response)
+        }
     }
 
     private fun processComment(comment: Comment) {
-        val message = comment.body.toLowerCase()
-        val response = phrases
-            .find { Random.nextFloat() <= it.getReplyChance(message) }
-            ?.responses?.randomOrNull()
+        if (comment.author == BotUsername) {
+            return
+        }
+        val response = findPhrase(comment.body)
             ?: return
 
-        notify(comment, response)
+        telegramNotifier.sendMessage(
+            "New comment:\n" +
+                    "${comment.author}: ${comment.body}\n" +
+                    "Response: $response"
+        )
         if (sendReplies) {
             redditService.replyToComment(comment, response)
         }
     }
 
-    private fun notify(comment: Comment, response: String) {
-        telegramNotifier.sendMessage(
-            "Comment by ${comment.author}:\n" +
-                    "${comment.body}\n" +
-                    "\n" +
-                    "Respond with:\n" +
-                    response
-        )
+    private fun findPhrase(vararg inputs: String?): String? {
+        inputs.filterNotNull().forEach { input ->
+            val phrase = phrases
+                .find { Random.nextFloat() <= it.getReplyChance(input.toLowerCase()) }
+                ?.responses?.randomOrNull()
+
+            if (phrase != null) {
+                return phrase
+            }
+        }
+        return null
     }
 }
