@@ -1,5 +1,5 @@
 ########################################################################################################################
-# These phrases are sent when a comment mentions "we want answers", and only if the word "answers" is mentioned once.
+# These phrases are sent when a comment mentions "we want answers" and the word "answers" is mentioned only once.
 ########################################################################################################################
 
 ... answers...
