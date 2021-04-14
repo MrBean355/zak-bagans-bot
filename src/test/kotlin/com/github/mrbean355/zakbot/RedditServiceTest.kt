@@ -7,9 +7,10 @@ import io.mockk.mockk
 import io.mockk.verify
 import net.dean.jraw.RedditClient
 import net.dean.jraw.models.Comment
-import net.dean.jraw.pagination.BarebonesPaginator
+import net.dean.jraw.models.Submission
+import net.dean.jraw.models.SubredditSort
 import net.dean.jraw.references.CommentReference
-import org.junit.jupiter.api.Assertions.assertSame
+import net.dean.jraw.references.SubmissionReference
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -25,23 +26,42 @@ internal class RedditServiceTest {
     }
 
     @Test
-    internal fun testGetLatestComments() {
-        val comments = listOf<Comment>()
-        val paginator = mockk<BarebonesPaginator<Comment>> {
-            every { accumulateMerged(any()) } returns comments
-        }
-        val builder = mockk<BarebonesPaginator.Builder<Comment>> {
-            every { build() } returns paginator
-        }
-        every { client.latestComments(any()) } returns builder
+    internal fun testGetSubmissionsSince() {
+        service.getSubmissionsSince(mockk())
 
-        val actual = service.getLatestComments()
+        verify {
+            client.subreddit("GhostAdventures")
+                .posts()
+                .sorting(SubredditSort.NEW)
+                .build()
+        }
+    }
 
-        assertSame(comments, actual)
+    @Test
+    internal fun testGetCommentsSince() {
+        service.getCommentsSince(mockk())
+
         verify {
             client.latestComments("GhostAdventures")
-            builder.build()
-            paginator.accumulateMerged(1)
+                .build()
+        }
+    }
+
+    @Test
+    internal fun testReplyToSubmission() {
+        val submissionRef = mockk<SubmissionReference> {
+            every { reply(any()) } returns mockk()
+        }
+        every { client.submission(any()) } returns submissionRef
+        val submission = mockk<Submission> {
+            every { id } returns "123-456"
+        }
+
+        service.replyToSubmission(submission, "Credibility...")
+
+        verify {
+            client.submission("123-456")
+            submissionRef.reply("Credibility...\n\n^(I'm a) [^(bot)](https://github.com/MrBean355/zak-bagans-bot)^(! Please report issues to) [^(/u/Mr_Bean355)](https://www.reddit.com/user/Mr_Bean355)^(.)")
         }
     }
 

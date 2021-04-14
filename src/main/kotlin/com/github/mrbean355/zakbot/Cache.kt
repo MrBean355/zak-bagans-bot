@@ -19,15 +19,25 @@ class Cache(systemClock: SystemClock) {
         data = if (file.exists()) {
             Json.decodeFromString(file.readText())
         } else {
-            Data(lastChecked = systemClock.currentTimeMillis)
+            Data(
+                lastPost = systemClock.currentTimeMillis,
+                lastComment = systemClock.currentTimeMillis
+            )
         }
         save()
     }
 
-    fun getLastChecked(): Long = data.lastChecked
+    fun getLastPost(): Long = data.lastPost
 
-    fun setLastChecked(time: Long) {
-        data.lastChecked = time
+    fun setLastPost(time: Long) {
+        data.lastPost = time
+        save()
+    }
+
+    fun getLastComment(): Long = data.lastComment
+
+    fun setLastComment(time: Long) {
+        data.lastComment = time
         save()
     }
 
@@ -37,6 +47,7 @@ class Cache(systemClock: SystemClock) {
 
     @Serializable
     private data class Data(
-        var lastChecked: Long
+        var lastPost: Long,
+        var lastComment: Long
     )
 }

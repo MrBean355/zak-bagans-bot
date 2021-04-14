@@ -26,30 +26,37 @@ internal class CacheTest {
     }
 
     @Test
-    internal fun testConstruction_FileDoesNotExist_InitialisesLastCheckedToCurrentTime() {
+    internal fun testConstruction_FileDoesNotExist_InitialisesFieldsToCurrentTime() {
         val cache = Cache(systemClock)
 
-        val actual = cache.getLastChecked()
-
-        assertEquals(1_000_000, actual)
+        assertEquals(1_000_000, cache.getLastPost())
+        assertEquals(1_000_000, cache.getLastComment())
     }
 
     @Test
     internal fun testConstruction_FileAlreadyExists_ReturnsCachedCurrentTime() {
-        File("cache.json").writeText("{\"lastChecked\":987654321}")
+        File("cache.json").writeText("{\"lastPost\": 111,\"lastComment\":222}")
         val cache = Cache(systemClock)
 
-        val actual = cache.getLastChecked()
-
-        assertEquals(987654321, actual)
+        assertEquals(111, cache.getLastPost())
+        assertEquals(222, cache.getLastComment())
     }
 
     @Test
-    internal fun testSetLastChecked_UpdatesCache() {
+    internal fun testSetLastPost_UpdatesCache() {
         val cache = Cache(systemClock)
 
-        cache.setLastChecked(123456789)
+        cache.setLastPost(111)
 
-        assertEquals("{\"lastChecked\":123456789}", File("cache.json").readText())
+        assertEquals("{\"lastPost\":111,\"lastComment\":1000000}", File("cache.json").readText())
+    }
+
+    @Test
+    internal fun testSetLastComment_UpdatesCache() {
+        val cache = Cache(systemClock)
+
+        cache.setLastComment(222)
+
+        assertEquals("{\"lastPost\":1000000,\"lastComment\":222}", File("cache.json").readText())
     }
 }
