@@ -9,6 +9,7 @@ import net.dean.jraw.RedditClient
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.Submission
 import net.dean.jraw.models.SubredditSort
+import net.dean.jraw.pagination.BarebonesPaginator
 import net.dean.jraw.references.CommentReference
 import net.dean.jraw.references.SubmissionReference
 import org.junit.jupiter.api.BeforeEach
@@ -39,11 +40,20 @@ internal class RedditServiceTest {
 
     @Test
     internal fun testGetCommentsSince() {
+        val builder = mockk<BarebonesPaginator.Builder<Comment>> {
+            every { build() } returns mockk {
+                every { iterator() } returns mockk {
+                    every { hasNext() } returns false
+                }
+            }
+        }
+        every { client.latestComments(any()) } returns builder
+
         service.getCommentsSince(mockk())
 
         verify {
             client.latestComments("GhostAdventures")
-                .build()
+            builder.build()
         }
     }
 
