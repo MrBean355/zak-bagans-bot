@@ -4,13 +4,13 @@ import com.github.mrbean355.zakbot.util.readResourceFileLines
 import org.springframework.stereotype.Component
 
 @Component
-class AaronPhrase : Phrase {
+class SituationPhrase : Phrase {
 
-    override val priority = 3
+    override val priority = 9
 
-    override val responses = readResourceFileLines("phrases/aaron.txt")
+    override val responses = readResourceFileLines("phrases/situation.txt")
 
     override fun getReplyChance(message: String): Float {
-        return if ("aaron" in message) 0.5f else 0f
+        return if ("situation" in message) 0.5f else 0f
     }
 }
