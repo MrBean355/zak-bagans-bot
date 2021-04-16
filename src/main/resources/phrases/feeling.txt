@@ -1,0 +1,8 @@
+########################################################################################################################
+# These phrases have a 50% chance to be sent when someone mentions "I feel" or "I'm feeling".
+########################################################################################################################
+
+I feel an overwhelming sense of sadness.
+I'm feeling an uncontrollable rage coming over me.
+I feel intense anger towards Billy, stay back!
+I'm feeling so emotional at the moment!

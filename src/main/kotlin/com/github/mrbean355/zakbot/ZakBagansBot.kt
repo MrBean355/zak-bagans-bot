@@ -3,10 +3,12 @@ package com.github.mrbean355.zakbot
 import com.github.mrbean355.zakbot.phrases.Phrase
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.Submission
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.util.Date
+import javax.annotation.PostConstruct
 import kotlin.random.Random
 
 @Component
@@ -21,6 +23,25 @@ class ZakBagansBot(
 
     @Value("\${zakbot.replies.enabled:false}")
     private var sendReplies = false
+
+    @PostConstruct
+    fun onPostConstruct() {
+        val logger = LoggerFactory.getLogger(ZakBagansBot::class.java)
+
+        logger.info("Order of phrases:")
+        phrases.forEachIndexed { index, phrase ->
+            logger.info("$index: ${phrase::class.java.simpleName}")
+        }
+
+        val totalResponses = phrases.fold(0) { acc, phrase ->
+            acc.plus(phrase.responses.size)
+        }
+        telegramNotifier.sendMessage(
+            "Zak Bot v$AppVersion started up!\n" +
+                    "Phrases: ${phrases.size}\n" +
+                    "Responses: $totalResponses"
+        )
+    }
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     fun checkComments() {

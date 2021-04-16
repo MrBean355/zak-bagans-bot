@@ -1,5 +1,6 @@
 ########################################################################################################################
-# These phrases will be sent when someone mentions "we want answers" and the word "answers" is mentioned exactly once.
+# These phrases have a 50% chance to be sent when someone mentions "situation".
 ########################################################################################################################
 
-*... answers...*
+Did you know that "situation" is actually pronounced "sid-ju-ation"?
+I'm feeling anger and rage because you can't spell "sidjuation"!

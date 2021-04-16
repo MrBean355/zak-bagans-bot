@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
-internal class AaronPhraseTest {
+internal class FeelingPhraseTest {
 
     @Test
     internal fun testPriority() {
-        assertEquals(3, AaronPhrase().priority)
+        assertEquals(8, FeelingPhrase().priority)
     }
 
     @Test
@@ -22,24 +22,31 @@ internal class AaronPhraseTest {
         mockkStatic(::readResourceFileLines)
         every { readResourceFileLines(any()) } returns responses
 
-        val actual = AaronPhrase().responses
+        val actual = FeelingPhrase().responses
 
         assertSame(responses, actual)
         verify {
-            readResourceFileLines("phrases/aaron.txt")
+            readResourceFileLines("phrases/feeling.txt")
         }
     }
 
     @Test
-    internal fun testGetReplyChance_DoesNotContainAaron_ReturnsZeroPercent() {
-        val actual = AaronPhrase().getReplyChance("hello world!")
+    internal fun testGetReplyChance_DoesNotContainPhrase_ReturnsZeroPercent() {
+        val actual = FeelingPhrase().getReplyChance("hello world!")
 
         assertEquals(0f, actual)
     }
 
     @Test
-    internal fun testGetReplyChance_ContainsAaron_ReturnsFiftyPercent() {
-        val actual = AaronPhrase().getReplyChance("hello aaron!")
+    internal fun testGetReplyChance_ContainsFirstPhrase_ReturnsFiftyPercent() {
+        val actual = FeelingPhrase().getReplyChance("i feel filled with rage")
+
+        assertEquals(0.5f, actual)
+    }
+
+    @Test
+    internal fun testGetReplyChance_ContainsSecondPhrase_ReturnsFiftyPercent() {
+        val actual = FeelingPhrase().getReplyChance("i'm feeling overwhelmed with sadness")
 
         assertEquals(0.5f, actual)
     }

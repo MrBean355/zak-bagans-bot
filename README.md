@@ -1,5 +1,11 @@
 # Zak Bagans Reddit Bot
 
+![Zak Bagans](zak.jpg)
+
+*There are things in this world we will never fully understand... <sup>understand</sup>*
+
+## Welcome
+
 This is a Reddit bot for [r/GhostAdventures](https://www.reddit.com/r/GhostAdventures/) which replies to messages that
 mention Zak with random quotes.
 
@@ -9,13 +15,23 @@ in [this post](https://www.reddit.com/r/GhostAdventures/comments/mguuyi/we_need_
 ## How It Works
 
 Every 5 minutes, the bot checks for new posts and comments
-on [r/GhostAdventures](https://www.reddit.com/r/GhostAdventures/). The content of each post/comment is checked in this
-order:
+on [r/GhostAdventures](https://www.reddit.com/r/GhostAdventures/). The content of each post/comment is checked for
+various keywords, and a reply is sent if the keywords match. Keywords are checked in **this order**:
 
-1. Mentions `Aaron`: chance to send an [Aaron phrase](src/main/resources/phrases/aaron.txt).
-2. Mentions `we want answers`: send an [answers phrase](src/main/resources/phrases/answers.txt).
-3. Mentions `understand`: chance to send an [understand phrase](src/main/resources/phrases/understand.txt).
-4. Mentions `Zak` or `Bagans`: send a [generic phrase](src/main/resources/phrases/generic.txt).
+1. `mercury` - send a random [mercury phrase](src/main/resources/phrases/mercury.txt).
+2. `situation` - chance to send a random [situation phrase](src/main/resources/phrases/situation.txt).
+3. `I feel` or `I'm feeling` - chance to send a random [feeling phrase](src/main/resources/phrases/feeling.txt).
+4. `Aaron` - chance to send a random [Aaron phrase](src/main/resources/phrases/aaron.txt).
+5. `understand` - chance to send a random [understand phrase](src/main/resources/phrases/understand.txt).
+6. `we want answers` - send a random [answers phrase](src/main/resources/phrases/answers.txt).
+7. `Zak` or `Bagans` - send a random [generic phrase](src/main/resources/phrases/generic.txt).
+
+Each post/comment will only receive, at most, one reply from the bot. If the bot sends a reply for one of the keywords,
+it will not check for any of the others.
+
+Some keywords have a chance to send a reply. If the chance prevents a reply from being sent, the next keyword in the
+list will be checked instead. For example, if a comment mentions "situation", there's a 50% chance to reply with a
+"situation phrase", and a 50% chance to skip to the next keyword in the list.
 
 ## Contributing
 

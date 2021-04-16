@@ -13,7 +13,7 @@ internal class UnderstandPhraseTest {
 
     @Test
     internal fun testPriority() {
-        assertEquals(1, UnderstandPhrase().priority)
+        assertEquals(2, UnderstandPhrase().priority)
     }
 
     @Test

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 @Component
 class UnderstandPhrase : Phrase {
 
-    override val priority = 1
+    override val priority = 2
 
     override val responses = readResourceFileLines("phrases/understand.txt")
 

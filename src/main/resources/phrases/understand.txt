@@ -1,7 +1,5 @@
 ########################################################################################################################
-# These phrases are sometimes sent when a comment mentions "understand".
-# If "understand" is mentioned once, there is a 50% chance to send one of these phrases.
-# If "understand" is mentioned multiple times, these phrases are ignored.
+# These phrases have a 50% chance to be sent when someone mentions "understand" exactly once.
 ########################################################################################################################
 
-... understand...
+*... understand...*

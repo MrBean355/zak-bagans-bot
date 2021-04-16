@@ -1,10 +1,9 @@
 ########################################################################################################################
-# These phrases are sometimes sent when a comment mentions Aaron's name.
-# The chance equals 25% multiplied by how many times his name was mentioned.
-# E.g. 1 mention = 25% chance, 3 mentions = 75% chance.
+# These phrases have a 50% chance to be sent when someone mentions "Aaron".
 ########################################################################################################################
 
 I'm sending Aaron in alone to investigate.
 Aaron, go lock yourself in the basement!
 I'm gonna lock Aaron in here alone.
 I want Aaron to go into this crawlspace by himself.
+Aaron, get in the bed with me so we can feel the vibrations together.
