@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot
 
 import com.github.mrbean355.zakbot.phrases.Phrase
+import com.github.mrbean355.zakbot.substitutions.substitute
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.Submission
 import org.slf4j.LoggerFactory
@@ -58,6 +59,7 @@ class ZakBagansBot(
 
     private fun processSubmission(submission: Submission) {
         val response = findPhrase(submission.title, submission.body)
+            ?.substitute(submission)
             ?: return
 
         telegramNotifier.sendMessage(
@@ -75,6 +77,7 @@ class ZakBagansBot(
             return
         }
         val response = findPhrase(comment.body)
+            ?.substitute(comment)
             ?: return
 
         telegramNotifier.sendMessage(
