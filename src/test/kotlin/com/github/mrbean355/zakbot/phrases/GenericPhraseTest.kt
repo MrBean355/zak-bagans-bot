@@ -31,17 +31,17 @@ internal class GenericPhraseTest {
     }
 
     @Test
-    internal fun testGetReplyChance_MessageContainsZak_ReturnsOneHundredPercent() {
+    internal fun testGetReplyChance_MessageContainsZak_ReturnsFiftyPercent() {
         val actual = GenericPhrase().getReplyChance("hello zak!")
 
-        assertEquals(1f, actual)
+        assertEquals(0.5f, actual)
     }
 
     @Test
-    internal fun testGetReplyChance_MessageContainsBagans_ReturnsOneHundredPercent() {
+    internal fun testGetReplyChance_MessageContainsBagans_ReturnsFiftyPercent() {
         val actual = GenericPhrase().getReplyChance("hello mr bagans!")
 
-        assertEquals(1f, actual)
+        assertEquals(0.5f, actual)
     }
 
     @Test

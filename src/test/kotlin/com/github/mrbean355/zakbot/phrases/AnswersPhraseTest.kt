@@ -38,10 +38,10 @@ internal class AnswersPhraseTest {
     }
 
     @Test
-    internal fun testGetReplyChance_ContainsPhrase_ContainsAnswersOnce_ReturnsOneHundredPercent() {
+    internal fun testGetReplyChance_ContainsPhrase_ContainsAnswersOnce_ReturnsSeventyFivePercent() {
         val actual = AnswersPhrase().getReplyChance("we want answers...")
 
-        assertEquals(1f, actual)
+        assertEquals(0.75f, actual)
     }
 
     @Test

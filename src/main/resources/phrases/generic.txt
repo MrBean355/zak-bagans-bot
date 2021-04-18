@@ -1,40 +1,55 @@
 ########################################################################################################################
-# These phrases will be sent when someone mentions "Zak" or "Bagans".
+# These phrases have a 50% chance to be sent when someone mentions "Zak" or "Bagans".
 ########################################################################################################################
 
 # Old intro:
+I never believed in ghosts until I came face-to-face with one.
 Did someone just scratch me?!
+RAW. EXTREME.
 STOP! Stop running!
 You wanted us; you got us!
 
-# New intro:
+# Current intro:
 There are things in this world we will never fully understand... ^(understand)
 We want answers... ^(answers)
 We have worked years to build our credibility... our reputation...
 
-# General:
+# Memes:
+C R E D I B I L I T Y
 Our credi-bili-ty, our reputation.
 Bill Chappell can't give us an explanation.
-IT'S CLIMBING UP YOU!
-The evidence is extremely compelling.
+You want to pick on someone? Pick on me!
+Do you wanna tickle my big ol' long toes?
+NEVER eat a Crockpot of beans before a paranormal investigation.
+
+# Reactions:
 BRO!
 NO WAY BRO!
 DUDE!
 OMG DUDE!
-That's a class-A EVP right there!
 Bro, are you serious?!
 SHHHHHH!!! Be quiet! Listen!
-Dude, is it getting cold in here?!
-Could there be a portal here?
-You want to pick on someone? Pick on me!
-Do you wanna tickle my big ol' long toes?
-There's an ice-cold mass right here, FEEL!
-Feel this!! It's freezing right over here!
-NEVER eat a Crockpot of beans before a paranormal investigation.
 DUDE WHAT WAS THAT?!
-THERE'S A TEENY TINY FIGURE ON MY RECORDER!
-We could not debunk this as being some kind of insect.
-I'm suddenly feeling angry and aggressive...
+Dude, is it getting cold in here?!
+
+# Feelings:
+There's an ice-cold mass right here, FEEL!
+Feel this! It's freezing right over here!
+I've got goosebumps on my arm, FEEL!
 It's giving me rage!
 The hearing in the left side of my face went numb.
-I saw it with my own eyes!
+There has to be a portal over here!
+
+# Evidence:
+IT'S CLIMBING UP YOU!
+This evidence is extremely compelling.
+That's a class-A EVP right there!
+I saw a dark mist with my own eyes!
+A light anomaly just shot into {author}'s head!
+A light orb just shot into {author}'s arm!
+A ball of light just shot into {author}'s chest!
+I just saw a dark shadow figure behind you!
+BRO! A mass of static energy just shot through my body!
+THERE'S A TEENY TINY FIGURE ON MY RECORDER!
+We could not debunk this as being some kind of insect.
+*{ DEBUNKED }*
