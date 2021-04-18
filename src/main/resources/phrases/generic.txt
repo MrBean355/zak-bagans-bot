@@ -1,5 +1,5 @@
 ########################################################################################################################
-# These phrases will be sent when someone mentions "Zak" or "Bagans".
+# These phrases have a 50% chance to be sent when someone mentions "Zak" or "Bagans".
 ########################################################################################################################
 
 # Old intro:

@@ -41,7 +41,7 @@ internal class AnswersPhraseTest {
     internal fun testGetReplyChance_ContainsPhrase_ContainsAnswersOnce_ReturnsOneHundredPercent() {
         val actual = AnswersPhrase().getReplyChance("we want answers...")
 
-        assertEquals(1f, actual)
+        assertEquals(0.75f, actual)
     }
 
     @Test

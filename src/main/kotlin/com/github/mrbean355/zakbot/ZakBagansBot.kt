@@ -73,7 +73,7 @@ class ZakBagansBot(
     }
 
     private fun processComment(comment: Comment) {
-        if (comment.author == BotUsername || Random.nextFloat() > 0.25f) {
+        if (comment.author == BotUsername) {
             return
         }
         val response = findPhrase(comment.body)

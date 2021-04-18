@@ -1,5 +1,6 @@
 ########################################################################################################################
-# These phrases will be sent when someone mentions "we want answers" and the word "answers" is mentioned exactly once.
+# These phrases have a 75% chance to be sent when someone mentions "we want answers" and the word "answers" is mentioned
+# exactly once.
 ########################################################################################################################
 
 *... answers...*

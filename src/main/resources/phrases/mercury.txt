@@ -1,5 +1,5 @@
 ########################################################################################################################
-# These phrases will be sent when someone mentions "mercury".
+# These phrases have a 75% chance to be sent when someone mentions "mercury".
 ########################################################################################################################
 
 [Capturing ground-breaking proof... of how to pronounce "mercury".](https://www.youtube.com/watch?v=mjhBo0u6-wU)

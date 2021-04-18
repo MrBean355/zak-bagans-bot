@@ -11,6 +11,6 @@ class MercuryPhrase : Phrase {
     override val responses = readResourceFileLines("phrases/mercury.txt")
 
     override fun getReplyChance(message: String): Float {
-        return if ("mercury" in message) 1f else 0f
+        return if ("mercury" in message) 0.75f else 0f
     }
 }

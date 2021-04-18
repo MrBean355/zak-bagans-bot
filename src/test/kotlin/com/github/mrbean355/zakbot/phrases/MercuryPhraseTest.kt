@@ -41,6 +41,6 @@ internal class MercuryPhraseTest {
     internal fun testGetReplyChance_ContainsMercury_ReturnsOneHundredPercent() {
         val actual = MercuryPhrase().getReplyChance("did he drink mercury?!")
 
-        assertEquals(1f, actual)
+        assertEquals(0.75f, actual)
     }
 }

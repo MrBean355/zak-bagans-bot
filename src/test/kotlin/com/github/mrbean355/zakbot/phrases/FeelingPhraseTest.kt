@@ -41,13 +41,13 @@ internal class FeelingPhraseTest {
     internal fun testGetReplyChance_ContainsFirstPhrase_ReturnsFiftyPercent() {
         val actual = FeelingPhrase().getReplyChance("i feel filled with rage")
 
-        assertEquals(0.5f, actual)
+        assertEquals(0.75f, actual)
     }
 
     @Test
     internal fun testGetReplyChance_ContainsSecondPhrase_ReturnsFiftyPercent() {
         val actual = FeelingPhrase().getReplyChance("i'm feeling overwhelmed with sadness")
 
-        assertEquals(0.5f, actual)
+        assertEquals(0.75f, actual)
     }
 }
