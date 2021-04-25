@@ -1,46 +1,15 @@
 package com.github.mrbean355.zakbot.phrases
 
-import com.github.mrbean355.zakbot.util.readResourceFileLines
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Test
+internal class MercuryPhraseTest : PhraseTest() {
 
-internal class MercuryPhraseTest {
+    override val creator = { MercuryPhrase() }
 
-    @Test
-    internal fun testPriority() {
-        assertEquals(10, MercuryPhrase().priority)
-    }
+    override val expectedPriority = 10
 
-    @Test
-    internal fun testResponses() {
-        val responses = mockk<List<String>>()
-        mockkStatic(::readResourceFileLines)
-        every { readResourceFileLines(any()) } returns responses
+    override val responseFileName = "phrases/mercury.txt"
 
-        val actual = MercuryPhrase().responses
-
-        assertSame(responses, actual)
-        verify {
-            readResourceFileLines("phrases/mercury.txt")
-        }
-    }
-
-    @Test
-    internal fun testGetReplyChance_DoesNotContainMercury_ReturnsZeroPercent() {
-        val actual = MercuryPhrase().getReplyChance("hello world!")
-
-        assertEquals(0f, actual)
-    }
-
-    @Test
-    internal fun testGetReplyChance_ContainsMercury_ReturnsSeventyFivePercent() {
-        val actual = MercuryPhrase().getReplyChance("did he drink mercury?!")
-
-        assertEquals(0.75f, actual)
-    }
+    override val replyChances = mapOf(
+        "hello world!" to 0f,
+        "did he drink mercury?!" to 0.75f,
+    )
 }

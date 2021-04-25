@@ -35,7 +35,7 @@ class ZakBagansBot(
         }
 
         val totalResponses = phrases.fold(0) { acc, phrase ->
-            acc.plus(phrase.responses.size)
+            acc.plus(phrase.responses.totalSize)
         }
         telegramNotifier.sendMessage(
             "Zak Bot v$AppVersion started up!\n" +
@@ -94,7 +94,7 @@ class ZakBagansBot(
         inputs.filterNotNull().forEach { input ->
             val phrase = phrases
                 .find { Random.nextFloat() <= it.getReplyChance(input.toLowerCase()) }
-                ?.responses?.randomOrNull()
+                ?.responses?.take()
 
             if (phrase != null) {
                 return phrase

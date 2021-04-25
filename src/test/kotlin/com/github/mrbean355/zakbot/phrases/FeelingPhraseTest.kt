@@ -1,53 +1,16 @@
 package com.github.mrbean355.zakbot.phrases
 
-import com.github.mrbean355.zakbot.util.readResourceFileLines
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Test
+internal class FeelingPhraseTest : PhraseTest() {
 
-internal class FeelingPhraseTest {
+    override val creator = { FeelingPhrase() }
 
-    @Test
-    internal fun testPriority() {
-        assertEquals(8, FeelingPhrase().priority)
-    }
+    override val expectedPriority = 8
 
-    @Test
-    internal fun testResponses() {
-        val responses = mockk<List<String>>()
-        mockkStatic(::readResourceFileLines)
-        every { readResourceFileLines(any()) } returns responses
+    override val responseFileName = "phrases/feeling.txt"
 
-        val actual = FeelingPhrase().responses
-
-        assertSame(responses, actual)
-        verify {
-            readResourceFileLines("phrases/feeling.txt")
-        }
-    }
-
-    @Test
-    internal fun testGetReplyChance_DoesNotContainPhrase_ReturnsZeroPercent() {
-        val actual = FeelingPhrase().getReplyChance("hello world!")
-
-        assertEquals(0f, actual)
-    }
-
-    @Test
-    internal fun testGetReplyChance_ContainsFirstPhrase_ReturnsSeventyFivePercent() {
-        val actual = FeelingPhrase().getReplyChance("i feel filled with rage")
-
-        assertEquals(0.75f, actual)
-    }
-
-    @Test
-    internal fun testGetReplyChance_ContainsSecondPhrase_ReturnsSeventyFivePercent() {
-        val actual = FeelingPhrase().getReplyChance("i'm feeling overwhelmed with sadness")
-
-        assertEquals(0.75f, actual)
-    }
+    override val replyChances = mapOf(
+        "hello world!" to 0f,
+        "i feel filled with rage" to 0.75f,
+        "i'm feeling overwhelmed with sadness" to 0.75f,
+    )
 }
