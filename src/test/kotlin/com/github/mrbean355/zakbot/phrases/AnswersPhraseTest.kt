@@ -10,7 +10,7 @@ internal class AnswersPhraseTest : PhraseTest() {
 
     override val replyChances = mapOf(
         "hello world!" to 0f,
-        "we want answers..." to 0.75f,
+        "we want answers..." to 0.5f,
         "we want answers... answers..." to 0f,
     )
 }

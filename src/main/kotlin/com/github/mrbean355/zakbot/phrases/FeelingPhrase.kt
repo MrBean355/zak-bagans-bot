@@ -11,6 +11,6 @@ class FeelingPhrase : Phrase {
     override val responses = ResponsePool.fromFile("phrases/feeling.txt")
 
     override fun getReplyChance(message: String): Float {
-        return if ("i feel" in message || "i'm feeling" in message) 0.75f else 0f
+        return if ("i feel" in message || "i'm feeling" in message) 0.5f else 0f
     }
 }

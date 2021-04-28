@@ -14,6 +14,6 @@ class GenericPhrase : Phrase {
     override val responses = ResponsePool.fromFile("phrases/generic.txt")
 
     override fun getReplyChance(message: String): Float {
-        return if (message.contains(ZakRegex)) 0.5f else 0f
+        return if (message.contains(ZakRegex)) 0.4f else 0f
     }
 }

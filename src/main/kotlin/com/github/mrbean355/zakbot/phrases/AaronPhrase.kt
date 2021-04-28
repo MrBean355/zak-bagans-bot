@@ -11,6 +11,6 @@ class AaronPhrase : Phrase {
     override val responses = ResponsePool.fromFile("phrases/aaron.txt")
 
     override fun getReplyChance(message: String): Float {
-        return if ("aaron" in message) 0.5f else 0f
+        return if ("aaron" in message) 0.25f else 0f
     }
 }

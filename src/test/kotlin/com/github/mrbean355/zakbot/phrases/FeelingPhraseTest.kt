@@ -10,7 +10,7 @@ internal class FeelingPhraseTest : PhraseTest() {
 
     override val replyChances = mapOf(
         "hello world!" to 0f,
-        "i feel filled with rage" to 0.75f,
-        "i'm feeling overwhelmed with sadness" to 0.75f,
+        "i feel filled with rage" to 0.5f,
+        "i'm feeling overwhelmed with sadness" to 0.5f,
     )
 }
