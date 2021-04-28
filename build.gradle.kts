@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.mrbean355"
-version = "1.3.0"
+version = "1.4.0"
 
 repositories {
     mavenCentral()
@@ -28,8 +28,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web:2.4.5")
     implementation("com.google.code.gson:gson:2.8.6")
     implementation("net.dean.jraw:JRAW:1.1.0")
-    implementation("org.telegram:telegrambots:5.1.1")
-    implementation("org.telegram:telegrambots-spring-boot-starter:5.1.1")
+    implementation("org.telegram:telegrambots:5.2.0")
+    implementation("org.telegram:telegrambots-spring-boot-starter:5.2.0")
 
     testImplementation(platform("org.junit:junit-bom:5.7.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")

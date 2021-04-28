@@ -1,53 +1,16 @@
 package com.github.mrbean355.zakbot.phrases
 
-import com.github.mrbean355.zakbot.util.readResourceFileLines
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Test
+internal class GenericPhraseTest : PhraseTest() {
 
-internal class GenericPhraseTest {
+    override val creator = { GenericPhrase() }
 
-    @Test
-    internal fun testPriority() {
-        assertEquals(0, GenericPhrase().priority)
-    }
+    override val expectedPriority = 0
 
-    @Test
-    internal fun testResponses() {
-        val responses = mockk<List<String>>()
-        mockkStatic(::readResourceFileLines)
-        every { readResourceFileLines(any()) } returns responses
+    override val responseFileName = "phrases/generic.txt"
 
-        val actual = GenericPhrase().responses
-
-        assertSame(responses, actual)
-        verify {
-            readResourceFileLines("phrases/generic.txt")
-        }
-    }
-
-    @Test
-    internal fun testGetReplyChance_MessageContainsZak_ReturnsFiftyPercent() {
-        val actual = GenericPhrase().getReplyChance("hello zak!")
-
-        assertEquals(0.5f, actual)
-    }
-
-    @Test
-    internal fun testGetReplyChance_MessageContainsBagans_ReturnsFiftyPercent() {
-        val actual = GenericPhrase().getReplyChance("hello mr bagans!")
-
-        assertEquals(0.5f, actual)
-    }
-
-    @Test
-    internal fun testGetReplyChance_MessageDoesNotContainZaksName_ReturnsZeroPercent() {
-        val actual = GenericPhrase().getReplyChance("hello aaron!")
-
-        assertEquals(0f, actual)
-    }
+    override val replyChances = mapOf(
+        "hello zak!" to 0.4f,
+        "hello mr bagans!" to 0.4f,
+        "hello aaron!" to 0f,
+    )
 }
