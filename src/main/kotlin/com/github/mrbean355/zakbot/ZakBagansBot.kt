@@ -93,7 +93,7 @@ class ZakBagansBot(
     private fun findPhrase(vararg inputs: String?): String? {
         inputs.filterNotNull().forEach { input ->
             val phrase = phrases
-                .find { Random.nextFloat() <= it.getReplyChance(input.toLowerCase()) }
+                .find { Random.nextFloat() <= it.getReplyChance(input.lowercase()) }
                 ?.responses?.take()
 
             if (phrase != null) {
