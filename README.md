@@ -20,11 +20,11 @@ various keywords, and a reply may be sent if the keywords match. **Keywords are 
 
 1. `mercury` - 75% chance to send a random [mercury phrase](src/main/resources/phrases/mercury.txt).
 2. `situation` - 50% chance to send a random [situation phrase](src/main/resources/phrases/situation.txt).
-3. `I feel` or `I'm feeling` - 75% chance to send a random [feeling phrase](src/main/resources/phrases/feeling.txt).
-4. `Aaron` - 50% chance to send a random [Aaron phrase](src/main/resources/phrases/aaron.txt).
+3. `I feel` or `I'm feeling` - 50% chance to send a random [feeling phrase](src/main/resources/phrases/feeling.txt).
+4. `Aaron` - 25% chance to send a random [Aaron phrase](src/main/resources/phrases/aaron.txt).
 5. `understand` - 50% chance to send a random [understand phrase](src/main/resources/phrases/understand.txt).
-6. `we want answers` - 75% chance to send a random [answers phrase](src/main/resources/phrases/answers.txt).
-7. `Zak` or `Bagans` - 50% chance send a random [generic phrase](src/main/resources/phrases/generic.txt).
+6. `we want answers` - 50% chance to send a random [answers phrase](src/main/resources/phrases/answers.txt).
+7. `Zak` or `Bagans` - 40% chance send a random [generic phrase](src/main/resources/phrases/generic.txt).
 
 Each post/comment will only receive, at most, one reply from the bot. If the bot sends a reply for one of the keywords,
 it will not check for any of the others.
