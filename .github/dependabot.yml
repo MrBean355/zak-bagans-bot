@@ -11,7 +11,3 @@ updates:
   - MrBean355
   assignees:
   - MrBean355
-  ignore:
-  - dependency-name: org.telegram:telegrambots-spring-boot-starter
-    versions:
-    - 5.1.1
