@@ -71,7 +71,7 @@ internal class RedditServiceTest {
 
         verify {
             client.submission("123-456")
-            submissionRef.reply("Credibility...\n\n^(I'm a) [^(bot)](https://github.com/MrBean355/zak-bagans-bot)^(! Please report issues to) [^(/u/Mr_Bean355)](https://www.reddit.com/user/Mr_Bean355)^(.)")
+            submissionRef.reply("Credibility...")
         }
     }
 
@@ -89,7 +89,7 @@ internal class RedditServiceTest {
 
         verify {
             client.comment("123-456")
-            commentRef.reply("We want answers\n\n^(I'm a) [^(bot)](https://github.com/MrBean355/zak-bagans-bot)^(! Please report issues to) [^(/u/Mr_Bean355)](https://www.reddit.com/user/Mr_Bean355)^(.)")
+            commentRef.reply("We want answers")
         }
     }
 }

@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.5.10"
-    kotlin("plugin.serialization") version "1.5.10"
-    id("org.springframework.boot") version "2.5.0"
+    kotlin("jvm") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.21"
+    id("org.springframework.boot") version "2.5.3"
 }
 
 group = "com.github.mrbean355"
-version = "1.6.0"
+version = "1.7.0"
 
 repositories {
     mavenCentral()
@@ -24,16 +24,16 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
-    implementation("org.springframework.boot:spring-boot-starter-web:2.5.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+    implementation("org.springframework.boot:spring-boot-starter-web:2.5.3")
     implementation("com.google.code.gson:gson:2.8.7")
     implementation("net.dean.jraw:JRAW:1.1.0")
-    implementation("org.telegram:telegrambots:5.2.0")
-    implementation("org.telegram:telegrambots-spring-boot-starter:5.2.0")
+    implementation("org.telegram:telegrambots:5.3.0")
+    implementation("org.telegram:telegrambots-spring-boot-starter:5.3.0")
 
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("io.mockk:mockk:1.11.0")
+    testImplementation("io.mockk:mockk:1.12.0")
 }
 
 tasks.test {
