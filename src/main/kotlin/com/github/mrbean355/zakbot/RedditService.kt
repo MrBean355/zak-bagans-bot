@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service
 import java.util.Date
 
 private const val PageLimit = 10
-private const val PostFormat = "%s\n\n^(I'm a) [^(bot)]($GitHubUrl)^(! Please report issues to) [^(/u/$AuthorUsername)](https://www.reddit.com/user/$AuthorUsername)^(.)"
 
 @Service
 class RedditService(private val client: RedditClient) {
@@ -29,11 +28,11 @@ class RedditService(private val client: RedditClient) {
             .collectAfter(date)
 
     fun replyToSubmission(submission: Submission, response: String) {
-        client.submission(submission.id).reply(PostFormat.format(response))
+        client.submission(submission.id).reply(response)
     }
 
     fun replyToComment(comment: Comment, response: String) {
-        client.comment(comment.id).reply(PostFormat.format(response))
+        client.comment(comment.id).reply(response)
     }
 
     /** Collects all contributions that have been created after the given date. */
