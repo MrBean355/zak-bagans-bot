@@ -44,7 +44,7 @@ class ZakBagansBot(
         )
     }
 
-    @Scheduled(fixedRate = 5 * 60 * 1000)
+    @Scheduled(fixedRate = 5 * 60 * 1000L)
     fun checkComments() {
         redditService.getSubmissionsSince(Date(cache.getLastPost())).apply {
             firstOrNull()?.created?.time?.let(cache::setLastPost)
