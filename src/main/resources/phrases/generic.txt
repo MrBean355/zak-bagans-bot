@@ -1,5 +1,5 @@
 ########################################################################################################################
-# These phrases have a 50% chance to be sent when someone mentions "Zak" or "Bagans".
+# These phrases have a 40% chance to be sent when someone mentions "Zak" or "Bagans".
 ########################################################################################################################
 
 # Old intro:
@@ -98,14 +98,18 @@ I'm the official brothel inspector. # S13E4
 I think our human eyeballs - our living eyeballs - see this town as it is now. # S13E4
 I have hydrogen in my farts. # S13E4
 It's not me. I wear deodorant. I do not have B.O. # S13E4
-There's a heaviness in the air that begins to trigger something inside of me.   # S23E01
-Are you making me angry? Are you giving me aggression?                          # S23E01
-It's pitch darkness.                                                            # S23E01
-You wanna push me? Let me feel your touch!                                      # S23E01
-Ouch! I got a pain on the left side of my head.                                 # S23E01
-This costume shop just got a hell of a lot more [bleep] creepy.                 # S23E02
-Hi I'm Zak, what's your name? Do you want a beer? Do you want a cigarette?      # S23E02
-They're pulling the heat from around me - the thermal heat energy.              # S23E02
+
+# Season 23, Episode 1
+There's a heaviness in the air that begins to trigger something inside of me.
+Are you making me angry? Are you giving me aggression?
+It's pitch darkness.
+You wanna push me? Let me feel your touch!
+Ouch! I got a pain on the left side of my head.
+
+# Season 23, Episode 2
+This costume shop just got a hell of a lot more [bleep] creepy.
+Hi I'm Zak, what's your name? Do you want a beer? Do you want a cigarette?
+They're pulling the heat from around me - the thermal heat energy.
 
 # Season 23, Episode 4
 I feel like I have a weird connection to Mark Twain.

@@ -1,5 +1,5 @@
 ########################################################################################################################
-# These phrases have a 50% chance to be sent when someone mentions "Aaron".
+# These phrases have a 25% chance to be sent when someone mentions "Aaron".
 ########################################################################################################################
 
 I'm sending Aaron in alone to investigate.
