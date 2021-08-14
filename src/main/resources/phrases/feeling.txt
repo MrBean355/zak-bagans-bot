@@ -1,5 +1,5 @@
 ########################################################################################################################
-# These phrases have a 75% chance to be sent when someone mentions "I feel" or "I'm feeling".
+# These phrases have a 50% chance to be sent when someone mentions "I feel" or "I'm feeling".
 ########################################################################################################################
 
 I feel an overwhelming sense of sadness.
