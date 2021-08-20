@@ -2,6 +2,7 @@ package com.github.mrbean355.zakbot
 
 import com.github.mrbean355.zakbot.phrases.Phrase
 import com.github.mrbean355.zakbot.substitutions.substitute
+import com.github.mrbean355.zakbot.util.getString
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.PublicContribution
 import net.dean.jraw.models.Submission
@@ -27,7 +28,7 @@ class ZakBagansBot(
 
     @PostConstruct
     fun onPostConstruct() {
-        telegramNotifier.sendMessage("Zak Bot v$AppVersion started up!")
+        telegramNotifier.sendMessage(getString("telegram.bot_start_up", AppVersion))
     }
 
     @Scheduled(fixedRate = 5 * 60 * 1000L)
@@ -50,11 +51,7 @@ class ZakBagansBot(
             ?.substitute(submission)
             ?: return
 
-        telegramNotifier.sendMessage(
-            "New submission:\n" +
-                    "${submission.author}: ${submission.title}\n" +
-                    "Response: $response"
-        )
+        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.author, submission.title, response))
         if (sendReplies) {
             redditService.replyToSubmission(submission, response)
         }
@@ -66,19 +63,16 @@ class ZakBagansBot(
         }
         if (comment.shouldIgnoreAuthor()) {
             cache.ignoreUser(comment.author)
-            telegramNotifier.sendMessage("New user ignored: ${comment.author}")
-            redditService.replyToComment(comment, "I'm sorry you feel that way. I won't reply to your posts or comments anymore.")
+            telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
+            redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
             return
         }
         val response = findPhrase(comment.body)
             ?.substitute(comment)
             ?: return
 
-        telegramNotifier.sendMessage(
-            "New comment:\n" +
-                    "${comment.author}: ${comment.body}\n" +
-                    "Response: $response"
-        )
+        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.author, comment.body, response))
+
         if (sendReplies) {
             redditService.replyToComment(comment, response)
         }
