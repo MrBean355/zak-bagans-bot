@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
@@ -35,8 +36,9 @@ class TelegramBot : TelegramLongPollingBot(), TelegramNotifier {
 @Component
 @Profile("dev")
 class StubTelegramNotifier : TelegramNotifier {
+    private val logger = LoggerFactory.getLogger(StubTelegramNotifier::class.java)
 
     override fun sendMessage(text: String) {
-        println("[Telegram] $text")
+        logger.info("[Telegram] $text")
     }
 }
