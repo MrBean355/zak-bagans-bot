@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -44,29 +45,39 @@ internal class CacheTest {
     }
 
     @Test
-    internal fun testConstruction_FileAlreadyExists_ReturnsCachedCurrentTime() {
-        File("cache.json").writeText("{\"lastPost\": 111,\"lastComment\":222}")
+    internal fun testConstruction_FileAlreadyExists_ReturnsCachedData() {
+        File("cache.json").writeText("{\"lastPost\": 111,\"lastComment\":222,\"ignoredUsers\":[\"zakbagans\"]}")
         val cache = Cache(systemClock)
 
         assertEquals(111, cache.getLastPost())
         assertEquals(222, cache.getLastComment())
+        assertTrue(cache.isUserIgnored("ZakBagans"))
     }
 
     @Test
-    internal fun testSetLastPost_UpdatesCache() {
+    internal fun testSetLastPost_UpdatesCacheFile() {
         val cache = Cache(systemClock)
 
         cache.setLastPost(111)
 
-        assertEquals("{\"lastPost\":111,\"lastComment\":1000000}", File("cache.json").readText())
+        assertEquals("{\"lastPost\":111,\"lastComment\":1000000,\"ignoredUsers\":[]}", File("cache.json").readText())
     }
 
     @Test
-    internal fun testSetLastComment_UpdatesCache() {
+    internal fun testSetLastComment_UpdatesCacheFile() {
         val cache = Cache(systemClock)
 
         cache.setLastComment(222)
 
-        assertEquals("{\"lastPost\":1000000,\"lastComment\":222}", File("cache.json").readText())
+        assertEquals("{\"lastPost\":1000000,\"lastComment\":222,\"ignoredUsers\":[]}", File("cache.json").readText())
+    }
+
+    @Test
+    internal fun testIgnoreUser_UpdatesCacheFile() {
+        val cache = Cache(systemClock)
+
+        cache.ignoreUser("MrBean")
+
+        assertEquals("{\"lastPost\":1000000,\"lastComment\":1000000,\"ignoredUsers\":[\"mrbean\"]}", File("cache.json").readText())
     }
 }

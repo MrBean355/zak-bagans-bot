@@ -7,11 +7,14 @@ import io.mockk.mockk
 import io.mockk.verify
 import net.dean.jraw.RedditClient
 import net.dean.jraw.models.Comment
+import net.dean.jraw.models.Listing
 import net.dean.jraw.models.Submission
 import net.dean.jraw.models.SubredditSort
 import net.dean.jraw.pagination.BarebonesPaginator
 import net.dean.jraw.references.CommentReference
 import net.dean.jraw.references.SubmissionReference
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -91,5 +94,55 @@ internal class RedditServiceTest {
             client.comment("123-456")
             commentRef.reply("We want answers")
         }
+    }
+
+    @Test
+    internal fun testFindParentComment_CallsApiCorrectly() {
+        val comment = mockk<Comment> {
+            every { parentFullName } returns "t1_6afe8u"
+        }
+
+        service.findParentComment(comment)
+
+        verify {
+            client.lookup("t1_6afe8u")
+        }
+    }
+
+    @Test
+    internal fun testFindParentComment_ApiReturnsEmptyList_ReturnsNull() {
+        val comment = mockk<Comment> {
+            every { parentFullName } returns "t1_6afe8u"
+        }
+        every { client.lookup(*anyVararg()) } returns Listing.empty()
+
+        val result = service.findParentComment(comment)
+
+        assertNull(result)
+    }
+
+    @Test
+    internal fun testFindParentComment_ApiReturnsNonEmptyList_FirstItemIsNotComment_ReturnsNull() {
+        val comment = mockk<Comment> {
+            every { parentFullName } returns "t1_6afe8u"
+        }
+        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(mockk<Submission>()))
+
+        val result = service.findParentComment(comment)
+
+        assertNull(result)
+    }
+
+    @Test
+    internal fun testFindParentComment_ApiReturnsNonEmptyList_FirstItemIsComment_ReturnsComment() {
+        val comment = mockk<Comment> {
+            every { parentFullName } returns "t1_6afe8u"
+        }
+        val parent = mockk<Comment>()
+        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(parent))
+
+        val result = service.findParentComment(comment)
+
+        assertSame(parent, result)
     }
 }
