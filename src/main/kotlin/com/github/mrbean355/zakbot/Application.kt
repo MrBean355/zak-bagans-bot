@@ -24,7 +24,9 @@ open class Application : SpringApplication() {
             BotClientId,
             System.getenv("BOT_CLIENT_SECRET")
         )
-    )
+    ).apply {
+        logHttp = false
+    }
 }
 
 fun main(vararg args: String) {
