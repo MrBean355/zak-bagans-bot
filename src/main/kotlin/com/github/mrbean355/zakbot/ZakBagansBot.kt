@@ -64,7 +64,9 @@ class ZakBagansBot(
         if (comment.shouldIgnoreAuthor()) {
             cache.ignoreUser(comment.author)
             telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
-            redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+            if (sendReplies) {
+                redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+            }
             return
         }
         val response = findPhrase(comment.body)
