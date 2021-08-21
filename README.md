@@ -21,10 +21,11 @@ various keywords, and a reply may be sent if the keywords match. **Keywords are 
 1. `mercury` - 75% chance to send a random [mercury phrase](src/main/resources/phrases/mercury.txt).
 2. `situation` - 50% chance to send a random [situation phrase](src/main/resources/phrases/situation.txt).
 3. `I feel` or `I'm feeling` - 50% chance to send a random [feeling phrase](src/main/resources/phrases/feeling.txt).
-4. `Aaron` - 25% chance to send a random [Aaron phrase](src/main/resources/phrases/aaron.txt).
-5. `understand` - 50% chance to send a random [understand phrase](src/main/resources/phrases/understand.txt).
-6. `we want answers` - 50% chance to send a random [answers phrase](src/main/resources/phrases/answers.txt).
-7. `Zak` or `Bagans` - 40% chance send a random [generic phrase](src/main/resources/phrases/generic.txt).
+4. `3` or `three` - 50% chance to send a random [trinity phrase](src/main/resources/phrases/trinity.txt).
+5. `Aaron` - 25% chance to send a random [Aaron phrase](src/main/resources/phrases/aaron.txt).
+6. `understand` - 50% chance to send a random [understand phrase](src/main/resources/phrases/understand.txt).
+7. `we want answers` - 50% chance to send a random [answers phrase](src/main/resources/phrases/answers.txt).
+8. `Zak` or `Bagans` - 40% chance send a random [generic phrase](src/main/resources/phrases/generic.txt).
 
 Each post/comment will only receive, at most, one reply from the bot. If the bot sends a reply for one of the keywords,
 it will not check for any of the others.
@@ -32,6 +33,11 @@ it will not check for any of the others.
 All keywords have a chance to send a reply. If the chance prevents a reply from being sent, the next keyword in the list
 will be checked instead. For example, if a comment mentions "situation", there's a 50% chance to reply with a
 "situation phrase", and a 50% chance to skip to the next keyword in the list.
+
+## Opting Out
+
+If you find the bot annoying, you can reply to one of its comments with `bad bot`. This will make the bot ignore all of
+your future posts and comments.
 
 ## Contributing
 

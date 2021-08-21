@@ -35,6 +35,11 @@ class RedditService(private val client: RedditClient) {
         client.comment(comment.id).reply(response)
     }
 
+    /** @return the parent comment of [comment], or null if the parent is not a comment. */
+    fun findParentComment(comment: Comment): Comment? {
+        return client.lookup(comment.parentFullName).firstOrNull() as? Comment
+    }
+
     /** Collects all contributions that have been created after the given date. */
     private fun <T : PublicContribution<*>> Paginator<T>.collectAfter(since: Date): List<T> {
         val items = mutableListOf<T>()

@@ -3,11 +3,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.5.21"
     kotlin("plugin.serialization") version "1.5.21"
-    id("org.springframework.boot") version "2.5.3"
+    id("org.springframework.boot") version "2.5.4"
 }
 
 group = "com.github.mrbean355"
-version = "1.9.0"
+version = "1.10.0"
 
 repositories {
     mavenCentral()
@@ -25,8 +25,7 @@ tasks.withType<KotlinCompile> {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
-    implementation("org.springframework.boot:spring-boot-starter-web:2.5.3")
-    implementation("com.google.code.gson:gson:2.8.7")
+    implementation("org.springframework.boot:spring-boot-starter-web:2.5.4")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:5.3.0")
     implementation("org.telegram:telegrambots-spring-boot-starter:5.3.0")

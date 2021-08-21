@@ -1,0 +1,7 @@
+########################################################################################################################
+# These phrases have a 50% chance to be sent when someone mentions "3" or "three".
+########################################################################################################################
+
+{author} is mocking the Holy Trinity.
+You're mocking the Holy Trinity by saying the number '3'.
+{author} mentioned the number '3'. They must be mocking the Trinity.

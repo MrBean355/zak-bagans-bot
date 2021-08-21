@@ -21,7 +21,8 @@ class Cache(systemClock: SystemClock) {
         } else {
             Data(
                 lastPost = systemClock.currentTimeMillis,
-                lastComment = systemClock.currentTimeMillis
+                lastComment = systemClock.currentTimeMillis,
+                ignoredUsers = mutableSetOf()
             )
         }
         save()
@@ -41,6 +42,15 @@ class Cache(systemClock: SystemClock) {
         save()
     }
 
+    fun ignoreUser(username: String) {
+        data.ignoredUsers += username.lowercase()
+        save()
+    }
+
+    fun isUserIgnored(username: String): Boolean {
+        return username.lowercase() in data.ignoredUsers
+    }
+
     private fun save() = synchronized(this) {
         File(FILE_NAME).writeText(Json.encodeToString(data))
     }
@@ -48,6 +58,7 @@ class Cache(systemClock: SystemClock) {
     @Serializable
     private data class Data(
         var lastPost: Long,
-        var lastComment: Long
+        var lastComment: Long,
+        val ignoredUsers: MutableSet<String>,
     )
 }
