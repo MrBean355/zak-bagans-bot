@@ -33,6 +33,11 @@ All keywords have a chance to send a reply. If the chance prevents a reply from 
 will be checked instead. For example, if a comment mentions "situation", there's a 50% chance to reply with a
 "situation phrase", and a 50% chance to skip to the next keyword in the list.
 
+## Opting Out
+
+If you find the bot annoying, you can reply to one of its comments with `bad bot`. This will make the bot ignore all of
+your future posts and comments.
+
 ## Contributing
 
 Any contributions by the community are welcome!
