@@ -14,6 +14,6 @@ class TrinityPhrase : Phrase {
     override val responses = ResponsePool.fromFile("phrases/trinity.txt")
 
     override fun getReplyChance(message: String): Float {
-        return if (message.contains(DigitRegex) || message.contains("three", ignoreCase = true)) 0.5f else 0f
+        return if (message.contains(DigitRegex) || message.contains("three", ignoreCase = true)) 0.33f else 0f
     }
 }
