@@ -30,7 +30,7 @@ dependencies {
     implementation("org.telegram:telegrambots:5.3.0")
     implementation("org.telegram:telegrambots-spring-boot-starter:5.3.0")
 
-    testImplementation(platform("org.junit:junit-bom:5.7.2"))
+    testImplementation(platform("org.junit:junit-bom:5.8.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("io.mockk:mockk:1.12.0")
 }
