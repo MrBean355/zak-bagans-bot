@@ -25,7 +25,7 @@ tasks.withType<KotlinCompile> {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
-    implementation("org.springframework.boot:spring-boot-starter-web:2.5.4")
+    implementation("org.springframework.boot:spring-boot-starter-web:2.5.5")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:5.3.0")
     implementation("org.telegram:telegrambots-spring-boot-starter:5.3.0")
