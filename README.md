@@ -21,7 +21,7 @@ various keywords, and a reply may be sent if the keywords match. **Keywords are 
 1. `mercury` - 75% chance to send a random [mercury phrase](src/main/resources/phrases/mercury.txt).
 2. `situation` - 50% chance to send a random [situation phrase](src/main/resources/phrases/situation.txt).
 3. `I feel` or `I'm feeling` - 50% chance to send a random [feeling phrase](src/main/resources/phrases/feeling.txt).
-4. `3` or `three` - 50% chance to send a random [trinity phrase](src/main/resources/phrases/trinity.txt).
+4. `3` or `three` - 33% chance to send a random [trinity phrase](src/main/resources/phrases/trinity.txt).
 5. `Aaron` - 25% chance to send a random [Aaron phrase](src/main/resources/phrases/aaron.txt).
 6. `understand` - 50% chance to send a random [understand phrase](src/main/resources/phrases/understand.txt).
 7. `we want answers` - 50% chance to send a random [answers phrase](src/main/resources/phrases/answers.txt).

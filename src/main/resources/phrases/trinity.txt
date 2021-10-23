@@ -1,5 +1,5 @@
 ########################################################################################################################
-# These phrases have a 50% chance to be sent when someone mentions "3" or "three".
+# These phrases have a 33% chance to be sent when someone mentions "3" or "three".
 ########################################################################################################################
 
 {author} is mocking the Holy Trinity.
