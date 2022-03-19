@@ -29,7 +29,7 @@ class TelegramBot(
     override fun getBotUsername() = TelegramUsername
 
     override fun onUpdateReceived(update: Update) {
-        if (update.message?.text == "!ping") {
+        if (update.message?.text == "/ping") {
             sendMessage(getString("telegram.bot_ping_response", AppVersion, getUptime()))
         }
     }
@@ -38,7 +38,6 @@ class TelegramBot(
         execute(SendMessage(ChatId, text))
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     private fun getUptime(): String {
         val elapsed = Duration.between(Instant.ofEpochMilli(applicationContext.startupDate), Instant.now())
         val days = elapsed.toDaysPart()

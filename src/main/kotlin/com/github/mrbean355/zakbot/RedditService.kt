@@ -5,6 +5,8 @@ import net.dean.jraw.models.Comment
 import net.dean.jraw.models.PublicContribution
 import net.dean.jraw.models.Submission
 import net.dean.jraw.models.SubredditSort
+import net.dean.jraw.models.UserHistorySort
+import net.dean.jraw.pagination.DefaultPaginator
 import net.dean.jraw.pagination.Paginator
 import org.springframework.stereotype.Service
 import java.util.Date
@@ -38,6 +40,14 @@ class RedditService(private val client: RedditClient) {
     /** @return the parent comment of [comment], or null if the parent is not a comment. */
     fun findParentComment(comment: Comment): Comment? {
         return client.lookup(comment.parentFullName).firstOrNull() as? Comment
+    }
+
+    fun getAllBotComments(): DefaultPaginator<PublicContribution<*>> {
+        return client.me()
+            .history("comments")
+            .sorting(UserHistorySort.NEW)
+            .limit(Paginator.RECOMMENDED_MAX_LIMIT)
+            .build()
     }
 
     /** Collects all contributions that have been created after the given date. */
