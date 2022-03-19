@@ -28,7 +28,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web:2.6.4")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:5.7.1")
-    implementation("org.telegram:telegrambots-spring-boot-starter:5.6.0")
+    implementation("org.telegram:telegrambots-spring-boot-starter:5.7.1")
 
     testImplementation(platform("org.junit:junit-bom:5.8.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
