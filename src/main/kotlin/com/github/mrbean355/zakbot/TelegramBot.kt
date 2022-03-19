@@ -38,7 +38,6 @@ class TelegramBot(
         execute(SendMessage(ChatId, text))
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     private fun getUptime(): String {
         val elapsed = Duration.between(Instant.ofEpochMilli(applicationContext.startupDate), Instant.now())
         val days = elapsed.toDaysPart()
