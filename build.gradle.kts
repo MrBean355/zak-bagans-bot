@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.6.10"
     kotlin("plugin.serialization") version "1.6.10"
-    id("org.springframework.boot") version "2.6.4"
+    id("org.springframework.boot") version "2.6.5"
 }
 
 group = "com.github.mrbean355"
