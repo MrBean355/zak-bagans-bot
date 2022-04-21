@@ -27,7 +27,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
     implementation("org.springframework.boot:spring-boot-starter-web:2.6.6")
     implementation("net.dean.jraw:JRAW:1.1.0")
-    implementation("org.telegram:telegrambots:5.7.1")
+    implementation("org.telegram:telegrambots:6.0.1")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.0.1")
 
     testImplementation(platform("org.junit:junit-bom:5.8.2"))
