@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.phrases.Phrase
 import com.github.mrbean355.zakbot.substitutions.substitute
 import com.github.mrbean355.zakbot.util.getString
@@ -9,7 +10,6 @@ import net.dean.jraw.models.Submission
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import java.util.Date
 import javax.annotation.PostConstruct
 import kotlin.random.Random
 
@@ -17,7 +17,7 @@ import kotlin.random.Random
 class ZakBagansBot(
     private val redditService: RedditService,
     private val telegramNotifier: TelegramNotifier,
-    private val cache: Cache,
+    private val botCache: BotCache,
     phrases: List<Phrase>
 ) {
 
@@ -33,14 +33,14 @@ class ZakBagansBot(
 
     @Scheduled(fixedRate = 5 * 60 * 1000L)
     fun checkComments() {
-        redditService.getSubmissionsSince(Date(cache.getLastPost())).apply {
-            firstOrNull()?.created?.time?.let(cache::setLastPost)
+        redditService.getSubmissionsSince(botCache.getLastPostTime()).apply {
+            firstOrNull()?.created?.let(botCache::setLastPostTime)
             filterNot { it.isAuthorIgnored() }
                 .forEach(::processSubmission)
         }
 
-        redditService.getCommentsSince(Date(cache.getLastComment())).apply {
-            firstOrNull()?.created?.time?.let(cache::setLastComment)
+        redditService.getCommentsSince(botCache.getLastCommentTime()).apply {
+            firstOrNull()?.created?.let(botCache::setLastCommentTime)
             filterNot { it.isAuthorIgnored() }
                 .forEach(::processComment)
         }
@@ -62,7 +62,7 @@ class ZakBagansBot(
             return
         }
         if (comment.shouldIgnoreAuthor()) {
-            cache.ignoreUser(comment.author)
+            botCache.ignoreUser(comment.author, comment.fullName)
             telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
             if (sendReplies) {
                 redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
@@ -94,7 +94,7 @@ class ZakBagansBot(
     }
 
     private fun PublicContribution<*>.isAuthorIgnored(): Boolean =
-        cache.isUserIgnored(author)
+        botCache.isUserIgnored(author)
 
     private fun Comment.shouldIgnoreAuthor(): Boolean {
         val isBadBot = body.filter { it.isLetter() }.equals("badbot", ignoreCase = true)
