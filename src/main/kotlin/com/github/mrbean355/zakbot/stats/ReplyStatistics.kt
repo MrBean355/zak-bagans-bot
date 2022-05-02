@@ -10,6 +10,7 @@ class ReplyStatistics(
     private val redditService: RedditService
 ) {
 
+    // @PostConstruct
     fun fetchReplyStatistics() {
         val scoredComments = mutableListOf<ScoredReply>()
 
@@ -25,6 +26,8 @@ class ReplyStatistics(
         }
 
         val text = buildString {
+            appendLine("Comment|Times Sent|Upvotes|Average Upvotes")
+
             scoredComments.sortedBy { it.reply.lowercase() }
                 .groupBy { it.reply }
                 .forEach { (body, comments) ->
@@ -80,9 +83,11 @@ class ReplyStatistics(
             "<3",
             "\uD83D\uDC9C", // 💜
             "\uD83D\uDE22", // 😢
+            "\uD83C\uDF70", // 🍰
             "Sorry :(",
             "U serious bruh?!",
-            "u/Mr_Bean355"
+            "u/Mr_Bean355",
+            "I'm sorry you feel that way. I won't reply to your posts or comments anymore."
         )
     }
 }
