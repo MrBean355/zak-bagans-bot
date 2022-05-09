@@ -10,7 +10,6 @@ import net.dean.jraw.models.Submission
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import javax.annotation.PostConstruct
 import kotlin.random.Random
 
 @Component
@@ -25,11 +24,6 @@ class ZakBagansBot(
 
     @Value("\${zakbot.replies.enabled:false}")
     private var sendReplies = false
-
-    @PostConstruct
-    fun onPostConstruct() {
-        telegramNotifier.sendMessage(getString("telegram.bot_start_up", AppVersion))
-    }
 
     @Scheduled(fixedRate = 5 * 60 * 1000L)
     fun checkComments() {
