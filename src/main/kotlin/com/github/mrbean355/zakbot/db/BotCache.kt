@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot.db
 
+import com.github.mrbean355.zakbot.util.SystemClock
 import org.springframework.stereotype.Component
 import java.util.Date
 import java.util.concurrent.locks.ReentrantLock
@@ -12,6 +13,7 @@ private const val CommentKey = "comment"
 class BotCache(
     private val lastCheckedRepository: LastCheckedRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
+    private val systemClock: SystemClock
 ) {
     private val lock = ReentrantLock()
 
@@ -20,7 +22,7 @@ class BotCache(
         if (entity.isPresent) {
             entity.get().value
         } else {
-            lastCheckedRepository.save(LastChecked(PostKey, Date())).value
+            lastCheckedRepository.save(LastChecked(PostKey, currentTime())).value
         }
     }
 
@@ -35,7 +37,7 @@ class BotCache(
         if (entity.isPresent) {
             entity.get().value
         } else {
-            lastCheckedRepository.save(LastChecked(CommentKey, Date())).value
+            lastCheckedRepository.save(LastChecked(CommentKey, currentTime())).value
         }
     }
 
@@ -50,6 +52,9 @@ class BotCache(
     }
 
     fun ignoreUser(id: String, source: String) {
-        ignoredUserRepository.save(IgnoredUser(id, Date(), source))
+        ignoredUserRepository.save(IgnoredUser(id, currentTime(), source))
     }
+
+    private fun currentTime() = Date(systemClock.currentTimeMillis)
+
 }
