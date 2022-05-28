@@ -27,7 +27,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-web:2.6.7")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:2.6.7")
-    implementation("org.postgresql:postgresql:42.3.5")
+    implementation("org.postgresql:postgresql:42.3.6")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:6.0.1")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.0.1")
