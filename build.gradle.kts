@@ -29,7 +29,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:2.7.0")
     implementation("org.postgresql:postgresql:42.4.0")
     implementation("net.dean.jraw:JRAW:1.1.0")
-    implementation("org.telegram:telegrambots:6.0.1")
+    implementation("org.telegram:telegrambots:6.1.0")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.1.0")
 
     testImplementation(platform("org.junit:junit-bom:5.8.2"))
