@@ -1,5 +1,9 @@
 package com.github.mrbean355.zakbot.db
 
+import com.github.mrbean355.zakbot.db.entity.IgnoredUserEntity
+import com.github.mrbean355.zakbot.db.entity.LastCheckedEntity
+import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
+import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
 import com.github.mrbean355.zakbot.util.SystemClock
 import org.springframework.stereotype.Component
 import java.util.Date
@@ -22,13 +26,13 @@ class BotCache(
         if (entity.isPresent) {
             entity.get().value
         } else {
-            lastCheckedRepository.save(LastChecked(PostKey, currentTime())).value
+            lastCheckedRepository.save(LastCheckedEntity(PostKey, currentTime())).value
         }
     }
 
     fun setLastPostTime(time: Date) {
         lock.withLock {
-            lastCheckedRepository.save(LastChecked(PostKey, time))
+            lastCheckedRepository.save(LastCheckedEntity(PostKey, time))
         }
     }
 
@@ -37,13 +41,13 @@ class BotCache(
         if (entity.isPresent) {
             entity.get().value
         } else {
-            lastCheckedRepository.save(LastChecked(CommentKey, currentTime())).value
+            lastCheckedRepository.save(LastCheckedEntity(CommentKey, currentTime())).value
         }
     }
 
     fun setLastCommentTime(time: Date) {
         lock.withLock {
-            lastCheckedRepository.save(LastChecked(CommentKey, time))
+            lastCheckedRepository.save(LastCheckedEntity(CommentKey, time))
         }
     }
 
@@ -52,7 +56,7 @@ class BotCache(
     }
 
     fun ignoreUser(id: String, source: String) {
-        ignoredUserRepository.save(IgnoredUser(id, currentTime(), source))
+        ignoredUserRepository.save(IgnoredUserEntity(id, currentTime(), source))
     }
 
     private fun currentTime() = Date(systemClock.currentTimeMillis)

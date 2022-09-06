@@ -1,6 +1,8 @@
 package com.github.mrbean355.zakbot
 
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.db.repo.PhraseRepository
+import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
 import com.github.mrbean355.zakbot.substitutions.substitute
 import com.github.mrbean355.zakbot.util.getString
@@ -17,6 +19,7 @@ class ZakBagansBot(
     private val redditService: RedditService,
     private val telegramNotifier: TelegramNotifier,
     private val botCache: BotCache,
+    private val phraseRepository: PhraseRepository,
     phrases: List<Phrase>
 ) {
 
@@ -78,10 +81,17 @@ class ZakBagansBot(
         inputs.filterNotNull().forEach { input ->
             val phrase = phrases
                 .find { Random.nextFloat() <= it.getReplyChance(input.lowercase()) }
-                ?.responses?.take()
 
             if (phrase != null) {
-                return phrase
+                val choices = phraseRepository.findByType(phrase.type())
+                val lowestUsage = choices.minOf { it.usages }
+
+                return choices.filter { it.usages == lowestUsage }
+                    .random()
+                    .let {
+                        phraseRepository.save(it.copy(usages = it.usages + 1))
+                        it.content
+                    }
             }
         }
         return null

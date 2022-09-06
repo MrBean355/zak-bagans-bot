@@ -2,12 +2,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.7.10"
-    kotlin("plugin.serialization") version "1.7.10"
     id("org.springframework.boot") version "2.7.3"
 }
 
 group = "com.github.mrbean355"
-version = "1.17.0-SNAPSHOT"
+version = "2.0.0-SNAPSHOT"
 
 repositories {
     mavenCentral()

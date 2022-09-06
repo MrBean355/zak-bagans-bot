@@ -6,8 +6,6 @@ internal class TrinityPhraseTest : PhraseTest() {
 
     override val expectedPriority = 7
 
-    override val responseFileName = "phrases/trinity.txt"
-
     override val replyChances = mapOf(
         "hello world!" to 0f,
         "I love the number 3!" to 0.33f,

@@ -1,5 +1,9 @@
 package com.github.mrbean355.zakbot.db
 
+import com.github.mrbean355.zakbot.db.entity.IgnoredUserEntity
+import com.github.mrbean355.zakbot.db.entity.LastCheckedEntity
+import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
+import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
 import com.github.mrbean355.zakbot.util.SystemClock
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -39,7 +43,7 @@ internal class BotCacheTest {
     @Test
     internal fun testGetLastPostTime_EntityPresent_ReturnsEntityValue() {
         val lastChecked = mockk<Date>()
-        every { lastCheckedRepository.findById("post") } returns Optional.of(LastChecked("post", lastChecked))
+        every { lastCheckedRepository.findById("post") } returns Optional.of(LastCheckedEntity("post", lastChecked))
 
         val result = botCache.getLastPostTime()
 
@@ -51,12 +55,12 @@ internal class BotCacheTest {
     internal fun testGetLastPostTime_EntityNotPresent_SavesEntityAndReturnsValue() {
         every { lastCheckedRepository.findById("post") } returns Optional.empty()
         val lastChecked = mockk<Date>()
-        every { lastCheckedRepository.save(any()) } returns LastChecked("post", lastChecked)
+        every { lastCheckedRepository.save(any()) } returns LastCheckedEntity("post", lastChecked)
 
         val result = botCache.getLastPostTime()
 
         assertSame(lastChecked, result)
-        val slot = slot<LastChecked>()
+        val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
         assertEquals("post", slot.captured.key)
         assertEquals(CurrentTime, slot.captured.value.time)
@@ -69,7 +73,7 @@ internal class BotCacheTest {
 
         botCache.setLastPostTime(lastChecked)
 
-        val slot = slot<LastChecked>()
+        val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
         assertEquals("post", slot.captured.key)
         assertSame(lastChecked, slot.captured.value)
@@ -78,7 +82,7 @@ internal class BotCacheTest {
     @Test
     internal fun testGetLastCommentTime_EntityPresent_ReturnsEntityValue() {
         val lastChecked = mockk<Date>()
-        every { lastCheckedRepository.findById("comment") } returns Optional.of(LastChecked("comment", lastChecked))
+        every { lastCheckedRepository.findById("comment") } returns Optional.of(LastCheckedEntity("comment", lastChecked))
 
         val result = botCache.getLastCommentTime()
 
@@ -90,12 +94,12 @@ internal class BotCacheTest {
     internal fun testGetLastCommentTime_EntityNotPresent_SavesEntityAndReturnsValue() {
         every { lastCheckedRepository.findById("comment") } returns Optional.empty()
         val lastChecked = mockk<Date>()
-        every { lastCheckedRepository.save(any()) } returns LastChecked("comment", lastChecked)
+        every { lastCheckedRepository.save(any()) } returns LastCheckedEntity("comment", lastChecked)
 
         val result = botCache.getLastCommentTime()
 
         assertSame(lastChecked, result)
-        val slot = slot<LastChecked>()
+        val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
         assertEquals("comment", slot.captured.key)
         assertEquals(CurrentTime, slot.captured.value.time)
@@ -108,7 +112,7 @@ internal class BotCacheTest {
 
         botCache.setLastCommentTime(lastChecked)
 
-        val slot = slot<LastChecked>()
+        val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
         assertEquals("comment", slot.captured.key)
         assertSame(lastChecked, slot.captured.value)
@@ -138,7 +142,7 @@ internal class BotCacheTest {
 
         botCache.ignoreUser("123", "somewhere")
 
-        val slot = slot<IgnoredUser>()
+        val slot = slot<IgnoredUserEntity>()
         verify { ignoredUserRepository.save(capture(slot)) }
         assertEquals("123", slot.captured.userId)
         assertEquals("somewhere", slot.captured.source)

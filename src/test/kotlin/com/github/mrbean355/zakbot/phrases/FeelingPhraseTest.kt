@@ -6,8 +6,6 @@ internal class FeelingPhraseTest : PhraseTest() {
 
     override val expectedPriority = 8
 
-    override val responseFileName = "phrases/feeling.txt"
-
     override val replyChances = mapOf(
         "hello world!" to 0f,
         "i feel filled with rage" to 0.5f,
