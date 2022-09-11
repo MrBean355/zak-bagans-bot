@@ -28,7 +28,7 @@ class ZakBagansBot(
     @Value("\${zakbot.replies.enabled:false}")
     private var sendReplies = false
 
-    @Scheduled(fixedRate = 5 * 60 * 1000L)
+    @Scheduled(fixedRate = 15 * 60 * 1000L)
     fun checkComments() {
         redditService.getSubmissionsSince(botCache.getLastPostTime()).apply {
             firstOrNull()?.created?.let(botCache::setLastPostTime)

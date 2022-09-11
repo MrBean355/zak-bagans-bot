@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot
 
 import io.mockk.MockKAnnotations
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
@@ -37,13 +38,16 @@ internal class RedditServiceTest {
             client.subreddit("GhostAdventures")
                 .posts()
                 .sorting(SubredditSort.NEW)
+                .limit(5)
                 .build()
         }
+        confirmVerified(client)
     }
 
     @Test
     internal fun testGetCommentsSince() {
         val builder = mockk<BarebonesPaginator.Builder<Comment>> {
+            every { limit(any()) } returns this
             every { build() } returns mockk {
                 every { iterator() } returns mockk {
                     every { hasNext() } returns false
@@ -56,8 +60,10 @@ internal class RedditServiceTest {
 
         verify {
             client.latestComments("GhostAdventures")
+            builder.limit(5)
             builder.build()
         }
+        confirmVerified(client, builder)
     }
 
     @Test
