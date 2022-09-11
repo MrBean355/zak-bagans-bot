@@ -97,6 +97,56 @@ internal class RedditServiceTest {
     }
 
     @Test
+    internal fun testGetCommentSubmission_CallsApiCorrectly() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+
+        service.getCommentSubmission(comment)
+
+        verify {
+            client.lookup("t1_6afe8u")
+        }
+    }
+
+    @Test
+    internal fun testGetCommentSubmission_ApiReturnsEmptyList_ReturnsNull() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+        every { client.lookup(*anyVararg()) } returns Listing.empty()
+
+        val result = service.getCommentSubmission(comment)
+
+        assertNull(result)
+    }
+
+    @Test
+    internal fun testGetCommentSubmission_ApiReturnsNonEmptyList_FirstItemIsNotSubmission_ReturnsNull() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(mockk<Comment>()))
+
+        val result = service.getCommentSubmission(comment)
+
+        assertNull(result)
+    }
+
+    @Test
+    internal fun testGetCommentSubmission_ApiReturnsNonEmptyList_FirstItemIsComment_ReturnsComment() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+        val parent = mockk<Submission>()
+        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(parent))
+
+        val result = service.getCommentSubmission(comment)
+
+        assertSame(parent, result)
+    }
+
+    @Test
     internal fun testFindParentComment_CallsApiCorrectly() {
         val comment = mockk<Comment> {
             every { parentFullName } returns "t1_6afe8u"

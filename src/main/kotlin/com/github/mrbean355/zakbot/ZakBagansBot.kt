@@ -32,32 +32,39 @@ class ZakBagansBot(
     fun checkComments() {
         redditService.getSubmissionsSince(botCache.getLastPostTime()).apply {
             firstOrNull()?.created?.let(botCache::setLastPostTime)
-            filterNot { it.isAuthorIgnored() }
-                .forEach(::processSubmission)
+            forEach(::processSubmission)
         }
 
         redditService.getCommentsSince(botCache.getLastCommentTime()).apply {
             firstOrNull()?.created?.let(botCache::setLastCommentTime)
-            filterNot { it.isAuthorIgnored() }
-                .forEach(::processComment)
+            forEach(::processComment)
         }
     }
 
     private fun processSubmission(submission: Submission) {
+        if (submission.isAuthorIgnored()) {
+            return
+        }
+
         val response = findPhrase(submission.title, submission.body)
             ?.substitute(submission)
             ?: return
 
         telegramNotifier.sendMessage(getString("telegram.new_submission", submission.author, submission.title, response))
+
         if (sendReplies) {
             redditService.replyToSubmission(submission, response)
         }
     }
 
     private fun processComment(comment: Comment) {
-        if (comment.author == BotUsername) {
+        if (comment.author == BotUsername ||
+            comment.isAuthorIgnored() ||
+            comment.getSubmission()?.isAuthorIgnored() == true
+        ) {
             return
         }
+
         if (comment.shouldIgnoreAuthor()) {
             botCache.ignoreUser(comment.author, comment.fullName)
             telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
@@ -66,6 +73,7 @@ class ZakBagansBot(
             }
             return
         }
+
         val response = findPhrase(comment.body)
             ?.substitute(comment)
             ?: return
@@ -99,6 +107,9 @@ class ZakBagansBot(
 
     private fun PublicContribution<*>.isAuthorIgnored(): Boolean =
         botCache.isUserIgnored(author)
+
+    private fun Comment.getSubmission(): Submission? =
+        redditService.getCommentSubmission(this)
 
     private fun Comment.shouldIgnoreAuthor(): Boolean {
         val isBadBot = body.filter { it.isLetter() }.equals("badbot", ignoreCase = true)
