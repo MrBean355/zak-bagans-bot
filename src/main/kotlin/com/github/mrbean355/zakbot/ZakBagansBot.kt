@@ -57,10 +57,18 @@ class ZakBagansBot(
         }
     }
 
+    /*
+     * Ignore comments that:
+     * - are sent by the bot, or
+     * - are sent by an ignored user, or
+     * - are replies to a comment sent by the bot, or
+     * - belong to a submission created by an ignored user.
+     */
     private fun processComment(comment: Comment) {
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
-            comment.getSubmission()?.isAuthorIgnored() == true
+            redditService.findParentComment(comment)?.author == BotUsername ||
+            redditService.getCommentSubmission(comment)?.isAuthorIgnored() == true
         ) {
             return
         }
@@ -107,9 +115,6 @@ class ZakBagansBot(
 
     private fun PublicContribution<*>.isAuthorIgnored(): Boolean =
         botCache.isUserIgnored(author)
-
-    private fun Comment.getSubmission(): Submission? =
-        redditService.getCommentSubmission(this)
 
     private fun Comment.shouldIgnoreAuthor(): Boolean {
         val isBadBot = body.filter { it.isLetter() }.equals("badbot", ignoreCase = true)
