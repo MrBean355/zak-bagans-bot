@@ -42,6 +42,8 @@ class ZakBagansBot(
     }
 
     private fun processSubmission(submission: Submission) {
+        checkForBotMention(submission)
+
         if (submission.isAuthorIgnored()) {
             return
         }
@@ -65,6 +67,8 @@ class ZakBagansBot(
      * - belong to a submission created by an ignored user.
      */
     private fun processComment(comment: Comment) {
+        checkForBotMention(comment)
+
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
             redditService.findParentComment(comment)?.author == BotUsername ||
@@ -90,6 +94,26 @@ class ZakBagansBot(
 
         if (sendReplies) {
             redditService.replyToComment(comment, response)
+        }
+    }
+
+    /** Send a Telegram notification when someone mentions something 'bot' related. */
+    private fun checkForBotMention(contribution: PublicContribution<*>) {
+        val text = contribution.body.orEmpty().plus(
+            (contribution as? Submission)?.title.orEmpty()
+        )
+
+        if (text.contains(Regex("\\bbot\\b")) ||
+            "zakbot" in text ||
+            "zacbot" in text ||
+            "baganbot" in text ||
+            "bagansbot" in text
+        ) {
+            if (contribution is Submission) {
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.author, contribution.title))
+            } else {
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.author, contribution.body))
+            }
         }
     }
 
