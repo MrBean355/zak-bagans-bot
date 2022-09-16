@@ -12,8 +12,9 @@ data class PhraseEntity(
     val content: String,
     val usages: Int,
     val type: Int,
+    val source: String?,
 ) {
 
-    constructor() : this(0, "", 0, PhraseType.Generic)
+    constructor() : this(0, "", 0, PhraseType.Generic, null)
 
 }
