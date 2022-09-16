@@ -49,8 +49,9 @@ Any contributions by the community are welcome!
 ### Adding Responses
 
 If you would like to add more Zak responses to the bot, please
-[open an issue on GitHub](https://github.com/MrBean355/zak-bagans-bot/issues/new/choose), using the issue template to
-get started. If you're unfamiliar with GitHub, feel free to
+[search the existing responses](https://zak-bagans-bot.herokuapp.com) first, to see if there's a similar one already
+added. If not, you can [open an issue on GitHub](https://github.com/MrBean355/zak-bagans-bot/issues/new/choose), using
+the issue template to get started. If you're unfamiliar with GitHub, feel free to
 [chat to me on Reddit](https://www.reddit.com/user/Mr_Bean355) instead.
 
 ### Other Contributions
