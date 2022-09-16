@@ -5,13 +5,15 @@ import net.dean.jraw.models.Comment
 import net.dean.jraw.models.PublicContribution
 import net.dean.jraw.models.Submission
 import net.dean.jraw.models.SubredditSort
-import net.dean.jraw.models.UserHistorySort
-import net.dean.jraw.pagination.DefaultPaginator
 import net.dean.jraw.pagination.Paginator
 import org.springframework.stereotype.Service
 import java.util.Date
 
-private const val PageLimit = 10
+/** Number of posts/comments per page. */
+private const val PageSizeLimit = 5
+
+/** Max number of pages to look back through that haven't been checked before. */
+private const val PageHistoryLimit = 10
 
 @Service
 class RedditService(private val client: RedditClient) {
@@ -20,12 +22,14 @@ class RedditService(private val client: RedditClient) {
     fun getSubmissionsSince(date: Date): List<Submission> =
         client.subreddit(SubredditName).posts()
             .sorting(SubredditSort.NEW)
+            .limit(PageSizeLimit)
             .build()
             .collectAfter(date)
 
     /** Get all comments created after the given date. */
     fun getCommentsSince(date: Date): List<Comment> =
         client.latestComments(SubredditName)
+            .limit(PageSizeLimit)
             .build()
             .collectAfter(date)
 
@@ -37,17 +41,14 @@ class RedditService(private val client: RedditClient) {
         client.comment(comment.id).reply(response)
     }
 
-    /** @return the parent comment of [comment], or null if the parent is not a comment. */
-    fun findParentComment(comment: Comment): Comment? {
-        return client.lookup(comment.parentFullName).firstOrNull() as? Comment
+    /** @return the submission that the [comment] belongs to, or null if not found. */
+    fun getCommentSubmission(comment: Comment): Submission? {
+        return client.lookup(comment.submissionFullName).firstOrNull() as? Submission
     }
 
-    fun getAllBotComments(): DefaultPaginator<PublicContribution<*>> {
-        return client.me()
-            .history("comments")
-            .sorting(UserHistorySort.NEW)
-            .limit(Paginator.RECOMMENDED_MAX_LIMIT)
-            .build()
+    /** @return the parent comment of the [comment], or null if the parent is not a comment. */
+    fun findParentComment(comment: Comment): Comment? {
+        return client.lookup(comment.parentFullName).firstOrNull() as? Comment
     }
 
     /** Collects all contributions that have been created after the given date. */
@@ -63,7 +64,7 @@ class RedditService(private val client: RedditClient) {
                     return items
                 }
             }
-            if (++pages >= PageLimit) {
+            if (++pages >= PageHistoryLimit) {
                 return items
             }
         }

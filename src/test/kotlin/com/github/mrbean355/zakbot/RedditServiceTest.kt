@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot
 
 import io.mockk.MockKAnnotations
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
@@ -37,13 +38,16 @@ internal class RedditServiceTest {
             client.subreddit("GhostAdventures")
                 .posts()
                 .sorting(SubredditSort.NEW)
+                .limit(5)
                 .build()
         }
+        confirmVerified(client)
     }
 
     @Test
     internal fun testGetCommentsSince() {
         val builder = mockk<BarebonesPaginator.Builder<Comment>> {
+            every { limit(any()) } returns this
             every { build() } returns mockk {
                 every { iterator() } returns mockk {
                     every { hasNext() } returns false
@@ -56,8 +60,10 @@ internal class RedditServiceTest {
 
         verify {
             client.latestComments("GhostAdventures")
+            builder.limit(5)
             builder.build()
         }
+        confirmVerified(client, builder)
     }
 
     @Test
@@ -94,6 +100,56 @@ internal class RedditServiceTest {
             client.comment("123-456")
             commentRef.reply("We want answers")
         }
+    }
+
+    @Test
+    internal fun testGetCommentSubmission_CallsApiCorrectly() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+
+        service.getCommentSubmission(comment)
+
+        verify {
+            client.lookup("t1_6afe8u")
+        }
+    }
+
+    @Test
+    internal fun testGetCommentSubmission_ApiReturnsEmptyList_ReturnsNull() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+        every { client.lookup(*anyVararg()) } returns Listing.empty()
+
+        val result = service.getCommentSubmission(comment)
+
+        assertNull(result)
+    }
+
+    @Test
+    internal fun testGetCommentSubmission_ApiReturnsNonEmptyList_FirstItemIsNotSubmission_ReturnsNull() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(mockk<Comment>()))
+
+        val result = service.getCommentSubmission(comment)
+
+        assertNull(result)
+    }
+
+    @Test
+    internal fun testGetCommentSubmission_ApiReturnsNonEmptyList_FirstItemIsComment_ReturnsComment() {
+        val comment = mockk<Comment> {
+            every { submissionFullName } returns "t1_6afe8u"
+        }
+        val parent = mockk<Submission>()
+        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(parent))
+
+        val result = service.getCommentSubmission(comment)
+
+        assertSame(parent, result)
     }
 
     @Test

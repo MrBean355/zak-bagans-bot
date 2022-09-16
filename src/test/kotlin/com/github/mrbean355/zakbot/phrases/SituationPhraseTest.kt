@@ -6,8 +6,6 @@ internal class SituationPhraseTest : PhraseTest() {
 
     override val expectedPriority = 9
 
-    override val responseFileName = "phrases/situation.txt"
-
     override val replyChances = mapOf(
         "hello world!" to 0f,
         "it was a very intense situation" to 0.5f,

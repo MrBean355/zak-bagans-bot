@@ -1,6 +1,8 @@
 package com.github.mrbean355.zakbot
 
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.db.repo.PhraseRepository
+import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
 import com.github.mrbean355.zakbot.substitutions.substitute
 import com.github.mrbean355.zakbot.util.getString
@@ -17,6 +19,7 @@ class ZakBagansBot(
     private val redditService: RedditService,
     private val telegramNotifier: TelegramNotifier,
     private val botCache: BotCache,
+    private val phraseRepository: PhraseRepository,
     phrases: List<Phrase>
 ) {
 
@@ -25,36 +28,55 @@ class ZakBagansBot(
     @Value("\${zakbot.replies.enabled:false}")
     private var sendReplies = false
 
-    @Scheduled(fixedRate = 5 * 60 * 1000L)
+    @Scheduled(fixedRate = 15 * 60 * 1000L)
     fun checkComments() {
         redditService.getSubmissionsSince(botCache.getLastPostTime()).apply {
             firstOrNull()?.created?.let(botCache::setLastPostTime)
-            filterNot { it.isAuthorIgnored() }
-                .forEach(::processSubmission)
+            forEach(::processSubmission)
         }
 
         redditService.getCommentsSince(botCache.getLastCommentTime()).apply {
             firstOrNull()?.created?.let(botCache::setLastCommentTime)
-            filterNot { it.isAuthorIgnored() }
-                .forEach(::processComment)
+            forEach(::processComment)
         }
     }
 
     private fun processSubmission(submission: Submission) {
+        checkForBotMention(submission)
+
+        if (submission.isAuthorIgnored()) {
+            return
+        }
+
         val response = findPhrase(submission.title, submission.body)
             ?.substitute(submission)
             ?: return
 
         telegramNotifier.sendMessage(getString("telegram.new_submission", submission.author, submission.title, response))
+
         if (sendReplies) {
             redditService.replyToSubmission(submission, response)
         }
     }
 
+    /*
+     * Ignore comments that:
+     * - are sent by the bot, or
+     * - are sent by an ignored user, or
+     * - are replies to a comment sent by the bot, or
+     * - belong to a submission created by an ignored user.
+     */
     private fun processComment(comment: Comment) {
-        if (comment.author == BotUsername) {
+        checkForBotMention(comment)
+
+        if (comment.author == BotUsername ||
+            comment.isAuthorIgnored() ||
+            redditService.findParentComment(comment)?.author == BotUsername ||
+            redditService.getCommentSubmission(comment)?.isAuthorIgnored() == true
+        ) {
             return
         }
+
         if (comment.shouldIgnoreAuthor()) {
             botCache.ignoreUser(comment.author, comment.fullName)
             telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
@@ -63,6 +85,7 @@ class ZakBagansBot(
             }
             return
         }
+
         val response = findPhrase(comment.body)
             ?.substitute(comment)
             ?: return
@@ -74,14 +97,41 @@ class ZakBagansBot(
         }
     }
 
+    /** Send a Telegram notification when someone mentions something 'bot' related. */
+    private fun checkForBotMention(contribution: PublicContribution<*>) {
+        val text = contribution.body.orEmpty().plus(
+            (contribution as? Submission)?.title.orEmpty()
+        )
+
+        if (text.contains(Regex("\\bbot\\b")) ||
+            "zakbot" in text ||
+            "zacbot" in text ||
+            "baganbot" in text ||
+            "bagansbot" in text
+        ) {
+            if (contribution is Submission) {
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.author, contribution.title))
+            } else {
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.author, contribution.body))
+            }
+        }
+    }
+
     private fun findPhrase(vararg inputs: String?): String? {
         inputs.filterNotNull().forEach { input ->
             val phrase = phrases
                 .find { Random.nextFloat() <= it.getReplyChance(input.lowercase()) }
-                ?.responses?.take()
 
             if (phrase != null) {
-                return phrase
+                val choices = phraseRepository.findByType(phrase.type())
+                val lowestUsage = choices.minOf { it.usages }
+
+                return choices.filter { it.usages == lowestUsage }
+                    .random()
+                    .let {
+                        phraseRepository.save(it.copy(usages = it.usages + 1))
+                        it.content
+                    }
             }
         }
         return null
