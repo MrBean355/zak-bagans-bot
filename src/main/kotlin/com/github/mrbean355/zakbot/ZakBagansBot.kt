@@ -48,7 +48,7 @@ class ZakBagansBot(
             return
         }
 
-        val response = findPhrase(submission.title, submission.body)
+        val response = findPhrase(submission.title, submission.selfText)
             ?.substitute(submission)
             ?: return
 
@@ -99,9 +99,11 @@ class ZakBagansBot(
 
     /** Send a Telegram notification when someone mentions something 'bot' related. */
     private fun checkForBotMention(contribution: PublicContribution<*>) {
-        val text = contribution.body.orEmpty().plus(
-            (contribution as? Submission)?.title.orEmpty()
-        )
+        val text = when (contribution) {
+            is Submission -> contribution.title + contribution.selfText.orEmpty()
+            is Comment -> contribution.body
+            else -> return
+        }.lowercase()
 
         if (text.contains(Regex("\\bbot\\b")) ||
             "zakbot" in text ||
