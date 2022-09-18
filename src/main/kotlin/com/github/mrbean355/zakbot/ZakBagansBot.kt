@@ -71,17 +71,18 @@ class ZakBagansBot(
 
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
-            redditService.findParentComment(comment)?.author == BotUsername ||
             redditService.getCommentSubmission(comment)?.isAuthorIgnored() == true
         ) {
             return
         }
 
-        if (comment.shouldIgnoreAuthor()) {
-            botCache.ignoreUser(comment.author, comment.fullName)
-            telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
-            if (sendReplies) {
-                redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+        if (redditService.findParentComment(comment)?.author == BotUsername) {
+            if (comment.mentionsBadBot()) {
+                botCache.ignoreUser(comment.author, comment.fullName)
+                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
+                if (sendReplies) {
+                    redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+                }
             }
             return
         }
@@ -142,11 +143,7 @@ class ZakBagansBot(
     private fun PublicContribution<*>.isAuthorIgnored(): Boolean =
         botCache.isUserIgnored(author)
 
-    private fun Comment.shouldIgnoreAuthor(): Boolean {
-        val isBadBot = body.filter { it.isLetter() }.equals("badbot", ignoreCase = true)
-        return if (isBadBot) {
-            redditService.findParentComment(this)
-                ?.author == BotUsername
-        } else false
+    private fun Comment.mentionsBadBot(): Boolean {
+        return body.filter(Char::isLetter).equals("badbot", ignoreCase = true)
     }
 }
