@@ -2,6 +2,7 @@ package com.github.mrbean355.zakbot
 
 import net.dean.jraw.RedditClient
 import net.dean.jraw.models.Comment
+import net.dean.jraw.models.Flair
 import net.dean.jraw.models.PublicContribution
 import net.dean.jraw.models.Submission
 import net.dean.jraw.models.SubredditSort
@@ -49,6 +50,17 @@ class RedditService(private val client: RedditClient) {
     /** @return the parent comment of the [comment], or null if the parent is not a comment. */
     fun findParentComment(comment: Comment): Comment? {
         return client.lookup(comment.parentFullName).firstOrNull() as? Comment
+    }
+
+    fun getFlairOptions(): List<Flair> {
+        return client.subreddit(SubredditName)
+            .userFlairOptions()
+    }
+
+    fun setBotFlair(flair: Flair) {
+        client.subreddit(SubredditName)
+            .selfUserFlair()
+            .updateToTemplate(flair.id, flair.text)
     }
 
     /** Collects all contributions that have been created after the given date. */

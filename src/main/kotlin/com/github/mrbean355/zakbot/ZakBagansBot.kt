@@ -41,6 +41,14 @@ class ZakBagansBot(
         }
     }
 
+    @Scheduled(cron = "@midnight")
+    fun updateBotFlair() {
+        val options = redditService.getFlairOptions()
+        if (options.isNotEmpty()) {
+            redditService.setBotFlair(options.random())
+        }
+    }
+
     private fun processSubmission(submission: Submission) {
         checkForBotMention(submission)
 

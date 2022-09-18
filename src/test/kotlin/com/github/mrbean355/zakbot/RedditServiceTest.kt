@@ -4,15 +4,18 @@ import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import net.dean.jraw.RedditClient
 import net.dean.jraw.models.Comment
+import net.dean.jraw.models.Flair
 import net.dean.jraw.models.Listing
 import net.dean.jraw.models.Submission
 import net.dean.jraw.models.SubredditSort
 import net.dean.jraw.pagination.BarebonesPaginator
 import net.dean.jraw.references.CommentReference
+import net.dean.jraw.references.SelfUserFlairReference
 import net.dean.jraw.references.SubmissionReference
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
@@ -200,5 +203,35 @@ internal class RedditServiceTest {
         val result = service.findParentComment(comment)
 
         assertSame(parent, result)
+    }
+
+    @Test
+    internal fun testGetFlairOptions_ReturnsApiResult() {
+        val options = mockk<List<Flair>>()
+        every { client.subreddit("GhostAdventures") } returns mockk {
+            every { userFlairOptions() } returns options
+        }
+
+        val result = service.getFlairOptions()
+
+        assertSame(options, result)
+    }
+
+    @Test
+    internal fun testSetBotFlair_InvokesApi() {
+        val selfFlair = mockk<SelfUserFlairReference> {
+            justRun { updateToTemplate(any(), any()) }
+        }
+        every { client.subreddit("GhostAdventures") } returns mockk {
+            every { selfUserFlair() } returns selfFlair
+        }
+        val flairChoice = mockk<Flair> {
+            every { id } returns "flair-id"
+            every { text } returns "flair-text"
+        }
+
+        service.setBotFlair(flairChoice)
+
+        verify { selfFlair.updateToTemplate("flair-id", "flair-text") }
     }
 }
