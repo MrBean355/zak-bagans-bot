@@ -24,7 +24,7 @@ tasks.withType<KotlinCompile> {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-web:2.7.3")
+    implementation("org.springframework.boot:spring-boot-starter-web:2.7.4")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:2.7.3")
     implementation("org.postgresql:postgresql:42.5.0")
     implementation("net.dean.jraw:JRAW:1.1.0")
