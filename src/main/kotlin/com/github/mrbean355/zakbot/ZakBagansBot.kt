@@ -41,6 +41,14 @@ class ZakBagansBot(
         }
     }
 
+    @Scheduled(cron = "@midnight")
+    fun updateBotFlair() {
+        val options = redditService.getFlairOptions()
+        if (options.isNotEmpty()) {
+            redditService.setBotFlair(options.random())
+        }
+    }
+
     private fun processSubmission(submission: Submission) {
         checkForBotMention(submission)
 
@@ -131,9 +139,13 @@ class ZakBagansBot(
 
                 return choices.filter { it.usages == lowestUsage }
                     .random()
-                    .let {
-                        phraseRepository.save(it.copy(usages = it.usages + 1))
-                        it.content
+                    .let { entity ->
+                        phraseRepository.save(entity.copy(usages = entity.usages + 1))
+                        if (entity.source != null) {
+                            getString("reddit.quote_source_prefix", entity.content, entity.source)
+                        } else {
+                            entity.content
+                        }
                     }
             }
         }

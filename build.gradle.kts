@@ -1,12 +1,12 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.7.10"
-    id("org.springframework.boot") version "2.7.3"
+    kotlin("jvm") version "1.7.20"
+    id("org.springframework.boot") version "2.7.4"
 }
 
 group = "com.github.mrbean355"
-version = "2.0.2"
+version = "2.1.0"
 
 repositories {
     mavenCentral()
@@ -24,16 +24,16 @@ tasks.withType<KotlinCompile> {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-web:2.7.3")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:2.7.3")
+    implementation("org.springframework.boot:spring-boot-starter-web:2.7.4")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa:2.7.4")
     implementation("org.postgresql:postgresql:42.5.0")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:6.1.0")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.1.0")
 
-    testImplementation(platform("org.junit:junit-bom:5.9.0"))
+    testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("io.mockk:mockk:1.12.8")
+    testImplementation("io.mockk:mockk:1.13.2")
 }
 
 tasks.test {
