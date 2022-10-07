@@ -22,6 +22,10 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "11"
 }
 
+tasks.getByName<Jar>("jar") {
+    enabled = false
+}
+
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-web:2.7.4")
