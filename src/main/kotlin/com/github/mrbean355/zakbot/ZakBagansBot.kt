@@ -142,7 +142,7 @@ class ZakBagansBot(
                     .let { entity ->
                         phraseRepository.save(entity.copy(usages = entity.usages + 1))
                         if (entity.source != null) {
-                            getString("reddit.quote_source_prefix", entity.content, entity.source)
+                            getString("reddit.quote_source_prefix", entity.content, entity.source.escapeParentheses())
                         } else {
                             entity.content
                         }
@@ -157,5 +157,10 @@ class ZakBagansBot(
 
     private fun Comment.mentionsBadBot(): Boolean {
         return body.filter(Char::isLetter).equals("badbot", ignoreCase = true)
+    }
+
+    private fun String.escapeParentheses(): String {
+        return replace("(", "\\(")
+            .replace(")", "\\)")
     }
 }
