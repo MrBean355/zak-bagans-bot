@@ -8,9 +8,9 @@ internal class UnderstandPhraseTest : PhraseTest() {
 
     override val replyChances = mapOf(
         "hello world!" to 0f,
-        "we will never understand!" to 0.5f,
+        "we will never understand!" to 0.2f,
         "we will never understand... understand!" to 0f,
-        "we will never understand! blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah" to 0.5f,
+        "we will never understand! blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah" to 0.2f,
         "we will never understand! blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah!" to 0f,
     )
 }

@@ -8,6 +8,6 @@ internal class MercuryPhraseTest : PhraseTest() {
 
     override val replyChances = mapOf(
         "hello world!" to 0f,
-        "did he drink mercury?!" to 0.75f,
+        "did he drink mercury?!" to 0.25f,
     )
 }

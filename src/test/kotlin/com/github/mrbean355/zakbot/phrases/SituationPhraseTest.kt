@@ -8,6 +8,6 @@ internal class SituationPhraseTest : PhraseTest() {
 
     override val replyChances = mapOf(
         "hello world!" to 0f,
-        "it was a very intense situation" to 0.5f,
+        "it was a very intense situation" to 0.2f,
     )
 }

@@ -25,15 +25,15 @@ class WebController(
                 """.trimIndent()
             )
 
-            appendResponses(PhraseType.Aaron, "Aaron", "25% chance to reply when \"Aaron\" is mentioned.")
-            appendResponses(PhraseType.Answers, "Answers", "50% chance to reply when \"we want answers\" is mentioned.")
-            appendResponses(PhraseType.Feeling, "Feeling", "50% chance to reply when \"I feel\" or \"I'm feeling\" is mentioned.")
-            appendResponses(PhraseType.Generic, "Generic", "40% chance to reply when \"Zak\" or \"Bagans\" is mentioned.")
-            appendResponses(PhraseType.Mercury, "Mercury", "75% chance to reply when \"mercury\" is mentioned.")
-            appendResponses(PhraseType.Situation, "Situation", "50% chance to reply when \"situation\" is mentioned.")
-            appendResponses(PhraseType.Trinity, "Trinity", "33% chance to reply when \"3\" or \"three\" is mentioned.")
-            appendResponses(PhraseType.Understand, "Understand", "50% chance to reply when \"understand\" is mentioned.")
-            appendResponses(PhraseType.Zozo, "Zozo", "75% chance to reply when \"Zozo\" is mentioned.")
+            appendResponses(PhraseType.Aaron, "Aaron", "10% chance to reply when \"Aaron\" is mentioned.")
+            appendResponses(PhraseType.Answers, "Answers", "25% chance to reply when \"we want answers\" is mentioned.")
+            appendResponses(PhraseType.Feeling, "Feeling", "25% chance to reply when \"I feel\" or \"I'm feeling\" is mentioned.")
+            appendResponses(PhraseType.Generic, "Generic", "15% chance to reply when \"Zak\" or \"Bagans\" is mentioned.")
+            appendResponses(PhraseType.Mercury, "Mercury", "25% chance to reply when \"mercury\" is mentioned.")
+            appendResponses(PhraseType.Situation, "Situation", "20% chance to reply when \"situation\" is mentioned.")
+            appendResponses(PhraseType.Trinity, "Trinity", "10% chance to reply when \"3\" or \"three\" is mentioned.")
+            appendResponses(PhraseType.Understand, "Understand", "20% chance to reply when \"understand\" is mentioned.")
+            appendResponses(PhraseType.Zozo, "Zozo", "25% chance to reply when \"Zozo\" is mentioned.")
 
             appendLine(
                 """
