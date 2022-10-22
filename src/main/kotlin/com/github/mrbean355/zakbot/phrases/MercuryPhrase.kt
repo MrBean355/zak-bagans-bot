@@ -8,6 +8,6 @@ class MercuryPhrase : Phrase {
     override val priority = 10
 
     override fun getReplyChance(message: String): Float {
-        return if ("mercury" in message) 0.75f else 0f
+        return if ("mercury" in message) 0.25f else 0f
     }
 }

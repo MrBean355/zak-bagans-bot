@@ -11,6 +11,6 @@ class TrinityPhrase : Phrase {
     override val priority = 7
 
     override fun getReplyChance(message: String): Float {
-        return if (message.contains(DigitRegex) || message.contains("three", ignoreCase = true)) 0.33f else 0f
+        return if (message.contains(DigitRegex) || message.contains("three", ignoreCase = true)) 0.1f else 0f
     }
 }
