@@ -18,17 +18,17 @@ Every 15 minutes, the bot checks for new posts and comments on
 [r/GhostAdventures](https://www.reddit.com/r/GhostAdventures/). The content of each post/comment is checked for various
 keywords, and a reply may be sent if the keywords match. **Keywords are checked in this order**:
 
-1. `zozo` - 75% chance to send a random
+1. `zozo` - 25% chance to send a random
    [Z̶̞̼̔̍o̶̮͇̕z̷̜͓̅̽ỡ̵̗ ̶̹͚̔̔p̵̂͜ḣ̷͓̜̏r̷͙͘̕ȃ̴̰̞s̵̹̗̈́̔e̴͚̻̒͊](https://zak-bagans-bot.herokuapp.com#zozo).
-2. `mercury` - 75% chance to send a random [mercury phrase](https://zak-bagans-bot.herokuapp.com#mercury).
-3. `situation` - 50% chance to send a random [situation phrase](https://zak-bagans-bot.herokuapp.com#situation).
-4. `I feel` or `I'm feeling` - 50% chance to send a random
+2. `mercury` - 25% chance to send a random [mercury phrase](https://zak-bagans-bot.herokuapp.com#mercury).
+3. `situation` - 20% chance to send a random [situation phrase](https://zak-bagans-bot.herokuapp.com#situation).
+4. `I feel` or `I'm feeling` - 25% chance to send a random
    [feeling phrase](https://zak-bagans-bot.herokuapp.com#feeling).
-5. `3` or `three` - 33% chance to send a random [trinity phrase](https://zak-bagans-bot.herokuapp.com#trinity).
-6. `Aaron` - 25% chance to send a random [Aaron phrase](https://zak-bagans-bot.herokuapp.com#aaron).
-7. `understand` - 50% chance to send a random [understand phrase](https://zak-bagans-bot.herokuapp.com#understand).
-8. `we want answers` - 50% chance to send a random [answers phrase](https://zak-bagans-bot.herokuapp.com#answers).
-9. `Zak` or `Bagans` - 40% chance send a random [generic phrase](https://zak-bagans-bot.herokuapp.com#generic).
+5. `3` or `three` - 10% chance to send a random [trinity phrase](https://zak-bagans-bot.herokuapp.com#trinity).
+6. `Aaron` - 10% chance to send a random [Aaron phrase](https://zak-bagans-bot.herokuapp.com#aaron).
+7. `understand` - 20% chance to send a random [understand phrase](https://zak-bagans-bot.herokuapp.com#understand).
+8. `we want answers` - 25% chance to send a random [answers phrase](https://zak-bagans-bot.herokuapp.com#answers).
+9. `Zak` or `Bagans` - 15% chance send a random [generic phrase](https://zak-bagans-bot.herokuapp.com#generic).
 
 Each post/comment will only receive, at most, one reply from the bot. If the bot sends a reply for one of the keywords,
 it will not check for any of the others.

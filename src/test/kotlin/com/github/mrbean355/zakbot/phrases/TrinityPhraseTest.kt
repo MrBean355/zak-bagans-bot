@@ -8,8 +8,8 @@ internal class TrinityPhraseTest : PhraseTest() {
 
     override val replyChances = mapOf(
         "hello world!" to 0f,
-        "I love the number 3!" to 0.33f,
+        "I love the number 3!" to 0.1f,
         "but not the number 33.." to 0f,
-        "Three is also pretty cool" to 0.33f,
+        "Three is also pretty cool" to 0.1f,
     )
 }
