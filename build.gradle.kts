@@ -33,7 +33,7 @@ dependencies {
     implementation("org.postgresql:postgresql:42.5.0")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:6.1.0")
-    implementation("org.telegram:telegrambots-spring-boot-starter:6.1.0")
+    implementation("org.telegram:telegrambots-spring-boot-starter:6.3.0")
 
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
