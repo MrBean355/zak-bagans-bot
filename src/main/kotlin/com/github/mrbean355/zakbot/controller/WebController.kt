@@ -10,7 +10,7 @@ class WebController(
     private val phraseRepository: PhraseRepository
 ) {
 
-    @GetMapping
+    @GetMapping("/")
     fun index(): String {
         return buildString {
             appendLine(
