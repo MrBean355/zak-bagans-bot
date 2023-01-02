@@ -1,8 +1,8 @@
 package com.github.mrbean355.zakbot.db.entity
 
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
 import java.util.Date
-import javax.persistence.Entity
-import javax.persistence.Id
 
 @Entity(name = "ignored_user")
 data class IgnoredUserEntity(
