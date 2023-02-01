@@ -30,7 +30,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-web:3.0.2")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.0.2")
-    implementation("org.postgresql:postgresql:42.5.1")
+    implementation("org.postgresql:postgresql:42.5.2")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:6.4.0")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.4.0")
