@@ -1,3 +1,3 @@
 package com.github.mrbean355.zakbot
 
-const val AppVersion = "2.2.1"
+const val AppVersion = "2.3.0"
