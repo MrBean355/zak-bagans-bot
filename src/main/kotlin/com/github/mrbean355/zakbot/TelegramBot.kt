@@ -22,9 +22,7 @@ interface TelegramNotifier {
 @Profile("!dev")
 class TelegramBot(
     private val applicationContext: ApplicationContext
-) : TelegramLongPollingBot(), TelegramNotifier {
-
-    override fun getBotToken(): String = System.getenv("TELEGRAM_TOKEN")
+) : TelegramLongPollingBot(System.getenv("TELEGRAM_TOKEN")), TelegramNotifier {
 
     override fun getBotUsername() = TelegramUsername
 
