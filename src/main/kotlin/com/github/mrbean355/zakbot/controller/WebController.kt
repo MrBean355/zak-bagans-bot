@@ -49,7 +49,11 @@ class WebController(
         appendLine("\t<p class=\"mdc-typography--subtitle1\">${description}</p>")
         appendLine("\t<ul class=\"mdc-list\">")
         phraseRepository.findByType(type).sortedBy { it.content }.forEach { phrase ->
-            append("\t\t<li class=\"mdc-list-item\">").append(phrase.content).appendLine("</li>")
+            append("\t\t<li class=\"mdc-list-item\">").append(phrase.content)
+            if (phrase.source != null) {
+                append(" (quote from: \"${phrase.source}\")")
+            }
+            appendLine("</li>")
         }
         appendLine("\t</ul>")
     }
