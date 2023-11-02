@@ -14,6 +14,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import kotlin.random.Random
 
+private val BotRegex = """\bbot\b""".toRegex()
+private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)""".toRegex()
+
 @Component
 class ZakBagansBot(
     private val redditService: RedditService,
@@ -114,7 +117,7 @@ class ZakBagansBot(
             else -> return
         }.lowercase()
 
-        if (text.contains(Regex("\\bbot\\b")) ||
+        if (text.contains(BotRegex) ||
             "zakbot" in text ||
             "zacbot" in text ||
             "baganbot" in text ||
@@ -130,8 +133,8 @@ class ZakBagansBot(
 
     private fun findPhrase(vararg inputs: String?): String? {
         inputs.filterNotNull().forEach { input ->
-            val phrase = phrases
-                .find { Random.nextFloat() <= it.getReplyChance(input.lowercase()) }
+            val text = input.lowercase().replace(UrlRegex, "")
+            val phrase = phrases.find { Random.nextFloat() <= it.getReplyChance(text) }
 
             if (phrase != null) {
                 val choices = phraseRepository.findByType(phrase.type())
