@@ -60,7 +60,7 @@ class ZakBagansBot(
             ?.substitute(submission)
             ?: return
 
-        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.author, submission.title, response))
+        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))
 
         if (sendReplies) {
             redditService.replyToSubmission(submission, response)
@@ -87,7 +87,7 @@ class ZakBagansBot(
         if (redditService.findParentComment(comment)?.author == BotUsername) {
             if (comment.mentionsBadBot()) {
                 botCache.ignoreUser(comment.author, comment.fullName)
-                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
+                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 if (sendReplies) {
                     redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
                 }
@@ -99,7 +99,7 @@ class ZakBagansBot(
             ?.substitute(comment)
             ?: return
 
-        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.author, comment.body, response))
+        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
 
         if (sendReplies) {
             redditService.replyToComment(comment, response)
@@ -121,9 +121,9 @@ class ZakBagansBot(
             "bagansbot" in text
         ) {
             if (contribution is Submission) {
-                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.author, contribution.title))
-            } else {
-                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.author, contribution.body))
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.title, contribution.url))
+            } else if (contribution is Comment) {
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.body, contribution.url))
             }
         }
     }
