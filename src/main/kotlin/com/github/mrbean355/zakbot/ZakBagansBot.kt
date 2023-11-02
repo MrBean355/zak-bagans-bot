@@ -14,6 +14,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import kotlin.random.Random
 
+private val BotRegex = """\bbot\b""".toRegex()
+private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)""".toRegex()
+
 @Component
 class ZakBagansBot(
     private val redditService: RedditService,
@@ -60,7 +63,7 @@ class ZakBagansBot(
             ?.substitute(submission)
             ?: return
 
-        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.author, submission.title, response))
+        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))
 
         if (sendReplies) {
             redditService.replyToSubmission(submission, response)
@@ -87,7 +90,7 @@ class ZakBagansBot(
         if (redditService.findParentComment(comment)?.author == BotUsername) {
             if (comment.mentionsBadBot()) {
                 botCache.ignoreUser(comment.author, comment.fullName)
-                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author))
+                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 if (sendReplies) {
                     redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
                 }
@@ -99,7 +102,7 @@ class ZakBagansBot(
             ?.substitute(comment)
             ?: return
 
-        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.author, comment.body, response))
+        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
 
         if (sendReplies) {
             redditService.replyToComment(comment, response)
@@ -114,24 +117,24 @@ class ZakBagansBot(
             else -> return
         }.lowercase()
 
-        if (text.contains(Regex("\\bbot\\b")) ||
+        if (text.contains(BotRegex) ||
             "zakbot" in text ||
             "zacbot" in text ||
             "baganbot" in text ||
             "bagansbot" in text
         ) {
             if (contribution is Submission) {
-                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.author, contribution.title))
-            } else {
-                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.author, contribution.body))
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.title, contribution.url))
+            } else if (contribution is Comment) {
+                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.body, contribution.url))
             }
         }
     }
 
     private fun findPhrase(vararg inputs: String?): String? {
         inputs.filterNotNull().forEach { input ->
-            val phrase = phrases
-                .find { Random.nextFloat() <= it.getReplyChance(input.lowercase()) }
+            val text = input.lowercase().replace(UrlRegex, "")
+            val phrase = phrases.find { Random.nextFloat() <= it.getReplyChance(text) }
 
             if (phrase != null) {
                 val choices = phraseRepository.findByType(phrase.type())

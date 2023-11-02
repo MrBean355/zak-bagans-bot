@@ -7,8 +7,8 @@ internal class GenericPhraseTest : PhraseTest() {
     override val expectedPriority = 0
 
     override val replyChances = mapOf(
-        "hello zak!" to 0.15f,
-        "hello mr bagans!" to 0.15f,
+        "hello zak!" to 0.2f,
+        "hello mr bagans!" to 0.2f,
         "hello aaron!" to 0f,
     )
 }

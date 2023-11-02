@@ -11,6 +11,6 @@ class GenericPhrase : Phrase {
     override val priority = 0
 
     override fun getReplyChance(message: String): Float {
-        return if (message.contains(ZakRegex)) 0.15f else 0f
+        return if (message.contains(ZakRegex)) 0.2f else 0f
     }
 }
