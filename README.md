@@ -28,7 +28,7 @@ keywords, and a reply may be sent if the keywords match. **Keywords are checked 
 6. `Aaron` - 10% chance to send a random [Aaron phrase](https://zak-bagans-bot.herokuapp.com#aaron).
 7. `understand` - 20% chance to send a random [understand phrase](https://zak-bagans-bot.herokuapp.com#understand).
 8. `we want answers` - 25% chance to send a random [answers phrase](https://zak-bagans-bot.herokuapp.com#answers).
-9. `Zak` or `Bagans` - 15% chance send a random [generic phrase](https://zak-bagans-bot.herokuapp.com#generic).
+9. `Zak` or `Bagans` - 20% chance send a random [generic phrase](https://zak-bagans-bot.herokuapp.com#generic).
 
 Each post/comment will only receive, at most, one reply from the bot. If the bot sends a reply for one of the keywords,
 it will not check for any of the others.
