@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.mrbean355"
-version = "2.5.0-SNAPSHOT"
+version = "2.5.0"
 
 repositories {
     mavenCentral()
