@@ -29,7 +29,7 @@ tasks.getByName<Jar>("jar") {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-web:3.2.4")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.2.2")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.2.4")
     implementation("org.postgresql:postgresql:42.7.3")
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:6.9.7.0")
