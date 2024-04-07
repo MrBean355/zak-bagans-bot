@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.mrbean355"
-version = "2.6.0"
+version = "2.6.1"
 
 repositories {
     mavenCentral()
@@ -34,6 +34,13 @@ dependencies {
     implementation("net.dean.jraw:JRAW:1.1.0")
     implementation("org.telegram:telegrambots:6.9.7.1")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
+
+    runtimeOnly("jakarta.xml.ws:jakarta.xml.ws-api:4.0.1") {
+        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
+    }
+    runtimeOnly("javax.xml.ws:jaxws-api:2.3.1") {
+        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
+    }
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
