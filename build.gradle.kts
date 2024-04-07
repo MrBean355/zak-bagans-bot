@@ -35,6 +35,13 @@ dependencies {
     implementation("org.telegram:telegrambots:6.9.7.1")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
 
+    runtimeOnly("jakarta.xml.ws:jakarta.xml.ws-api:4.0.1") {
+        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
+    }
+    runtimeOnly("javax.xml.ws:jaxws-api:2.3.1") {
+        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
+    }
+
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("io.mockk:mockk:1.13.10")
