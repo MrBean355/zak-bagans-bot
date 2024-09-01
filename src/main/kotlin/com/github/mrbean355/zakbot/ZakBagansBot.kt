@@ -6,7 +6,6 @@ import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
 import com.github.mrbean355.zakbot.substitutions.substitute
 import com.github.mrbean355.zakbot.util.getString
-import jakarta.annotation.PostConstruct
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.PublicContribution
 import net.dean.jraw.models.Submission
@@ -24,18 +23,13 @@ class ZakBagansBot(
     private val telegramNotifier: TelegramNotifier,
     private val botCache: BotCache,
     private val phraseRepository: PhraseRepository,
-    phrases: List<Phrase>
+    phrases: List<Phrase>,
 ) {
 
     private val phrases = phrases.sortedByDescending { it.priority }
 
     @Value("\${zakbot.replies.enabled:false}")
     private var sendReplies = false
-
-    @PostConstruct
-    fun sendStartupMessage() {
-        telegramNotifier.sendMessage(getString("telegram.bot_startup", AppVersion))
-    }
 
     @Scheduled(fixedRate = 15 * 60 * 1000L)
     fun checkComments() {
