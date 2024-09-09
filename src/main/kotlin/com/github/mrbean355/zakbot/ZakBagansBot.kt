@@ -16,6 +16,7 @@ import kotlin.random.Random
 
 private val BotRegex = """\bbot\b""".toRegex()
 private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)""".toRegex()
+private const val IgnoreCommand = "!$BotUsername ignore"
 
 @Component
 class ZakBagansBot(
@@ -74,14 +75,25 @@ class ZakBagansBot(
      * Ignore comments that:
      * - are sent by the bot, or
      * - are sent by an ignored user, or
+     * - are replies to an ignored submission, or
      * - are replies to a comment sent by the bot, or
      * - belong to a submission created by an ignored user.
      */
     private fun processComment(comment: Comment) {
+        if (comment.author == AuthorUsername && comment.body.startsWith(IgnoreCommand)) {
+            val reason = comment.body.substringAfter(IgnoreCommand).trim().ifEmpty { null }
+            botCache.ignoreSubmission(comment.submissionFullName, reason)
+            if (sendReplies) {
+                redditService.replyToComment(comment, getString("reddit.new_post_ignored"))
+            }
+            return
+        }
+
         checkForBotMention(comment)
 
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
+            botCache.isSubmissionIgnored(comment.submissionFullName) ||
             redditService.getCommentSubmission(comment)?.isAuthorIgnored() == true
         ) {
             return
@@ -123,10 +135,9 @@ class ZakBagansBot(
             "baganbot" in text ||
             "bagansbot" in text
         ) {
-            if (contribution is Submission) {
-                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.title, contribution.url))
-            } else if (contribution is Comment) {
-                telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.body, contribution.url))
+            when (contribution) {
+                is Submission -> telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.title, contribution.url))
+                is Comment -> telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.body, contribution.url))
             }
         }
     }

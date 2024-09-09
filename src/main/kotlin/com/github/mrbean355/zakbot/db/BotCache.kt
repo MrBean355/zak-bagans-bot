@@ -1,7 +1,9 @@
 package com.github.mrbean355.zakbot.db
 
+import com.github.mrbean355.zakbot.db.entity.IgnoredSubmissionEntity
 import com.github.mrbean355.zakbot.db.entity.IgnoredUserEntity
 import com.github.mrbean355.zakbot.db.entity.LastCheckedEntity
+import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
 import com.github.mrbean355.zakbot.util.SystemClock
@@ -17,7 +19,8 @@ private const val CommentKey = "comment"
 class BotCache(
     private val lastCheckedRepository: LastCheckedRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
-    private val systemClock: SystemClock
+    private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
+    private val systemClock: SystemClock,
 ) {
     private val lock = ReentrantLock()
 
@@ -57,6 +60,14 @@ class BotCache(
 
     fun ignoreUser(id: String, source: String) {
         ignoredUserRepository.save(IgnoredUserEntity(id, currentTime(), source))
+    }
+
+    fun isSubmissionIgnored(fullName: String): Boolean {
+        return ignoredSubmissionRepository.findById(fullName).isPresent
+    }
+
+    fun ignoreSubmission(fullName: String, reason: String?) {
+        ignoredSubmissionRepository.save(IgnoredSubmissionEntity(fullName, currentTime(), reason))
     }
 
     private fun currentTime() = Date(systemClock.currentTimeMillis)
