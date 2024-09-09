@@ -1,7 +1,9 @@
 package com.github.mrbean355.zakbot.db
 
+import com.github.mrbean355.zakbot.db.entity.IgnoredSubmissionEntity
 import com.github.mrbean355.zakbot.db.entity.IgnoredUserEntity
 import com.github.mrbean355.zakbot.db.entity.LastCheckedEntity
+import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
 import com.github.mrbean355.zakbot.util.SystemClock
@@ -30,6 +32,9 @@ internal class BotCacheTest {
     private lateinit var ignoredUserRepository: IgnoredUserRepository
 
     @MockK
+    private lateinit var ignoredSubmissionRepository: IgnoredSubmissionRepository
+
+    @MockK
     private lateinit var systemClock: SystemClock
     private lateinit var botCache: BotCache
 
@@ -37,7 +42,7 @@ internal class BotCacheTest {
     internal fun setUp() {
         MockKAnnotations.init(this)
         every { systemClock.currentTimeMillis } returns CurrentTime
-        botCache = BotCache(lastCheckedRepository, ignoredUserRepository, systemClock)
+        botCache = BotCache(lastCheckedRepository, ignoredUserRepository, ignoredSubmissionRepository, systemClock)
     }
 
     @Test
@@ -147,5 +152,36 @@ internal class BotCacheTest {
         assertEquals("123", slot.captured.userId)
         assertEquals("somewhere", slot.captured.source)
         assertEquals(CurrentTime, slot.captured.since.time)
+    }
+
+    @Test
+    internal fun testIsSubmissionIgnored_EntityPresent_ReturnsTrue() {
+        every { ignoredSubmissionRepository.findById("123") } returns Optional.of(mockk())
+
+        val result = botCache.isSubmissionIgnored("123")
+
+        assertTrue(result)
+    }
+
+    @Test
+    internal fun testIsSubmissionIgnored_EntityNotPresent_ReturnsFalse() {
+        every { ignoredSubmissionRepository.findById("123") } returns Optional.empty()
+
+        val result = botCache.isSubmissionIgnored("123")
+
+        assertFalse(result)
+    }
+
+    @Test
+    internal fun testIgnoreSubmission_SavesEntity() {
+        every { ignoredSubmissionRepository.save(any()) } returns mockk()
+
+        botCache.ignoreSubmission("123", "Sensitive topic")
+
+        val slot = slot<IgnoredSubmissionEntity>()
+        verify { ignoredSubmissionRepository.save(capture(slot)) }
+        assertEquals("123", slot.captured.fullName)
+        assertEquals(CurrentTime, slot.captured.since.time)
+        assertEquals("Sensitive topic", slot.captured.reason)
     }
 }
