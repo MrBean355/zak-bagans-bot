@@ -30,7 +30,7 @@ internal class RedditServiceTest {
     @BeforeEach
     internal fun setUp() {
         MockKAnnotations.init(this)
-        service = RedditService(client)
+        service = RedditService(client, true)
     }
 
     @Test

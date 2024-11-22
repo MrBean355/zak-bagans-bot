@@ -9,10 +9,8 @@ import com.github.mrbean355.zakbot.util.getString
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.PublicContribution
 import net.dean.jraw.models.Submission
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
-private const val IGNORE_COMMAND = "!$BotUsername ignore"
 private const val SUBSTITUTION_AUTHOR_NAME = "{author}"
 
 private val BOT_REGEX = """\bbot\b""".toRegex()
@@ -21,12 +19,10 @@ private val BOT_REGEX = """\bbot\b""".toRegex()
 class ContributionService(
     private val redditService: RedditService,
     private val phraseService: PhraseService,
+    private val commandService: CommandService,
     private val botCache: BotCache,
     private val telegramNotifier: TelegramNotifier,
 ) {
-
-    @Value("\${zakbot.replies.enabled:false}")
-    internal var sendReplies = false
 
     /**
      * Ignores submissions that are:
@@ -49,14 +45,12 @@ class ContributionService(
             ?: return
 
         telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))
-
-        if (sendReplies) {
-            redditService.replyToSubmission(submission, response)
-        }
+        redditService.replyToSubmission(submission, response)
     }
 
     /**
      * Ignore comments that are:
+     * - sent by the bot's author that aren't commands, or
      * - sent by the bot itself, or
      * - sent by an ignored user, or
      * - replies to an ignored submission (via ignore command), or
@@ -64,12 +58,8 @@ class ContributionService(
      * - replies to a comment sent by the bot.
      */
     fun processComment(comment: Comment) {
-        if (comment.author == AuthorUsername && comment.body.startsWith(IGNORE_COMMAND)) {
-            val reason = comment.body.substringAfter(IGNORE_COMMAND).trim().ifEmpty { null }
-            botCache.ignoreSubmission(comment.submissionFullName, reason)
-            if (sendReplies) {
-                redditService.replyToComment(comment, getString("reddit.new_post_ignored"))
-            }
+        if (comment.author == AuthorUsername) {
+            commandService.processAuthorCommand(comment)
             return
         }
 
@@ -87,9 +77,7 @@ class ContributionService(
             if (comment.mentionsBadBot()) {
                 botCache.ignoreUser(comment.author, comment.fullName)
                 telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
-                if (sendReplies) {
-                    redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
-                }
+                redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
             }
             return
         }
@@ -99,10 +87,7 @@ class ContributionService(
             ?: return
 
         telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
-
-        if (sendReplies) {
-            redditService.replyToComment(comment, response)
-        }
+        redditService.replyToComment(comment, response)
     }
 
     /**

@@ -1,12 +1,15 @@
 package com.github.mrbean355.zakbot
 
 import net.dean.jraw.RedditClient
+import net.dean.jraw.models.AccountStatus
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.Flair
 import net.dean.jraw.models.PublicContribution
 import net.dean.jraw.models.Submission
 import net.dean.jraw.models.SubredditSort
 import net.dean.jraw.pagination.Paginator
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.Date
 
@@ -17,7 +20,12 @@ private const val PageSizeLimit = 5
 private const val PageHistoryLimit = 10
 
 @Service
-class RedditService(private val client: RedditClient) {
+class RedditService(
+    private val client: RedditClient,
+    @Value("\${zakbot.replies.enabled:false}") private val sendReplies: Boolean,
+) {
+
+    private val logger = if (!sendReplies) LoggerFactory.getLogger(RedditService::class.java) else null
 
     /** Get all submissions (posts) created after the given date. */
     fun getSubmissionsSince(date: Date): List<Submission> =
@@ -35,11 +43,19 @@ class RedditService(private val client: RedditClient) {
             .collectAfter(date)
 
     fun replyToSubmission(submission: Submission, response: String) {
-        client.submission(submission.id).reply(response)
+        if (sendReplies) {
+            client.submission(submission.id).reply(response)
+        } else {
+            logger?.info("Reply to submission '${submission.title}': $response")
+        }
     }
 
     fun replyToComment(comment: Comment, response: String) {
-        client.comment(comment.id).reply(response)
+        if (sendReplies) {
+            client.comment(comment.id).reply(response)
+        } else {
+            logger?.info("Reply to comment '${comment.body}': $response")
+        }
     }
 
     /** @return the submission that the [comment] belongs to, or null if not found. */
@@ -50,6 +66,10 @@ class RedditService(private val client: RedditClient) {
     /** @return the parent comment of the [comment], or null if the parent is not a comment. */
     fun findParentComment(comment: Comment): Comment? {
         return client.lookup(comment.parentFullName).firstOrNull() as? Comment
+    }
+
+    fun userExists(name: String): Boolean {
+        return client.user(name).query().status != AccountStatus.NON_EXISTENT
     }
 
     fun getFlairOptions(): List<Flair> {
