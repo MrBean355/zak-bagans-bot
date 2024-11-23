@@ -46,23 +46,23 @@ internal class BotCacheTest {
     }
 
     @Test
-    internal fun testGetLastPostTime_EntityPresent_ReturnsEntityValue() {
+    internal fun testGetLastSubmissionTime_EntityPresent_ReturnsEntityValue() {
         val lastChecked = mockk<Date>()
         every { lastCheckedRepository.findById("post") } returns Optional.of(LastCheckedEntity("post", lastChecked))
 
-        val result = botCache.getLastPostTime()
+        val result = botCache.getLastSubmissionTime()
 
         assertSame(lastChecked, result)
         verify(inverse = true) { lastCheckedRepository.save(any()) }
     }
 
     @Test
-    internal fun testGetLastPostTime_EntityNotPresent_SavesEntityAndReturnsValue() {
+    internal fun testGetLastSubmissionTime_EntityNotPresent_SavesEntityAndReturnsValue() {
         every { lastCheckedRepository.findById("post") } returns Optional.empty()
         val lastChecked = mockk<Date>()
         every { lastCheckedRepository.save(any()) } returns LastCheckedEntity("post", lastChecked)
 
-        val result = botCache.getLastPostTime()
+        val result = botCache.getLastSubmissionTime()
 
         assertSame(lastChecked, result)
         val slot = slot<LastCheckedEntity>()
@@ -72,11 +72,11 @@ internal class BotCacheTest {
     }
 
     @Test
-    internal fun testSetLastPostTime_SavesEntity() {
+    internal fun testSetLastSubmissionTime_SavesEntity() {
         every { lastCheckedRepository.save(any()) } returns mockk()
         val lastChecked = mockk<Date>()
 
-        botCache.setLastPostTime(lastChecked)
+        botCache.setLastSubmissionTime(lastChecked)
 
         val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }

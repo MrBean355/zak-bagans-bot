@@ -42,6 +42,15 @@ phrase", and a 50% chance to skip to the next keyword in the list.
 If you find the bot annoying, you can reply to one of its comments with `bad bot`. This will make the bot ignore all of
 your future posts and comments.
 
+## Special Commands
+
+There are some commands that can be sent to the bot via comments on Reddit, and **only the bot's author can send them**.
+
+- `!ZakBagansBot ignore_user <username>` - Ignore the user's future posts and comments.
+- `!ZakBagansBot unignore_user <username>` - Stop ignoring the user.
+- `!ZakBagansBot ignore_post <reason>` - Ignore all comments on the current post. The reason is optional.
+- `!ZakBagansBot unignore_post` - Stop ignoring the current post.
+
 ## Contributing
 
 Any contributions by the community are welcome!

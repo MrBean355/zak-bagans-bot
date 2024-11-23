@@ -12,7 +12,7 @@ import java.util.Date
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-private const val PostKey = "post"
+private const val SubmissionKey = "post"
 private const val CommentKey = "comment"
 
 @Component
@@ -24,18 +24,18 @@ class BotCache(
 ) {
     private val lock = ReentrantLock()
 
-    fun getLastPostTime(): Date = lock.withLock {
-        val entity = lastCheckedRepository.findById(PostKey)
+    fun getLastSubmissionTime(): Date = lock.withLock {
+        val entity = lastCheckedRepository.findById(SubmissionKey)
         if (entity.isPresent) {
             entity.get().value
         } else {
-            lastCheckedRepository.save(LastCheckedEntity(PostKey, currentTime())).value
+            lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, currentTime())).value
         }
     }
 
-    fun setLastPostTime(time: Date) {
+    fun setLastSubmissionTime(time: Date) {
         lock.withLock {
-            lastCheckedRepository.save(LastCheckedEntity(PostKey, time))
+            lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, time))
         }
     }
 
@@ -62,12 +62,20 @@ class BotCache(
         ignoredUserRepository.save(IgnoredUserEntity(id, currentTime(), source))
     }
 
+    fun unignoreUser(id: String) {
+        ignoredUserRepository.deleteById(id)
+    }
+
     fun isSubmissionIgnored(fullName: String): Boolean {
         return ignoredSubmissionRepository.findById(fullName).isPresent
     }
 
     fun ignoreSubmission(fullName: String, reason: String?) {
         ignoredSubmissionRepository.save(IgnoredSubmissionEntity(fullName, currentTime(), reason))
+    }
+
+    fun unignoreSubmission(fullName: String) {
+        ignoredSubmissionRepository.deleteById(fullName)
     }
 
     private fun currentTime() = Date(systemClock.currentTimeMillis)
