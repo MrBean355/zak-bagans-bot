@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.mrbean355"
-version = "2.9.0"
+version = "2.9.1"
 
 repositories {
     mavenCentral()
@@ -34,6 +34,7 @@ dependencies {
     implementation("com.faendir.jraw:JRAW:1.2.0")
     implementation("org.telegram:telegrambots:6.9.7.1")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
+    implementation("org.commonmark:commonmark:0.24.0")
 
     runtimeOnly("jakarta.xml.ws:jakarta.xml.ws-api:4.0.2") {
         because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")

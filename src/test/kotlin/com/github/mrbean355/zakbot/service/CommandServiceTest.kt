@@ -33,7 +33,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_AlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore\\_user victim"
+        every { comment.body } returns "!$BotUsername ignore_user victim"
         every { botCache.isUserIgnored("victim") } returns true
 
         service.processAuthorCommand(comment)
@@ -48,7 +48,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_NotAlreadyIgnored_UserDoesNotExist_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore\\_user victim"
+        every { comment.body } returns "!$BotUsername ignore_user victim"
         every { botCache.isUserIgnored("victim") } returns false
         every { redditService.userExists("victim") } returns false
 
@@ -64,7 +64,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_NotAlreadyIgnored_UserExists_IgnoresUser() {
-        every { comment.body } returns "!$BotUsername ignore\\_user victim"
+        every { comment.body } returns "!$BotUsername ignore_user victim"
         every { botCache.isUserIgnored("victim") } returns false
         every { redditService.userExists("victim") } returns true
 
@@ -78,7 +78,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignoreUser_NotAlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername unignore\\_user victim"
+        every { comment.body } returns "!$BotUsername unignore_user victim"
         every { botCache.isUserIgnored("victim") } returns false
 
         service.processAuthorCommand(comment)
@@ -93,7 +93,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignoreUser_IsIgnored_UnignoresUser() {
-        every { comment.body } returns "!$BotUsername unignore\\_user victim"
+        every { comment.body } returns "!$BotUsername unignore_user victim"
         every { botCache.isUserIgnored("victim") } returns true
 
         service.processAuthorCommand(comment)
@@ -106,7 +106,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithReason_NotAlreadyIgnored_IgnoresSubmission() {
-        every { comment.body } returns "!$BotUsername ignore\\_post This is a complex reason."
+        every { comment.body } returns "!$BotUsername ignore_post This is a complex reason."
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -119,7 +119,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithReason_AlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore\\_post This is a complex reason."
+        every { comment.body } returns "!$BotUsername ignore_post This is a complex reason."
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -134,7 +134,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithoutReason_NotAlreadyIgnored_IgnoresSubmission() {
-        every { comment.body } returns "!$BotUsername ignore\\_post"
+        every { comment.body } returns "!$BotUsername ignore_post"
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -147,7 +147,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithoutReason_AlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore\\_post"
+        every { comment.body } returns "!$BotUsername ignore_post"
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -162,7 +162,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignorePost_IsIgnored_UnignoresSubmission() {
-        every { comment.body } returns "!$BotUsername unignore\\_post"
+        every { comment.body } returns "!$BotUsername unignore_post"
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -175,7 +175,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignorePost_NotAlreadyIgnored_UnignoresSubmission() {
-        every { comment.body } returns "!$BotUsername unignore\\_post"
+        every { comment.body } returns "!$BotUsername unignore_post"
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
