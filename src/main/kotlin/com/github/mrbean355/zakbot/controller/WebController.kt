@@ -1,5 +1,8 @@
 package com.github.mrbean355.zakbot.controller
 
+import com.github.mrbean355.zakbot.AppVersion
+import com.github.mrbean355.zakbot.AuthorUsername
+import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import org.springframework.web.bind.annotation.GetMapping
@@ -7,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class WebController(
-    private val phraseRepository: PhraseRepository
+    private val phraseRepository: PhraseRepository,
 ) {
 
     @GetMapping("/")
@@ -35,6 +38,7 @@ class WebController(
             appendResponses(PhraseType.Understand, "Understand", "20% chance to reply when \"understand\" is mentioned.")
             appendResponses(PhraseType.Zozo, "Zozo", "25% chance to reply when \"Zozo\" is mentioned.")
 
+            appendLine("<div style=\"text-align: center;\"><a href='https://github.com/MrBean355/zak-bagans-bot'>$BotUsername</a> by $AuthorUsername (v$AppVersion)</div>")
             appendLine(
                 """
                     </body>
