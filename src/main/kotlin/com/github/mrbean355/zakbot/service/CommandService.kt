@@ -2,6 +2,7 @@ package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.util.asPlainText
 import com.github.mrbean355.zakbot.util.getString
 import net.dean.jraw.models.Comment
 import org.springframework.stereotype.Service
@@ -15,19 +16,20 @@ class CommandService(
 ) {
 
     fun processAuthorCommand(comment: Comment) {
-        if (!comment.body.startsWith(COMMAND_PREFIX)) {
+        val body = comment.body.asPlainText()
+        if (!body.startsWith(COMMAND_PREFIX)) {
             return
         }
 
-        val command = comment.body.substringAfter(COMMAND_PREFIX).trim()
+        val command = body.substringAfter(COMMAND_PREFIX).trim()
         val name = command.substringBefore(' ')
         val args = command.substringAfter(name).trim()
 
         when (name) {
-            "ignore\\_user" -> ignoreUser(args, comment)
-            "unignore\\_user" -> unignoreUser(args, comment)
-            "ignore\\_post" -> ignoreSubmission(args, comment)
-            "unignore\\_post" -> unignoreSubmission(comment)
+            "ignore_user" -> ignoreUser(args, comment)
+            "unignore_user" -> unignoreUser(args, comment)
+            "ignore_post" -> ignoreSubmission(args, comment)
+            "unignore_post" -> unignoreSubmission(comment)
         }
     }
 
