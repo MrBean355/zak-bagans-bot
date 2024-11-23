@@ -2,6 +2,7 @@ package com.github.mrbean355.zakbot
 
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.service.ContributionService
+import com.github.mrbean355.zakbot.service.RedditService
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 

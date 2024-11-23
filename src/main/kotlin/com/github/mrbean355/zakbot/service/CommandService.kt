@@ -1,7 +1,6 @@
 package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.BotUsername
-import com.github.mrbean355.zakbot.RedditService
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.util.getString
 import net.dean.jraw.models.Comment

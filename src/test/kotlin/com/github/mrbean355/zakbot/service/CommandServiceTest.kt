@@ -1,7 +1,6 @@
 package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.BotUsername
-import com.github.mrbean355.zakbot.RedditService
 import com.github.mrbean355.zakbot.db.BotCache
 import io.mockk.MockKAnnotations
 import io.mockk.every

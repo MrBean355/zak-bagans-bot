@@ -1,5 +1,6 @@
-package com.github.mrbean355.zakbot
+package com.github.mrbean355.zakbot.service
 
+import com.github.mrbean355.zakbot.SubredditName
 import net.dean.jraw.RedditClient
 import net.dean.jraw.models.AccountStatus
 import net.dean.jraw.models.Comment

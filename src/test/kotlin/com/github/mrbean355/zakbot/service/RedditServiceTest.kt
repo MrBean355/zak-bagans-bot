@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot
+package com.github.mrbean355.zakbot.service
 
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
