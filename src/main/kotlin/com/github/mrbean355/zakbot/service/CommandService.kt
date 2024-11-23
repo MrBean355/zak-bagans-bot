@@ -25,10 +25,10 @@ class CommandService(
         val args = command.substringAfter(name).trim()
 
         when (name) {
-            "ignore_user" -> ignoreUser(args, comment)
-            "unignore_user" -> unignoreUser(args, comment)
-            "ignore_post" -> ignoreSubmission(args, comment)
-            "unignore_post" -> unignoreSubmission(comment)
+            "ignore\\_user" -> ignoreUser(args, comment)
+            "unignore\\_user" -> unignoreUser(args, comment)
+            "ignore\\_post" -> ignoreSubmission(args, comment)
+            "unignore\\_post" -> unignoreSubmission(comment)
         }
     }
 
