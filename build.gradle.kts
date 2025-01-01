@@ -43,7 +43,7 @@ dependencies {
         because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
     }
 
-    testImplementation(platform("org.junit:junit-bom:5.11.3"))
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("io.mockk:mockk:1.13.13")
 }
