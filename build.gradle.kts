@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.1.10"
-    id("org.springframework.boot") version "3.4.0"
+    id("org.springframework.boot") version "3.4.3"
 }
 
 group = "com.github.mrbean355"
