@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "2.1.10"
     id("org.springframework.boot") version "3.4.3"
+    `jvm-test-suite`
 }
 
 group = "com.github.mrbean355"
@@ -42,14 +43,17 @@ dependencies {
     runtimeOnly("javax.xml.ws:jaxws-api:2.3.1") {
         because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
     }
-
-    testImplementation(platform("org.junit:junit-bom:5.12.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("io.mockk:mockk:1.13.17")
 }
 
-tasks.test {
-    useJUnitPlatform()
+testing {
+    suites {
+        val test by getting(JvmTestSuite::class) {
+            useJUnitJupiter("5.12.0")
+            dependencies {
+                implementation("io.mockk:mockk:1.13.17")
+            }
+        }
+    }
 }
 
 val generateBuildConfig = tasks.register("generateBuildConfig") {
