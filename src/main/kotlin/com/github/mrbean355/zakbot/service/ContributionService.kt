@@ -97,7 +97,11 @@ class ContributionService(
             is Submission -> contribution.title + contribution.selfText.orEmpty()
             is Comment -> contribution.body
             else -> return
-        }.lowercase()
+        }.lowercase().trim()
+
+        if (text == "good bot") {
+            return
+        }
 
         if (text.contains(BOT_REGEX) ||
             "zakbot" in text ||
