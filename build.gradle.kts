@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.2.20"
-    id("org.springframework.boot") version "3.5.5"
+    id("org.springframework.boot") version "3.5.6"
     `jvm-test-suite`
 }
 
@@ -29,8 +29,8 @@ tasks.getByName<Jar>("jar") {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-web:3.5.5")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.5.5")
+    implementation("org.springframework.boot:spring-boot-starter-web:3.5.6")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.5.6")
     implementation("org.postgresql:postgresql:42.7.8")
     implementation("com.faendir.jraw:JRAW:1.2.0")
     implementation("org.telegram:telegrambots:6.9.7.1")
