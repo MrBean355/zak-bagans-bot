@@ -73,7 +73,7 @@ class ContributionService(
         }
 
         if (redditService.findParentComment(comment)?.author == BotUsername) {
-            if (comment.mentionsBadBot()) {
+            if (comment.body.isBadBot()) {
                 botCache.ignoreUser(comment.author, comment.fullName)
                 telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
@@ -99,7 +99,7 @@ class ContributionService(
             else -> return
         }.lowercase().trim()
 
-        if (text == "good bot") {
+        if (text.isGoodBot()) {
             return
         }
 
@@ -120,8 +120,12 @@ class ContributionService(
         return botCache.isUserIgnored(author)
     }
 
-    private fun Comment.mentionsBadBot(): Boolean {
-        return body.filter(Char::isLetter).equals("badbot", ignoreCase = true)
+    private fun String.isGoodBot(): Boolean {
+        return filter(Char::isLetter).equals("goodbot", ignoreCase = true)
+    }
+
+    private fun String.isBadBot(): Boolean {
+        return filter(Char::isLetter).equals("badbot", ignoreCase = true)
     }
 
     private fun String.substitute(contribution: PublicContribution<*>): String {
