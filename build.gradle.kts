@@ -50,7 +50,7 @@ testing {
         val test by getting(JvmTestSuite::class) {
             useJUnitJupiter("5.12.0")
             dependencies {
-                implementation("io.mockk:mockk:1.14.6")
+                implementation("io.mockk:mockk:1.14.7")
             }
         }
     }
