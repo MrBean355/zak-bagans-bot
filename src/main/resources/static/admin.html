@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zak Bot Admin</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #bb86fc;
+            --text-color: #e0e0e0;
+            --secondary-text-color: #a0a0a0;
+            --error-color: #cf6679;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--secondary-text-color);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #2c2c2c;
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .phrase-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .phrase-item {
+            background-color: #2c2c2c;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .phrase-content {
+            flex-grow: 1;
+        }
+
+        .phrase-meta {
+            font-size: 0.8em;
+            color: var(--secondary-text-color);
+            margin-top: 5px;
+        }
+
+        .delete-btn {
+            background-color: var(--error-color);
+            width: auto;
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Manage Phrases</h1>
+
+    <div class="card">
+        <h2>Add New Phrase</h2>
+        <div class="form-group">
+            <label for="content">Content</label>
+            <input type="text" id="content" placeholder="Enter the phrase text...">
+        </div>
+        <div class="form-group">
+            <label for="type">Type</label>
+            <!-- 
+               Aaron = 0, Answers = 1, Feeling = 2, Generic = 3, Mercury = 4, 
+               Situation = 5, Trinity = 6, Understand = 7, Zozo = 8 
+            -->
+            <select id="type">
+                <option value="0">Aaron</option>
+                <option value="1">Answers</option>
+                <option value="2">Feeling</option>
+                <option value="3">Generic</option>
+                <option value="4">Mercury</option>
+                <option value="5">Situation</option>
+                <option value="6">Trinity</option>
+                <option value="7">Understand</option>
+                <option value="8">Zozo</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="source">Source (Optional)</label>
+            <input type="text" id="source" placeholder='Link or description (e.g. "S10E04")'>
+        </div>
+        <button onclick="addPhrase()">Add Phrase</button>
+    </div>
+
+    <div class="card">
+        <h2>Existing Phrases</h2>
+        <ul id="phraseList" class="phrase-list">
+            <!-- Items loaded via JS -->
+        </ul>
+    </div>
+</div>
+
+<script>
+    const API_URL = '/api/phrases';
+
+    async function fetchPhrases() {
+        const response = await fetch(API_URL);
+        if (response.ok) {
+            const phrases = await response.json();
+            renderPhrases(phrases);
+        } else {
+            alert('Failed to load phrases. Ensure you are logged in.');
+        }
+    }
+
+    function renderPhrases(phrases) {
+        const list = document.getElementById('phraseList');
+        list.innerHTML = '';
+        
+        // Sort by ID desc (newest first) or content
+        phrases.sort((a, b) => b.id - a.id);
+
+        phrases.forEach(phrase => {
+            const li = document.createElement('li');
+            li.className = 'phrase-item';
+            
+            const typeName = getTypeName(phrase.type);
+            const sourceText = phrase.source ? ` | Source: ${phrase.source}` : '';
+
+            li.innerHTML = `
+                <div class="phrase-content">
+                    <div>${escapeHtml(phrase.content)}</div>
+                    <div class="phrase-meta">${typeName}${sourceText}</div>
+                </div>
+                <button class="delete-btn" onclick="deletePhrase(${phrase.id})">Delete</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    async function addPhrase() {
+        const content = document.getElementById('content').value;
+        const type = parseInt(document.getElementById('type').value);
+        const source = document.getElementById('source').value || null;
+
+        if (!content) {
+            alert('Please enter phrase content.');
+            return;
+        }
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, type, source })
+        });
+
+        if (response.ok) {
+            document.getElementById('content').value = '';
+            document.getElementById('source').value = '';
+            fetchPhrases();
+        } else {
+            alert('Failed to add phrase.');
+        }
+    }
+
+    async function deletePhrase(id) {
+        if (!confirm('Are you sure you want to delete this phrase?')) return;
+
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            fetchPhrases();
+        } else {
+            alert('Failed to delete phrase.');
+        }
+    }
+
+    function getTypeName(type) {
+        const types = [
+            "Aaron", "Answers", "Feeling", "Generic", "Mercury", 
+            "Situation", "Trinity", "Understand", "Zozo"
+        ];
+        return types[type] || "Unknown";
+    }
+
+    function escapeHtml(text) {
+        if (!text) return text;
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Load on start
+    fetchPhrases();
+</script>
+
+</body>
+</html>

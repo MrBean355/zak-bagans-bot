@@ -30,6 +30,7 @@ tasks.getByName<Jar>("jar") {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-web:3.5.7")
+    implementation("org.springframework.boot:spring-boot-starter-security:3.5.7")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.5.7")
     implementation("org.postgresql:postgresql:42.7.8")
     implementation("com.faendir.jraw:JRAW:1.2.0")
@@ -59,8 +60,8 @@ testing {
 val generateBuildConfig = tasks.register("generateBuildConfig") {
     file("src/main/kotlin/com/github/mrbean355/zakbot/BuildConfig.kt").writeText(
         "package com.github.mrbean355.zakbot\n" +
-                "\n" +
-                "const val AppVersion = \"$version\""
+            "\n" +
+            "const val AppVersion = \"$version\""
     )
 }
 
