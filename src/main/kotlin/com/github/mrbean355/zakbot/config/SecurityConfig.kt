@@ -16,6 +16,7 @@ open class SecurityConfig {
         http
             .authorizeHttpRequests { authorize ->
                 authorize
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/phrases").permitAll()
                     .requestMatchers("/api/**", "/admin.html").authenticated()
                     .anyRequest().permitAll()
             }
