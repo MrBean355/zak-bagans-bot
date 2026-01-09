@@ -31,6 +31,11 @@ open class SecurityConfig {
             .csrf {
                 it.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             }
+            .headers { headers ->
+                headers.contentSecurityPolicy { csp ->
+                    csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com")
+                }
+            }
 
         return http.build()
     }

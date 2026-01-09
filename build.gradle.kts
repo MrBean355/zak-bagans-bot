@@ -30,6 +30,7 @@ tasks.getByName<Jar>("jar") {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-web:3.5.7")
+    implementation("org.springframework.boot:spring-boot-starter-validation:3.5.7")
     implementation("org.springframework.boot:spring-boot-starter-security:3.5.7")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.5.7")
     implementation("org.postgresql:postgresql:42.7.8")
