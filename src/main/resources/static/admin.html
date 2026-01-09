@@ -96,9 +96,9 @@
         <div class="form-group">
             <label for="type">Type</label>
             <!--
-           Aaron = 0, Answers = 1, Feeling = 2, Generic = 3, Mercury = 4,
-           Situation = 5, Trinity = 6, Understand = 7, Zozo = 8
-        -->
+       Aaron = 0, Answers = 1, Feeling = 2, Generic = 3, Mercury = 4,
+       Situation = 5, Trinity = 6, Understand = 7, Zozo = 8
+    -->
             <select id="type">
                 <option value="0">Aaron</option>
                 <option value="1">Answers</option>
@@ -122,6 +122,10 @@
 <script>
     const API_URL = '/api/phrases';
 
+    function getCsrfToken() {
+        return document.cookie.replace(/(?:(?:^|.*;\s*)XSRF-TOKEN\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+    }
+
     async function addPhrase() {
         const content = document.getElementById('content').value;
         const type = parseInt(document.getElementById('type').value);
@@ -134,7 +138,10 @@
 
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': getCsrfToken()
+            },
             body: JSON.stringify({ content, type, source })
         });
 
