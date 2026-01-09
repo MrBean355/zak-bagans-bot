@@ -15,7 +15,7 @@ open class UserInitializer(
 
     private val logger = LoggerFactory.getLogger(UserInitializer::class.java)
 
-    override fun run(vararg args: String?) {
+    override fun run(vararg args: String) {
         val username = System.getenv("ADMIN_USERNAME").takeIf { !it.isNullOrBlank() } ?: "admin"
         val password = System.getenv("ADMIN_PASSWORD").takeIf { !it.isNullOrBlank() }
 
@@ -32,6 +32,8 @@ open class UserInitializer(
         val user = appUserRepository.findByUsername(username)
             ?: AppUserEntity(username = username, password = "")
 
-        appUserRepository.save(user.copy(password = passwordEncoder.encode(password)))
+        val encoded = passwordEncoder.encode(password) ?: return
+
+        appUserRepository.save(user.copy(password = encoded))
     }
 }
