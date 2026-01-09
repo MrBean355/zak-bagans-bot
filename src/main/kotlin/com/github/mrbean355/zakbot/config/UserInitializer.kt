@@ -16,13 +16,22 @@ open class UserInitializer(
     private val logger = LoggerFactory.getLogger(UserInitializer::class.java)
 
     override fun run(vararg args: String?) {
-        if (appUserRepository.count() == 0L) {
-            val defaultAdmin = AppUserEntity(
-                username = "admin",
-                password = passwordEncoder.encode("password")
-            )
-            appUserRepository.save(defaultAdmin)
-            logger.info("Default admin user created: admin / password")
+        val username = System.getenv("ADMIN_USERNAME").takeIf { !it.isNullOrBlank() } ?: "admin"
+        val password = System.getenv("ADMIN_PASSWORD").takeIf { !it.isNullOrBlank() }
+
+        if (password != null) {
+            createOrUpdateUser(username, password)
+            logger.info("Admin user updated.")
+        } else if (appUserRepository.count() == 0L) {
+            createOrUpdateUser(username, "password")
+            logger.info("Default admin user created: $username / password")
         }
+    }
+
+    private fun createOrUpdateUser(username: String, password: String) {
+        val user = appUserRepository.findByUsername(username)
+            ?: AppUserEntity(username = username, password = "")
+
+        appUserRepository.save(user.copy(password = passwordEncoder.encode(password)))
     }
 }
