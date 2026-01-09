@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zak Bot Responses</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #bb86fc;
+            --text-color: #e0e0e0;
+            --secondary-text-color: #a0a0a0;
+            --border-color: #333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--secondary-text-color);
+            font-style: italic;
+        }
+
+        .category-section {
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .category-header {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .category-description {
+            color: var(--secondary-text-color);
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .phrase-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .phrase-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #2c2c2c;
+        }
+
+        .phrase-item:last-child {
+            border-bottom: none;
+        }
+
+        .phrase-source {
+            color: var(--secondary-text-color);
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--secondary-text-color);
+            font-size: 0.8em;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <header>
+        <h1>Zak Bagans Bot</h1>
+        <p class="subtitle">There are things in this world we will never fully understand...</p>
+    </header>
+
+    <div id="phrases-container">
+        <!-- Content loaded via JS -->
+        <p style="text-align: center;">Loading responses...</p>
+    </div>
+
+    <footer>
+        <p><a href="https://github.com/MrBean355/zak-bagans-bot">GitHub</a> | <a href="/admin.html">Admin</a></p>
+    </footer>
+</div>
+
+<script>
+    const API_URL = '/api/phrases';
+
+    // Same mapping as WebController/PhraseType
+    const PHRASE_TYPES = {
+        0: { title: "Aaron", description: '10% chance to reply when "Aaron" is mentioned.' },
+        1: { title: "Answers", description: '25% chance to reply when "we want answers" is mentioned.' },
+        2: { title: "Feeling", description: '25% chance to reply when "I feel" or "I\'m feeling" is mentioned.' },
+        3: { title: "Generic", description: '20% chance to reply when "Zak" or "Bagans" is mentioned.' },
+        4: { title: "Mercury", description: '25% chance to reply when "mercury" is mentioned.' },
+        5: { title: "Situation", description: '20% chance to reply when "situation" is mentioned.' },
+        6: { title: "Trinity", description: '10% chance to reply when "3" or "three" is mentioned.' },
+        7: { title: "Understand", description: '20% chance to reply when "understand" is mentioned.' },
+        8: { title: "Zozo", description: '25% chance to reply when "Zozo" is mentioned.' }
+    };
+
+    async function fetchPhrases() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error("Failed to fetch");
+            const phrases = await response.json();
+            renderPhrases(phrases);
+        } catch (e) {
+            document.getElementById('phrases-container').innerHTML = '<p style="text-align: center; color: var(--error-color);">Failed to load phrases.</p>';
+        }
+    }
+
+    function renderPhrases(phrases) {
+        const container = document.getElementById('phrases-container');
+        container.innerHTML = '';
+
+        // Group by type
+        const grouped = {};
+        Object.keys(PHRASE_TYPES).forEach(type => grouped[type] = []);
+
+        phrases.forEach(phrase => {
+            if (grouped[phrase.type]) {
+                grouped[phrase.type].push(phrase);
+            }
+        });
+
+        // Render each category
+        Object.keys(PHRASE_TYPES).forEach(type => {
+            const info = PHRASE_TYPES[type];
+            const items = grouped[type];
+
+            // Sort items alphabetically
+            items.sort((a, b) => a.content.localeCompare(b.content));
+
+            const section = document.createElement('div');
+            section.className = 'category-section';
+
+            let html = `
+            <h2 class="category-header">${info.title}</h2>
+            <div class="category-description">${info.description}</div>
+            <ul class="phrase-list">
+        `;
+
+            if (items.length === 0) {
+                html += `<li class="phrase-item" style="font-style: italic; color: #555;">No phrases added yet.</li>`;
+            } else {
+                items.forEach(item => {
+                    const sourceText = item.source ? `<span class="phrase-source">(quote from: "${escapeHtml(item.source)}")</span>` : '';
+                    html += `<li class="phrase-item">${escapeHtml(item.content)}${sourceText}</li>`;
+                });
+            }
+
+            html += `</ul>`;
+            section.innerHTML = html;
+            container.appendChild(section);
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return text;
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    fetchPhrases();
+</script>
+
+</body>
+
+</html>

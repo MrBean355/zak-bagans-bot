@@ -2,13 +2,13 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.1.20"
-    id("org.springframework.boot") version "3.4.5"
+    kotlin("jvm") version "2.3.0"
+    id("org.springframework.boot") version "4.0.1"
     `jvm-test-suite`
 }
 
 group = "com.github.mrbean355"
-version = "2.10.0"
+version = "2.12.0"
 
 repositories {
     mavenCentral()
@@ -29,13 +29,15 @@ tasks.getByName<Jar>("jar") {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-web:3.4.5")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.4.5")
-    implementation("org.postgresql:postgresql:42.7.5")
+    implementation("org.springframework.boot:spring-boot-starter-web:4.0.1")
+    implementation("org.springframework.boot:spring-boot-starter-validation:4.0.1")
+    implementation("org.springframework.boot:spring-boot-starter-security:4.0.1")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.0.1")
+    implementation("org.postgresql:postgresql:42.7.8")
     implementation("com.faendir.jraw:JRAW:1.2.0")
     implementation("org.telegram:telegrambots:6.9.7.1")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
-    implementation("org.commonmark:commonmark:0.24.0")
+    implementation("org.commonmark:commonmark:0.27.0")
 
     runtimeOnly("jakarta.xml.ws:jakarta.xml.ws-api:4.0.2") {
         because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
@@ -50,7 +52,7 @@ testing {
         val test by getting(JvmTestSuite::class) {
             useJUnitJupiter("5.12.0")
             dependencies {
-                implementation("io.mockk:mockk:1.14.2")
+                implementation("io.mockk:mockk:1.14.7")
             }
         }
     }
@@ -59,8 +61,8 @@ testing {
 val generateBuildConfig = tasks.register("generateBuildConfig") {
     file("src/main/kotlin/com/github/mrbean355/zakbot/BuildConfig.kt").writeText(
         "package com.github.mrbean355.zakbot\n" +
-                "\n" +
-                "const val AppVersion = \"$version\""
+            "\n" +
+            "const val AppVersion = \"$version\""
     )
 }
 
