@@ -7,9 +7,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -34,11 +32,6 @@ class PhraseApiController(
         val entity = PhraseEntity(0, phrase.content, minUsages, phrase.type, phrase.source)
         val saved = phraseRepository.save(entity)
         return PhraseDto(saved.id, saved.content, saved.type, saved.source)
-    }
-
-    @DeleteMapping("/{id}")
-    fun deletePhrase(@PathVariable id: Int) {
-        phraseRepository.deleteById(id)
     }
 
     data class PhraseDto(
