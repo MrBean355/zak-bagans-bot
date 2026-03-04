@@ -10,3 +10,8 @@ updates:
       - MrBean355
     assignees:
       - MrBean355
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+          - "org.springframework.boot"
