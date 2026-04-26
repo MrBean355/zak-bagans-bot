@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.3.21"
-    id("org.springframework.boot") version "4.0.3"
+    id("org.springframework.boot") version "4.0.6"
     `jvm-test-suite`
 }
 
