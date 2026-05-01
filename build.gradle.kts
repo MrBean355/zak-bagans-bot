@@ -33,7 +33,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation:4.0.6")
     implementation("org.springframework.boot:spring-boot-starter-security:4.0.6")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.0.6")
-    implementation("org.postgresql:postgresql:42.7.10")
+    implementation("org.postgresql:postgresql:42.7.11")
     implementation("com.faendir.jraw:JRAW:1.2.0")
     implementation("org.telegram:telegrambots:6.9.7.1")
     implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
