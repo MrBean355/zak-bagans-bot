@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.4.0"
-    id("org.springframework.boot") version "4.1.0"
+    kotlin("jvm") version "2.4.20"
+    id("org.springframework.boot") version "4.1.1"
     `jvm-test-suite`
 }
 
@@ -29,15 +29,15 @@ tasks.getByName<Jar>("jar") {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-web:4.1.0")
-    implementation("org.springframework.boot:spring-boot-starter-validation:4.1.0")
-    implementation("org.springframework.boot:spring-boot-starter-security:4.1.0")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.1.0")
-    implementation("org.postgresql:postgresql:42.7.12")
+    implementation("org.springframework.boot:spring-boot-starter-web:4.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-validation:4.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-security:4.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.1.1")
+    implementation("org.postgresql:postgresql:42.7.13")
     implementation("com.faendir.jraw:JRAW:1.2.0")
-    implementation("org.telegram:telegrambots:6.9.7.1")
-    implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
-    implementation("org.commonmark:commonmark:0.29.0")
+    implementation("org.telegram:telegrambots-client:10.3.0")
+    implementation("org.telegram:telegrambots-springboot-longpolling-starter:10.3.0")
+    implementation("org.commonmark:commonmark:0.30.0")
 
     runtimeOnly("jakarta.xml.ws:jakarta.xml.ws-api:4.0.3") {
         because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
