@@ -22,5 +22,11 @@ jobs:
 
       - name: Build and test
         run: |
-          chmod +x gradlew
           ./gradlew clean build
+
+      - name: Run Sonar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./gradlew sonar

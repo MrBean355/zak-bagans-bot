@@ -1,11 +1,14 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.sonarqube.gradle.SonarTask
 
 plugins {
     kotlin("jvm") version "2.4.20"
     kotlin("plugin.spring") version "2.4.20"
     kotlin("plugin.jpa") version "2.4.20"
     id("org.springframework.boot") version "4.1.1"
+    id("org.sonarqube") version "7.5.0.8588"
+    jacoco
     `jvm-test-suite`
 }
 
@@ -23,6 +26,30 @@ java {
 
 kotlin {
     compilerOptions.jvmTarget.set(JvmTarget.JVM_25)
+}
+
+jacoco {
+    toolVersion = "0.8.15"
+}
+
+tasks.withType<JacocoReport> {
+    dependsOn(tasks.test)
+    sourceSets(sourceSets.main.get())
+    reports {
+        xml.required.set(true)
+    }
+}
+
+tasks.withType<SonarTask> {
+    dependsOn(tasks.named("jacocoTestReport"))
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "MrBean355_zak-bagans-bot")
+        property("sonar.organization", "mrbean355")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }
 
 tasks.getByName<Jar>("jar") {
