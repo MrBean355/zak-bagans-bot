@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.BotUsername
+import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -18,6 +19,9 @@ class CommandServiceTest {
     private lateinit var botCache: BotCache
 
     @MockK
+    private lateinit var telegramNotifier: TelegramNotifier
+
+    @MockK
     private lateinit var comment: Comment
     private lateinit var service: CommandService
 
@@ -28,7 +32,7 @@ class CommandServiceTest {
         every { comment.submissionFullName } returns "def456"
         every { comment.author } returns "tester"
         every { comment.url } returns "www.reddit.com"
-        service = CommandService(redditService, botCache)
+        service = CommandService(redditService, botCache, telegramNotifier)
     }
 
     @Test
@@ -73,6 +77,7 @@ class CommandServiceTest {
         verify {
             botCache.ignoreUser("victim", "abc123")
             redditService.replyToComment(comment, "Okay, I will ignore 'victim' from now on 👌")
+            telegramNotifier.sendMessage(match { it.contains("ignore_user") && it.contains("victim") })
         }
     }
 
@@ -88,6 +93,7 @@ class CommandServiceTest {
         }
         verify(inverse = true) {
             botCache.unignoreUser(any())
+            telegramNotifier.sendMessage(any())
         }
     }
 
@@ -101,6 +107,7 @@ class CommandServiceTest {
         verify {
             botCache.unignoreUser("victim")
             redditService.replyToComment(comment, "Okay, I won't ignore 'victim' anymore 👌")
+            telegramNotifier.sendMessage(match { it.contains("unignore_user") && it.contains("victim") })
         }
     }
 
@@ -114,6 +121,7 @@ class CommandServiceTest {
         verify {
             botCache.ignoreSubmission("def456", "This is a complex reason.")
             redditService.replyToComment(comment, "Okay, I will ignore all comments on this post 👌")
+            telegramNotifier.sendMessage(match { it.contains("ignore_post") && it.contains("This is a complex reason.") })
         }
     }
 
@@ -129,6 +137,7 @@ class CommandServiceTest {
         }
         verify(inverse = true) {
             botCache.ignoreSubmission(any(), any())
+            telegramNotifier.sendMessage(any())
         }
     }
 
@@ -142,6 +151,7 @@ class CommandServiceTest {
         verify {
             botCache.ignoreSubmission("def456", null)
             redditService.replyToComment(comment, "Okay, I will ignore all comments on this post 👌")
+            telegramNotifier.sendMessage(match { it.contains("ignore_post") && it.contains("None") })
         }
     }
 
@@ -157,6 +167,7 @@ class CommandServiceTest {
         }
         verify(inverse = true) {
             botCache.ignoreSubmission(any(), any())
+            telegramNotifier.sendMessage(any())
         }
     }
 
@@ -170,6 +181,7 @@ class CommandServiceTest {
         verify {
             botCache.unignoreSubmission("def456")
             redditService.replyToComment(comment, "Okay, I won't ignore this post anymore 👌")
+            telegramNotifier.sendMessage(match { it.contains("unignore_post") })
         }
     }
 
@@ -185,6 +197,7 @@ class CommandServiceTest {
         }
         verify(inverse = true) {
             botCache.unignoreSubmission(any())
+            telegramNotifier.sendMessage(any())
         }
     }
 }
