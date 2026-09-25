@@ -7,6 +7,7 @@ import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
 import com.github.mrbean355.zakbot.util.SystemClock
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.util.Date
@@ -24,12 +25,8 @@ class BotCache(
 ) {
 
     fun getLastSubmissionTime(): Date {
-        val entity = lastCheckedRepository.findById(SubmissionKey)
-        return if (entity.isPresent) {
-            entity.get().value
-        } else {
-            lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, currentTime())).value
-        }
+        return lastCheckedRepository.findByIdOrNull(SubmissionKey)?.value
+            ?: lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, currentTime())).value
     }
 
     fun setLastSubmissionTime(time: Date) {
@@ -37,12 +34,8 @@ class BotCache(
     }
 
     fun getLastCommentTime(): Date {
-        val entity = lastCheckedRepository.findById(CommentKey)
-        return if (entity.isPresent) {
-            entity.get().value
-        } else {
-            lastCheckedRepository.save(LastCheckedEntity(CommentKey, currentTime())).value
-        }
+        return lastCheckedRepository.findByIdOrNull(CommentKey)?.value
+            ?: lastCheckedRepository.save(LastCheckedEntity(CommentKey, currentTime())).value
     }
 
     fun setLastCommentTime(time: Date) {
