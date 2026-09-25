@@ -1,36 +1,36 @@
 package com.github.mrbean355.zakbot.controller
 
-import com.github.mrbean355.zakbot.db.entity.PhraseEntity
-import com.github.mrbean355.zakbot.db.repo.PhraseRepository
+import com.github.mrbean355.zakbot.service.PhraseService
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/phrases")
 class PhraseApiController(
-    private val phraseRepository: PhraseRepository
+    private val phraseService: PhraseService
 ) {
 
     @GetMapping
     fun getAllPhrases(): List<PhraseDto> {
-        return phraseRepository.findAll().map {
+        return phraseService.getAllPhrases().map {
             PhraseDto(it.id, it.content, it.type, it.source)
         }
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     fun addPhrase(@RequestBody @Valid phrase: CreatePhraseDto): PhraseDto {
-        val minUsages = phraseRepository.findMinUsagesByType(phrase.type) ?: 0
-        val entity = PhraseEntity(0, phrase.content, minUsages, phrase.type, phrase.source)
-        val saved = phraseRepository.save(entity)
+        val saved = phraseService.addPhrase(phrase.content, phrase.type, phrase.source)
         return PhraseDto(saved.id, saved.content, saved.type, saved.source)
     }
 

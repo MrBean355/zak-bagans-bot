@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot.service
 
+import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
@@ -25,6 +26,15 @@ class PhraseService(
 ) {
 
     private val phrases = phrases.sortedByDescending { it.priority }
+
+    fun getAllPhrases(): List<PhraseEntity> {
+        return phraseRepository.findAll().toList()
+    }
+
+    fun addPhrase(content: String, type: Int, source: String?): PhraseEntity {
+        val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
+        return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source))
+    }
 
     fun findPhrase(submission: Submission): String? {
         return findPhrase(submission.title, submission.selfText)

@@ -146,4 +146,47 @@ class PhraseServiceTest {
             genericPhrase.getReplyChance("hello zak")
         }
     }
+
+    @Test
+    fun testGetAllPhrases_ReturnsAllPhrasesFromRepository() {
+        val expected = listOf(
+            PhraseEntity(1, "Quote 1", 2, PhraseType.Generic, "Source 1"),
+            PhraseEntity(2, "Quote 2", 3, PhraseType.Aaron, "Source 2"),
+        )
+        every { phraseRepository.findAll() } returns expected
+
+        val actual = service.getAllPhrases()
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testAddPhrase_CalculatesMinUsagesAndSavesEntity() {
+        every { phraseRepository.findMinUsagesByType(PhraseType.Aaron) } returns 4
+        every { phraseRepository.save(any<PhraseEntity>()) } answers { firstArg() }
+
+        val actual = service.addPhrase("New phrase", PhraseType.Aaron, "Source")
+
+        assertEquals(0, actual.id)
+        assertEquals("New phrase", actual.content)
+        assertEquals(4, actual.usages)
+        assertEquals(PhraseType.Aaron, actual.type)
+        assertEquals("Source", actual.source)
+        verify {
+            phraseRepository.save(PhraseEntity(0, "New phrase", 4, PhraseType.Aaron, "Source"))
+        }
+    }
+
+    @Test
+    fun testAddPhrase_WhenNoMinUsagesFound_DefaultsToZero() {
+        every { phraseRepository.findMinUsagesByType(PhraseType.Zozo) } returns null
+        every { phraseRepository.save(any<PhraseEntity>()) } answers { firstArg() }
+
+        val actual = service.addPhrase("Zozo phrase", PhraseType.Zozo, null)
+
+        assertEquals(0, actual.usages)
+        verify {
+            phraseRepository.save(PhraseEntity(0, "Zozo phrase", 0, PhraseType.Zozo, null))
+        }
+    }
 }
