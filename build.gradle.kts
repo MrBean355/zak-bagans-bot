@@ -44,13 +44,6 @@ dependencies {
     implementation("org.telegram:telegrambots-client:10.3.0")
     implementation("org.telegram:telegrambots-springboot-longpolling-starter:10.3.0")
     implementation("org.commonmark:commonmark:0.30.0")
-
-    runtimeOnly("jakarta.xml.ws:jakarta.xml.ws-api:4.0.3") {
-        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
-    }
-    runtimeOnly("javax.xml.ws:jaxws-api:2.3.1") {
-        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
-    }
 }
 
 testing {
