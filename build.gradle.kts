@@ -27,6 +27,10 @@ tasks.getByName<Jar>("jar") {
     enabled = false
 }
 
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveFileName.set("zakbot.jar")
+}
+
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-web:4.1.1")
