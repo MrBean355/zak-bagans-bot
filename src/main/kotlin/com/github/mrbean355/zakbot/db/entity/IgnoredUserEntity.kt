@@ -8,7 +8,5 @@ import java.util.Date
 data class IgnoredUserEntity(
     @Id val userId: String,
     val since: Date,
-    val source: String
-) {
-    constructor() : this("", Date(), "")
-}
+    val source: String,
+)

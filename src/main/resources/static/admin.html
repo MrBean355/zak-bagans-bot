@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zak Bot Admin</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <style>
         :root {
             --bg-color: #121212;
@@ -150,7 +152,9 @@
             document.getElementById('source').value = '';
             alert('Phrase added successfully!');
         } else {
-            alert('Failed to add phrase.');
+            const errorText = await response.text();
+            console.error('Failed to add phrase:', response.status, errorText);
+            alert(`Failed to add phrase (${response.status})`);
         }
     }
 </script>

@@ -1,50 +1,76 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.sonarqube.gradle.SonarTask
 
 plugins {
-    kotlin("jvm") version "2.3.0"
-    id("org.springframework.boot") version "4.0.1"
+    kotlin("jvm") version "2.4.20"
+    kotlin("plugin.spring") version "2.4.20"
+    kotlin("plugin.jpa") version "2.4.20"
+    id("org.springframework.boot") version "4.1.1"
+    id("org.sonarqube") version "7.5.0.8588"
+    jacoco
     `jvm-test-suite`
 }
 
 group = "com.github.mrbean355"
-version = "2.12.0"
+version = "2.13.0"
 
 repositories {
     mavenCentral()
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.toVersion(25)
+    targetCompatibility = JavaVersion.toVersion(25)
 }
 
 kotlin {
-    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_25)
+}
+
+jacoco {
+    toolVersion = "0.8.15"
+}
+
+tasks.withType<JacocoReport> {
+    dependsOn(tasks.test)
+    sourceSets(sourceSets.main.get())
+    reports {
+        xml.required.set(true)
+    }
+}
+
+tasks.withType<SonarTask> {
+    dependsOn(tasks.named("jacocoTestReport"))
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "MrBean355_zak-bagans-bot")
+        property("sonar.organization", "mrbean355")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }
 
 tasks.getByName<Jar>("jar") {
     enabled = false
 }
 
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveFileName.set("zakbot.jar")
+}
+
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-web:4.0.1")
-    implementation("org.springframework.boot:spring-boot-starter-validation:4.0.1")
-    implementation("org.springframework.boot:spring-boot-starter-security:4.0.1")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.0.1")
-    implementation("org.postgresql:postgresql:42.7.8")
+    implementation("org.springframework.boot:spring-boot-starter-web:4.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-validation:4.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-security:4.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.1.1")
+    implementation("org.postgresql:postgresql:42.7.13")
     implementation("com.faendir.jraw:JRAW:1.2.0")
-    implementation("org.telegram:telegrambots:6.9.7.1")
-    implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
-    implementation("org.commonmark:commonmark:0.27.0")
-
-    runtimeOnly("jakarta.xml.ws:jakarta.xml.ws-api:4.0.2") {
-        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
-    }
-    runtimeOnly("javax.xml.ws:jaxws-api:2.3.1") {
-        because("JAXB APIs are considered to be Java EE APIs and are completely removed from JDK 11")
-    }
+    implementation("org.telegram:telegrambots-client:10.3.0")
+    implementation("org.telegram:telegrambots-springboot-longpolling-starter:10.3.0")
+    implementation("org.commonmark:commonmark:0.30.0")
 }
 
 testing {
@@ -52,7 +78,7 @@ testing {
         val test by getting(JvmTestSuite::class) {
             useJUnitJupiter("5.12.0")
             dependencies {
-                implementation("io.mockk:mockk:1.14.7")
+                implementation("io.mockk:mockk:1.14.11")
             }
         }
     }

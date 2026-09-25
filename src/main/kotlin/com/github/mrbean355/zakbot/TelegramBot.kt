@@ -1,18 +1,25 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
+import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
+import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.bots.TelegramLongPollingBot
+import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
+import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.ParseMode
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.objects.LinkPreviewOptions
 import org.telegram.telegrambots.meta.api.objects.Update
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.Duration
 import java.time.Instant
 
-private const val TelegramUsername = "ZakBagansBot"
 private const val ChatId = "44692593"
 
 interface TelegramNotifier {
@@ -22,26 +29,59 @@ interface TelegramNotifier {
 @Component
 @Profile("!dev")
 class TelegramBot(
-    private val applicationContext: ApplicationContext
-) : TelegramLongPollingBot(System.getenv("TELEGRAM_TOKEN")), TelegramNotifier {
+    private val applicationContext: ApplicationContext,
+    private val phraseRepository: PhraseRepository,
+    private val ignoredUserRepository: IgnoredUserRepository,
+    private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
+    @Value($$"${TELEGRAM_TOKEN}") private val botToken: String,
+) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
-    override fun getBotUsername() = TelegramUsername
+    internal var telegramClient: TelegramClient = OkHttpTelegramClient(botToken)
 
-    override fun onUpdateReceived(update: Update) {
-        if (update.message?.text == "/ping") {
-            sendMessage(getString("telegram.bot_ping_response", AppVersion, getUptime()))
+    override fun getBotToken(): String = botToken
+
+    override fun getUpdatesConsumer(): LongPollingUpdateConsumer = this
+
+    override fun consume(updates: List<Update>) {
+        for (update in updates) {
+            val text = update.message?.text.orEmpty().trim().lowercase()
+            if (text == "/status" || text.startsWith("/status@")) {
+                sendMessage(buildStatusMessage())
+            }
         }
     }
 
     override fun sendMessage(text: String) {
-        execute(
+        telegramClient.execute(
             SendMessage.builder()
                 .chatId(ChatId)
                 .text(text)
                 .parseMode(ParseMode.MARKDOWN)
-                .disableWebPagePreview(true)
+                .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
                 .build()
         )
+    }
+
+    private fun buildStatusMessage(): String {
+        return getString(
+            "telegram.bot_status_response",
+            AppVersion,
+            getUptime().ifBlank { "< 1 second" },
+            getMemoryUsage(),
+            SubredditName,
+            phraseRepository.count(),
+            ignoredUserRepository.count(),
+            ignoredSubmissionRepository.count(),
+        )
+    }
+
+    private fun getMemoryUsage(): String {
+        val runtime = Runtime.getRuntime()
+        val totalMb = runtime.totalMemory() / (1024 * 1024)
+        val freeMb = runtime.freeMemory() / (1024 * 1024)
+        val usedMb = totalMb - freeMb
+        val maxMb = runtime.maxMemory() / (1024 * 1024)
+        return "${usedMb}MB / ${maxMb}MB"
     }
 
     private fun getUptime(): String {

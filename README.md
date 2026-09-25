@@ -4,6 +4,11 @@
 
 *There are things in this world we will never fully understand... <sup>understand</sup>*
 
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=MrBean355_zak-bagans-bot&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MrBean355_zak-bagans-bot)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=MrBean355_zak-bagans-bot&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=MrBean355_zak-bagans-bot)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=MrBean355_zak-bagans-bot&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=MrBean355_zak-bagans-bot)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=MrBean355_zak-bagans-bot&metric=coverage)](https://sonarcloud.io/summary/new_code?id=MrBean355_zak-bagans-bot)
+
 ## Welcome
 
 This is a Reddit bot for [r/GhostAdventures](https://www.reddit.com/r/GhostAdventures/) which replies to posts and

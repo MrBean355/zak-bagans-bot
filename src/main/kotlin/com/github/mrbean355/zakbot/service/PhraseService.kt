@@ -1,5 +1,8 @@
 package com.github.mrbean355.zakbot.service
 
+import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.db.PhraseType
+import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
@@ -7,6 +10,7 @@ import com.github.mrbean355.zakbot.util.getString
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.Submission
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import kotlin.random.Random
 
 private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)""".toRegex()
@@ -22,14 +26,37 @@ private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a
 class PhraseService(
     private val phraseRepository: PhraseRepository,
     phrases: List<Phrase>,
+    private val telegramNotifier: TelegramNotifier,
 ) {
 
     private val phrases = phrases.sortedByDescending { it.priority }
 
+    @Transactional(readOnly = true)
+    fun getAllPhrases(): List<PhraseEntity> {
+        return phraseRepository.findAll().toList()
+    }
+
+    @Transactional
+    fun addPhrase(content: String, type: Int, source: String?): PhraseEntity {
+        val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
+        return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source)).also {
+            telegramNotifier.sendMessage(
+                getString(
+                    "telegram.new_quote",
+                    content,
+                    PhraseType.name(type),
+                    source.orEmpty().ifBlank { "None" }
+                )
+            )
+        }
+    }
+
+    @Transactional
     fun findPhrase(submission: Submission): String? {
         return findPhrase(submission.title, submission.selfText)
     }
 
+    @Transactional
     fun findPhrase(comment: Comment): String? {
         return findPhrase(comment.body)
     }
@@ -47,8 +74,9 @@ class PhraseService(
                     .random()
                     .let { entity ->
                         phraseRepository.save(entity.copy(usages = entity.usages + 1))
-                        if (entity.source != null) {
-                            getString("reddit.quote_source_prefix", entity.content, entity.source.escapeParentheses())
+                        val source = entity.source
+                        if (source != null) {
+                            getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())
                         } else {
                             entity.content
                         }

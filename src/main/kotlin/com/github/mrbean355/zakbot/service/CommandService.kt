@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.BotUsername
+import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.util.asPlainText
 import com.github.mrbean355.zakbot.util.getString
@@ -13,6 +14,7 @@ private const val COMMAND_PREFIX = "!$BotUsername "
 class CommandService(
     private val redditService: RedditService,
     private val botCache: BotCache,
+    private val telegramNotifier: TelegramNotifier,
 ) {
 
     fun processAuthorCommand(comment: Comment) {
@@ -41,6 +43,7 @@ class CommandService(
         if (redditService.userExists(id)) {
             botCache.ignoreUser(id, comment.fullName)
             redditService.replyToComment(comment, getString("reddit.command.ignoreUser.success", id))
+            telegramNotifier.sendMessage(getString("telegram.command_ignore_user", id, comment.url))
         } else {
             redditService.replyToComment(comment, getString("reddit.command.ignoreUser.notFound", id))
         }
@@ -53,6 +56,7 @@ class CommandService(
         }
         botCache.unignoreUser(id)
         redditService.replyToComment(comment, getString("reddit.command.unignoreUser.success", id))
+        telegramNotifier.sendMessage(getString("telegram.command_unignore_user", id, comment.url))
     }
 
     private fun ignoreSubmission(reason: String, comment: Comment) {
@@ -62,6 +66,7 @@ class CommandService(
         }
         botCache.ignoreSubmission(comment.submissionFullName, reason.ifBlank { null })
         redditService.replyToComment(comment, getString("reddit.command.ignoreSubmission.success"))
+        telegramNotifier.sendMessage(getString("telegram.command_ignore_post", reason.ifBlank { "None" }, comment.url))
     }
 
     private fun unignoreSubmission(comment: Comment) {
@@ -71,5 +76,6 @@ class CommandService(
         }
         botCache.unignoreSubmission(comment.submissionFullName)
         redditService.replyToComment(comment, getString("reddit.command.unignoreSubmission.success"))
+        telegramNotifier.sendMessage(getString("telegram.command_unignore_post", comment.url))
     }
 }

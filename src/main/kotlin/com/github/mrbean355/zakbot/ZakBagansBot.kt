@@ -13,7 +13,7 @@ class ZakBagansBot(
     private val contributionService: ContributionService,
 ) {
 
-    @Scheduled(fixedRate = 15 * 60 * 1000L)
+    @Scheduled(fixedRate = 15 * 60 * 1000L, initialDelay = 10_000L)
     fun checkContributions() {
         redditService.getSubmissionsSince(botCache.getLastSubmissionTime()).apply {
             firstOrNull()?.created?.let(botCache::setLastSubmissionTime)
