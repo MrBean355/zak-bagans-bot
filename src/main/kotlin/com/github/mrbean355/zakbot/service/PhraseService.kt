@@ -1,5 +1,7 @@
 package com.github.mrbean355.zakbot.service
 
+import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.db.type
@@ -24,6 +26,7 @@ private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a
 class PhraseService(
     private val phraseRepository: PhraseRepository,
     phrases: List<Phrase>,
+    private val telegramNotifier: TelegramNotifier,
 ) {
 
     private val phrases = phrases.sortedByDescending { it.priority }
@@ -36,7 +39,16 @@ class PhraseService(
     @Transactional
     fun addPhrase(content: String, type: Int, source: String?): PhraseEntity {
         val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
-        return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source))
+        return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source)).also {
+            telegramNotifier.sendMessage(
+                getString(
+                    "telegram.new_quote",
+                    content,
+                    PhraseType.name(type),
+                    source.orEmpty().ifBlank { "None" }
+                )
+            )
+        }
     }
 
     @Transactional

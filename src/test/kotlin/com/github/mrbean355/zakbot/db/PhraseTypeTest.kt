@@ -48,4 +48,18 @@ internal class PhraseTypeTest {
         assertEquals(7, mockk<UnderstandPhrase>().type())
         assertEquals(8, mockk<ZozoPhrase>().type())
     }
+
+    @Test
+    fun testName_MapsToString() {
+        assertEquals("Aaron", PhraseType.name(PhraseType.Aaron))
+        assertEquals("Answers", PhraseType.name(PhraseType.Answers))
+        assertEquals("Feeling", PhraseType.name(PhraseType.Feeling))
+        assertEquals("Generic", PhraseType.name(PhraseType.Generic))
+        assertEquals("Mercury", PhraseType.name(PhraseType.Mercury))
+        assertEquals("Situation", PhraseType.name(PhraseType.Situation))
+        assertEquals("Trinity", PhraseType.name(PhraseType.Trinity))
+        assertEquals("Understand", PhraseType.name(PhraseType.Understand))
+        assertEquals("Zozo", PhraseType.name(PhraseType.Zozo))
+        assertEquals("Unknown", PhraseType.name(999))
+    }
 }

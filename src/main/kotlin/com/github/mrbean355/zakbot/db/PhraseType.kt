@@ -21,6 +21,19 @@ object PhraseType {
     const val Trinity = 6
     const val Understand = 7
     const val Zozo = 8
+
+    fun name(type: Int): String = when (type) {
+        Aaron -> "Aaron"
+        Answers -> "Answers"
+        Feeling -> "Feeling"
+        Generic -> "Generic"
+        Mercury -> "Mercury"
+        Situation -> "Situation"
+        Trinity -> "Trinity"
+        Understand -> "Understand"
+        Zozo -> "Zozo"
+        else -> "Unknown"
+    }
 }
 
 fun Phrase.type(): Int = when (this) {
