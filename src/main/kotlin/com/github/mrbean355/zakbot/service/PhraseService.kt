@@ -8,6 +8,7 @@ import com.github.mrbean355.zakbot.util.getString
 import net.dean.jraw.models.Comment
 import net.dean.jraw.models.Submission
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import kotlin.random.Random
 
 private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)""".toRegex()
@@ -27,19 +28,23 @@ class PhraseService(
 
     private val phrases = phrases.sortedByDescending { it.priority }
 
+    @Transactional(readOnly = true)
     fun getAllPhrases(): List<PhraseEntity> {
         return phraseRepository.findAll().toList()
     }
 
+    @Transactional
     fun addPhrase(content: String, type: Int, source: String?): PhraseEntity {
         val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
         return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source))
     }
 
+    @Transactional
     fun findPhrase(submission: Submission): String? {
         return findPhrase(submission.title, submission.selfText)
     }
 
+    @Transactional
     fun findPhrase(comment: Comment): String? {
         return findPhrase(comment.body)
     }

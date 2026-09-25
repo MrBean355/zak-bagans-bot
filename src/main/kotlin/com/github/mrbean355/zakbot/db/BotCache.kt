@@ -8,25 +8,24 @@ import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
 import com.github.mrbean355.zakbot.util.SystemClock
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.util.Date
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 private const val SubmissionKey = "post"
 private const val CommentKey = "comment"
 
 @Component
+@Transactional
 class BotCache(
     private val lastCheckedRepository: LastCheckedRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
     private val systemClock: SystemClock,
 ) {
-    private val lock = ReentrantLock()
 
-    fun getLastSubmissionTime(): Date = lock.withLock {
+    fun getLastSubmissionTime(): Date {
         val entity = lastCheckedRepository.findById(SubmissionKey)
-        if (entity.isPresent) {
+        return if (entity.isPresent) {
             entity.get().value
         } else {
             lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, currentTime())).value
@@ -34,14 +33,12 @@ class BotCache(
     }
 
     fun setLastSubmissionTime(time: Date) {
-        lock.withLock {
-            lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, time))
-        }
+        lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, time))
     }
 
-    fun getLastCommentTime(): Date = lock.withLock {
+    fun getLastCommentTime(): Date {
         val entity = lastCheckedRepository.findById(CommentKey)
-        if (entity.isPresent) {
+        return if (entity.isPresent) {
             entity.get().value
         } else {
             lastCheckedRepository.save(LastCheckedEntity(CommentKey, currentTime())).value
@@ -49,13 +46,12 @@ class BotCache(
     }
 
     fun setLastCommentTime(time: Date) {
-        lock.withLock {
-            lastCheckedRepository.save(LastCheckedEntity(CommentKey, time))
-        }
+        lastCheckedRepository.save(LastCheckedEntity(CommentKey, time))
     }
 
+    @Transactional(readOnly = true)
     fun isUserIgnored(id: String): Boolean {
-        return ignoredUserRepository.findById(id).isPresent
+        return ignoredUserRepository.existsById(id)
     }
 
     fun ignoreUser(id: String, source: String) {
@@ -66,8 +62,9 @@ class BotCache(
         ignoredUserRepository.deleteById(id)
     }
 
+    @Transactional(readOnly = true)
     fun isSubmissionIgnored(fullName: String): Boolean {
-        return ignoredSubmissionRepository.findById(fullName).isPresent
+        return ignoredSubmissionRepository.existsById(fullName)
     }
 
     fun ignoreSubmission(fullName: String, reason: String?) {
@@ -79,5 +76,4 @@ class BotCache(
     }
 
     private fun currentTime() = Date(systemClock.currentTimeMillis)
-
 }

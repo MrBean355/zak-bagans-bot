@@ -125,7 +125,7 @@ internal class BotCacheTest {
 
     @Test
     internal fun testIsUserIgnored_EntityPresent_ReturnsTrue() {
-        every { ignoredUserRepository.findById("123") } returns Optional.of(mockk())
+        every { ignoredUserRepository.existsById("123") } returns true
 
         val result = botCache.isUserIgnored("123")
 
@@ -134,7 +134,7 @@ internal class BotCacheTest {
 
     @Test
     internal fun testIsUserIgnored_EntityNotPresent_ReturnsFalse() {
-        every { ignoredUserRepository.findById("123") } returns Optional.empty()
+        every { ignoredUserRepository.existsById("123") } returns false
 
         val result = botCache.isUserIgnored("123")
 
@@ -156,7 +156,7 @@ internal class BotCacheTest {
 
     @Test
     internal fun testIsSubmissionIgnored_EntityPresent_ReturnsTrue() {
-        every { ignoredSubmissionRepository.findById("123") } returns Optional.of(mockk())
+        every { ignoredSubmissionRepository.existsById("123") } returns true
 
         val result = botCache.isSubmissionIgnored("123")
 
@@ -165,7 +165,7 @@ internal class BotCacheTest {
 
     @Test
     internal fun testIsSubmissionIgnored_EntityNotPresent_ReturnsFalse() {
-        every { ignoredSubmissionRepository.findById("123") } returns Optional.empty()
+        every { ignoredSubmissionRepository.existsById("123") } returns false
 
         val result = botCache.isSubmissionIgnored("123")
 

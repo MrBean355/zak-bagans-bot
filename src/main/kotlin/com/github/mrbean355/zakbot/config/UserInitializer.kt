@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.transaction.annotation.Transactional
 
 @Configuration
 open class UserInitializer(
@@ -31,7 +32,8 @@ open class UserInitializer(
         }
     }
 
-    private fun createOrUpdateUser(username: String, password: String) {
+    @Transactional
+    open fun createOrUpdateUser(username: String, password: String) {
         val user = appUserRepository.findByUsername(username)
             ?: AppUserEntity(username = username, password = "")
 
