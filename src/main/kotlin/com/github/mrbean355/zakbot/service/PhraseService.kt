@@ -62,8 +62,9 @@ class PhraseService(
                     .random()
                     .let { entity ->
                         phraseRepository.save(entity.copy(usages = entity.usages + 1))
-                        if (entity.source != null) {
-                            getString("reddit.quote_source_prefix", entity.content, entity.source.escapeParentheses())
+                        val source = entity.source
+                        if (source != null) {
+                            getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())
                         } else {
                             entity.content
                         }

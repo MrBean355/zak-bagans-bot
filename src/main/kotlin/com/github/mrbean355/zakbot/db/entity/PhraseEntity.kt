@@ -1,6 +1,5 @@
 package com.github.mrbean355.zakbot.db.entity
 
-import com.github.mrbean355.zakbot.db.PhraseType
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -13,8 +12,4 @@ data class PhraseEntity(
     val usages: Int,
     val type: Int,
     val source: String?,
-) {
-
-    constructor() : this(0, "", 0, PhraseType.Generic, null)
-
-}
+)

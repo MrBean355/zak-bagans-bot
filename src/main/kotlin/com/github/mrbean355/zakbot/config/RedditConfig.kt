@@ -14,13 +14,13 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-open class RedditConfig(
+class RedditConfig(
     @Value($$"${BOT_ACCOUNT_PASSWORD:}") private val botAccountPassword: String,
     @Value($$"${BOT_CLIENT_SECRET:}") private val botClientSecret: String,
 ) {
 
     @Bean
-    open fun provideRedditClient(): RedditClient = OAuthHelper.automatic(
+    fun provideRedditClient(): RedditClient = OAuthHelper.automatic(
         OkHttpNetworkAdapter(UserAgent("bot", BotUsername, AppVersion, AuthorUsername)),
         Credentials.script(
             BotUsername,
