@@ -152,7 +152,9 @@
             document.getElementById('source').value = '';
             alert('Phrase added successfully!');
         } else {
-            alert('Failed to add phrase.');
+            const errorText = await response.text();
+            console.error('Failed to add phrase:', response.status, errorText);
+            alert(`Failed to add phrase (${response.status})`);
         }
     }
 </script>
