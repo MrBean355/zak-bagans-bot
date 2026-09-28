@@ -22,7 +22,7 @@ import java.time.Instant
 
 private const val ChatId = "44692593"
 
-interface TelegramNotifier {
+fun interface TelegramNotifier {
     fun sendMessage(text: String)
 }
 
