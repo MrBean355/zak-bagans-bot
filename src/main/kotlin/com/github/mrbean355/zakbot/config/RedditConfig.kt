@@ -1,6 +1,8 @@
 package com.github.mrbean355.zakbot.config
 
-import com.github.mrbean355.zakbot.RedditUserAgent
+import com.github.mrbean355.zakbot.AppVersion
+import com.github.mrbean355.zakbot.AuthorUsername
+import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.reddit.RedditAuthService
 import com.github.mrbean355.zakbot.reddit.RedditLoggingInterceptor
 import org.springframework.beans.factory.ObjectProvider
@@ -47,10 +49,13 @@ class RedditConfig {
     }
 
     @Bean
-    fun redditAuthRestClient(builder: RestClient.Builder): RestClient {
+    fun redditAuthRestClient(
+        builder: RestClient.Builder,
+        environment: Environment
+    ): RestClient {
         return builder.clone()
             .baseUrl("https://www.reddit.com")
-            .defaultHeader("User-Agent", RedditUserAgent)
+            .defaultHeader("User-Agent", getUserAgentHeader(environment))
             .build()
     }
 
@@ -59,10 +64,11 @@ class RedditConfig {
     fun redditRestClient(
         authService: RedditAuthService,
         builder: RestClient.Builder,
+        environment: Environment,
     ): RestClient {
         return builder.clone()
             .baseUrl("https://oauth.reddit.com")
-            .defaultHeader("User-Agent", RedditUserAgent)
+            .defaultHeader("User-Agent", getUserAgentHeader(environment))
             .requestInterceptor { request, body, execution ->
                 request.headers.setBearerAuth(authService.getAccessToken())
                 var response = execution.execute(request, body)
@@ -75,5 +81,11 @@ class RedditConfig {
                 response
             }
             .build()
+    }
+
+    fun getUserAgentHeader(environment: Environment): String {
+        val isDev = environment.acceptsProfiles(Profiles.of("dev"))
+        val version = if (isDev) "$AppVersion-dev" else AppVersion
+        return "bot:$BotUsername:$version (by /u/$AuthorUsername)"
     }
 }

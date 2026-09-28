@@ -1,12 +1,15 @@
 package com.github.mrbean355.zakbot.config
 
-import com.github.mrbean355.zakbot.RedditUserAgent
+import com.github.mrbean355.zakbot.AppVersion
+import com.github.mrbean355.zakbot.AuthorUsername
+import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.reddit.RedditAuthService
 import com.github.mrbean355.zakbot.reddit.RedditLoggingInterceptor
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.core.env.Environment
@@ -28,6 +31,11 @@ import java.util.function.Consumer
 class RedditConfigTest {
     private val config = RedditConfig()
     private val environment: Environment = mockk()
+
+    @BeforeEach
+    fun setUp() {
+        every { environment.acceptsProfiles(Profiles.of("dev")) } returns false
+    }
 
     @Test
     fun testClientHttpRequestFactory_WhenDevProfileActive_ReturnsBufferingFactory() {
@@ -75,14 +83,32 @@ class RedditConfigTest {
     }
 
     @Test
+    fun testGetUserAgentHeader_WhenDevProfileActive_AppendsDevSuffix() {
+        every { environment.acceptsProfiles(Profiles.of("dev")) } returns true
+
+        val header = config.getUserAgentHeader(environment)
+
+        assertEquals("bot:$BotUsername:$AppVersion-dev (by /u/$AuthorUsername)", header)
+    }
+
+    @Test
+    fun testGetUserAgentHeader_WhenDevProfileNotActive_ReturnsStandardHeader() {
+        every { environment.acceptsProfiles(Profiles.of("dev")) } returns false
+
+        val header = config.getUserAgentHeader(environment)
+
+        assertEquals("bot:$BotUsername:$AppVersion (by /u/$AuthorUsername)", header)
+    }
+
+    @Test
     fun testRedditAuthRestClient_ConfiguresBaseUrlAndUserAgent() {
         val builder = RestClient.builder()
         val server = MockRestServiceServer.bindTo(builder).build()
-        val authClient = config.redditAuthRestClient(builder)
+        val authClient = config.redditAuthRestClient(builder, environment)
 
         server.expect(requestTo("https://www.reddit.com/test"))
             .andExpect(method(HttpMethod.GET))
-            .andExpect(header("User-Agent", RedditUserAgent))
+            .andExpect(header("User-Agent", "bot:$BotUsername:$AppVersion (by /u/$AuthorUsername)"))
             .andRespond(withSuccess("auth-ok", MediaType.TEXT_PLAIN))
 
         val response = authClient.get().uri("/test").retrieve().body(String::class.java)
@@ -98,7 +124,7 @@ class RedditConfigTest {
 
         val builder = RestClient.builder()
         val server = MockRestServiceServer.bindTo(builder).build()
-        val client = config.redditRestClient(authService, builder)
+        val client = config.redditRestClient(authService, builder, environment)
 
         server.expect(requestTo("https://oauth.reddit.com/test"))
             .andExpect(method(HttpMethod.GET))
@@ -119,7 +145,7 @@ class RedditConfigTest {
 
         val builder = RestClient.builder()
         val server = MockRestServiceServer.bindTo(builder).bufferContent().build()
-        val client = config.redditRestClient(authService, builder)
+        val client = config.redditRestClient(authService, builder, environment)
 
         server.expect(requestTo("https://oauth.reddit.com/test"))
             .andExpect(method(HttpMethod.GET))
