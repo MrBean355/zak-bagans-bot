@@ -3,7 +3,6 @@ package com.github.mrbean355.zakbot.config
 import com.github.mrbean355.zakbot.db.entity.AppUserEntity
 import com.github.mrbean355.zakbot.db.repo.AppUserRepository
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.core.env.Environment
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -16,15 +15,14 @@ class UserInitializer(
     private val appUserRepository: AppUserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val environment: Environment,
-    @Value($$"${ADMIN_USERNAME:admin}") private val adminUsername: String,
-    @Value($$"${ADMIN_PASSWORD:}") private val adminPassword: String,
+    private val adminProperties: AdminProperties,
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(UserInitializer::class.java)
 
     override fun run(vararg args: String) {
-        val username = adminUsername.ifBlank { "admin" }
-        val password = adminPassword.ifBlank { null }
+        val username = adminProperties.username.ifBlank { "admin" }
+        val password = adminProperties.password.ifBlank { null }
 
         when {
             password != null -> {

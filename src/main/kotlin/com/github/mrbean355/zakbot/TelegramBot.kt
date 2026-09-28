@@ -1,11 +1,11 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.config.TelegramProperties
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Profile
@@ -33,11 +33,10 @@ class TelegramBot(
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
     private val telegramClient: TelegramClient,
     private val buildProperties: BuildProperties,
-    @Value($$"${TELEGRAM_TOKEN}") private val botToken: String,
-    @Value($$"${telegram.chat-id}") private val chatId: String,
+    private val telegramProperties: TelegramProperties,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
-    override fun getBotToken(): String = botToken
+    override fun getBotToken(): String = telegramProperties.token
 
     override fun getUpdatesConsumer(): LongPollingUpdateConsumer = this
 
@@ -53,7 +52,7 @@ class TelegramBot(
     override fun sendMessage(text: String) {
         telegramClient.execute(
             SendMessage.builder()
-                .chatId(chatId)
+                .chatId(telegramProperties.chatId)
                 .text(text)
                 .parseMode(ParseMode.MARKDOWN)
                 .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())

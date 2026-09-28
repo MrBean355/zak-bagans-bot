@@ -34,7 +34,7 @@ class UserInitializerTest {
         every { appUserRepository.findByUsername("admin") } returns null
         every { appUserRepository.save(any<AppUserEntity>()) } answers { firstArg() }
 
-        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, "admin", "secret123")
+        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, AdminProperties(username = "admin", password = "secret123"))
         initializer.run()
 
         val slot = slot<AppUserEntity>()
@@ -49,7 +49,7 @@ class UserInitializerTest {
         every { appUserRepository.findByUsername("admin") } returns existingUser
         every { appUserRepository.save(any<AppUserEntity>()) } answers { firstArg() }
 
-        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, "admin", "new_secret")
+        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, AdminProperties(username = "admin", password = "new_secret"))
         initializer.run()
 
         val slot = slot<AppUserEntity>()
@@ -66,7 +66,7 @@ class UserInitializerTest {
         every { appUserRepository.findByUsername("admin") } returns null
         every { appUserRepository.save(any<AppUserEntity>()) } answers { firstArg() }
 
-        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, "admin", "")
+        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, AdminProperties(username = "admin", password = ""))
         initializer.run()
 
         val slot = slot<AppUserEntity>()
@@ -80,7 +80,7 @@ class UserInitializerTest {
         every { environment.matchesProfiles("dev") } returns false
         every { appUserRepository.count() } returns 0L
 
-        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, "admin", "")
+        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, AdminProperties(username = "admin", password = ""))
         initializer.run()
 
         verify(inverse = true) { appUserRepository.save(any()) }

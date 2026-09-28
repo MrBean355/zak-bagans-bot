@@ -11,8 +11,8 @@ import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Contribution
 import com.github.mrbean355.zakbot.reddit.model.RedditFlair
 import com.github.mrbean355.zakbot.reddit.model.Submission
+import com.github.mrbean355.zakbot.config.ZakbotProperties
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
@@ -30,7 +30,7 @@ private const val PageHistoryLimit = 10
 @Service
 class RedditService(
     private val client: RestClient,
-    @Value($$"${zakbot.replies.enabled:false}") private val sendReplies: Boolean,
+    private val zakbotProperties: ZakbotProperties,
 ) {
     private val logger = LoggerFactory.getLogger(RedditService::class.java)
 
@@ -95,7 +95,7 @@ class RedditService(
     }
 
     fun replyToSubmission(submission: Submission, response: String) {
-        if (sendReplies) {
+        if (zakbotProperties.replies.enabled) {
             postCommentReply(submission.fullName, response)
         } else {
             logger.info("Reply to submission '{}': {}", submission.title, response)
@@ -103,7 +103,7 @@ class RedditService(
     }
 
     fun replyToComment(comment: Comment, response: String) {
-        if (sendReplies) {
+        if (zakbotProperties.replies.enabled) {
             postCommentReply(comment.fullName, response)
         } else {
             logger.info("Reply to comment '{}': {}", comment.body, response)

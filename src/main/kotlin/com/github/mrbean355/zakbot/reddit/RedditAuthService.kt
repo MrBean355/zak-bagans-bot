@@ -2,11 +2,11 @@ package com.github.mrbean355.zakbot.reddit
 
 import com.github.mrbean355.zakbot.BotClientId
 import com.github.mrbean355.zakbot.BotUsername
+import com.github.mrbean355.zakbot.config.RedditProperties
 import com.github.mrbean355.zakbot.reddit.dto.RedditTokenResponse
 import com.github.mrbean355.zakbot.util.SystemClock
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.util.LinkedMultiValueMap
@@ -14,8 +14,7 @@ import org.springframework.web.client.RestClient
 
 @Service
 class RedditAuthService(
-    @Value($$"${BOT_ACCOUNT_PASSWORD:}") private val botAccountPassword: String,
-    @Value($$"${BOT_CLIENT_SECRET:}") private val botClientSecret: String,
+    private val redditProperties: RedditProperties,
     private val systemClock: SystemClock,
     @Qualifier("redditAuthRestClient") private val authClient: RestClient,
 ) {
@@ -39,12 +38,12 @@ class RedditAuthService(
         val body = LinkedMultiValueMap<String, String>().apply {
             add("grant_type", "password")
             add("username", BotUsername)
-            add("password", botAccountPassword)
+            add("password", redditProperties.accountPassword)
         }
 
         val response = authClient.post()
             .uri("/api/v1/access_token")
-            .headers { it.setBasicAuth(BotClientId, botClientSecret) }
+            .headers { it.setBasicAuth(BotClientId, redditProperties.clientSecret) }
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .body(body)
             .retrieve()

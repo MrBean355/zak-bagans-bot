@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.config.TelegramProperties
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
@@ -56,8 +57,10 @@ class TelegramBotTest {
             ignoredSubmissionRepository = ignoredSubmissionRepository,
             telegramClient = telegramClient,
             buildProperties = buildProperties,
-            botToken = "dummy-token",
-            chatId = "123456",
+            telegramProperties = TelegramProperties(
+                token = "dummy-token",
+                chatId = "123456",
+            ),
         )
     }
 

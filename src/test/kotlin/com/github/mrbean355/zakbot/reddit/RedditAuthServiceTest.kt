@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot.reddit
 
+import com.github.mrbean355.zakbot.config.RedditProperties
 import com.github.mrbean355.zakbot.util.SystemClock
 import io.mockk.every
 import io.mockk.mockk
@@ -25,8 +26,10 @@ class RedditAuthServiceTest {
         server = MockRestServiceServer.bindTo(builder).build()
 
         authService = RedditAuthService(
-            botAccountPassword = "test-password",
-            botClientSecret = "test-secret",
+            redditProperties = RedditProperties(
+                accountPassword = "test-password",
+                clientSecret = "test-secret",
+            ),
             systemClock = systemClock,
             authClient = builder.build(),
         )

@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.SubredditName
+import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.RedditFlair
 import com.github.mrbean355.zakbot.reddit.model.Submission
@@ -34,8 +35,8 @@ class RedditServiceTest {
         server = MockRestServiceServer.bindTo(builder).bufferContent().build()
         val client = builder.build()
 
-        serviceWithReplies = RedditService(client, sendReplies = true)
-        serviceWithoutReplies = RedditService(client, sendReplies = false)
+        serviceWithReplies = RedditService(client, ZakbotProperties(replies = ZakbotProperties.Replies(enabled = true)))
+        serviceWithoutReplies = RedditService(client, ZakbotProperties(replies = ZakbotProperties.Replies(enabled = false)))
     }
 
     @Test

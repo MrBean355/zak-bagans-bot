@@ -1,6 +1,5 @@
 package com.github.mrbean355.zakbot.config
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -12,7 +11,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 class TelegramConfig {
 
     @Bean
-    fun telegramClient(@Value("\${TELEGRAM_TOKEN}") botToken: String): TelegramClient {
-        return OkHttpTelegramClient(botToken)
+    fun telegramClient(properties: TelegramProperties): TelegramClient {
+        return OkHttpTelegramClient(properties.token)
     }
 }
