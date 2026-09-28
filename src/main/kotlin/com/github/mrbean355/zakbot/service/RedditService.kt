@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClient
-import java.util.Date
+import java.time.Instant
 
 /** Number of posts/comments per page. */
 private const val PageSizeLimit = 5
@@ -34,28 +34,28 @@ class RedditService(
 ) {
     private val logger = LoggerFactory.getLogger(RedditService::class.java)
 
-    /** Get all submissions (posts) created after the given date. */
-    fun getSubmissionsSince(date: Date): List<Submission> =
+    /** Get all submissions (posts) created after the given instant. */
+    fun getSubmissionsSince(since: Instant): List<Submission> =
         fetchContributionsSince(
             path = "/r/{subreddit}/new",
             typeRef = object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {},
-            since = date,
+            since = since,
             transform = { it.toDomain() },
         )
 
-    /** Get all comments created after the given date. */
-    fun getCommentsSince(date: Date): List<Comment> =
+    /** Get all comments created after the given instant. */
+    fun getCommentsSince(since: Instant): List<Comment> =
         fetchContributionsSince(
             path = "/r/{subreddit}/comments",
             typeRef = object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {},
-            since = date,
+            since = since,
             transform = { it.toDomain() },
         )
 
     private inline fun <DTO, DOMAIN : Contribution> fetchContributionsSince(
         path: String,
         typeRef: ParameterizedTypeReference<RedditListing<DTO>>,
-        since: Date,
+        since: Instant,
         crossinline transform: (DTO) -> DOMAIN,
     ): List<DOMAIN> {
         val items = mutableListOf<DOMAIN>()
@@ -193,7 +193,7 @@ class RedditService(
         id = id,
         fullName = name,
         author = author,
-        created = Date((createdUtc * 1000).toLong()),
+        created = Instant.ofEpochMilli((createdUtc * 1000).toLong()),
         url = "https://www.reddit.com$permalink",
         title = title,
         selfText = selfText,
@@ -203,7 +203,7 @@ class RedditService(
         id = id,
         fullName = name,
         author = author,
-        created = Date((createdUtc * 1000).toLong()),
+        created = Instant.ofEpochMilli((createdUtc * 1000).toLong()),
         url = "https://www.reddit.com$permalink",
         body = body,
         submissionFullName = linkId,

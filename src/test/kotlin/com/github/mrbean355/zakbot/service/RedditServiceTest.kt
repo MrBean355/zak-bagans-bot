@@ -21,7 +21,7 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.request
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
-import java.util.Date
+import java.time.Instant
 
 class RedditServiceTest {
     private lateinit var server: MockRestServiceServer
@@ -81,14 +81,14 @@ class RedditServiceTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        val results = serviceWithReplies.getSubmissionsSince(Date(1700000010_000L))
+        val results = serviceWithReplies.getSubmissionsSince(Instant.ofEpochMilli(1700000010_000L))
 
         assertEquals(1, results.size)
         assertEquals("sub1", results[0].id)
         assertEquals("t3_sub1", results[0].fullName)
         assertEquals("user1", results[0].author)
         assertEquals("Title 1", results[0].title)
-        assertEquals(Date(1700000050_000L), results[0].created)
+        assertEquals(Instant.ofEpochMilli(1700000050_000L), results[0].created)
         assertEquals("https://www.reddit.com/r/GhostAdventures/comments/sub1/title_1/", results[0].url)
         server.verify()
     }
@@ -136,7 +136,7 @@ class RedditServiceTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        val results = serviceWithReplies.getCommentsSince(Date(1700000010_000L))
+        val results = serviceWithReplies.getCommentsSince(Instant.ofEpochMilli(1700000010_000L))
 
         assertEquals(1, results.size)
         assertEquals("com1", results[0].id)
@@ -156,7 +156,7 @@ class RedditServiceTest {
             .andExpect(content().formDataContains(mapOf("api_type" to "json", "thing_id" to "t3_sub1", "text" to "Credibility...")))
             .andRespond(withSuccess())
 
-        val submission = Submission("sub1", "t3_sub1", "author", Date(), "url", "Title", null)
+        val submission = Submission("sub1", "t3_sub1", "author", Instant.now(), "url", "Title", null)
         serviceWithReplies.replyToSubmission(submission, "Credibility...")
 
         server.verify()
@@ -164,7 +164,7 @@ class RedditServiceTest {
 
     @Test
     fun testReplyToSubmission_WhenRepliesDisabled_DoesNotSendRequest() {
-        val submission = Submission("sub1", "t3_sub1", "author", Date(), "url", "Title", null)
+        val submission = Submission("sub1", "t3_sub1", "author", Instant.now(), "url", "Title", null)
         serviceWithoutReplies.replyToSubmission(submission, "Credibility...")
 
         server.verify()
@@ -178,7 +178,7 @@ class RedditServiceTest {
             .andExpect(content().formDataContains(mapOf("api_type" to "json", "thing_id" to "t1_com1", "text" to "We want answers")))
             .andRespond(withSuccess())
 
-        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_post1", "t1_parent")
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_post1", "t1_parent")
         serviceWithReplies.replyToComment(comment, "We want answers")
 
         server.verify()
@@ -186,7 +186,7 @@ class RedditServiceTest {
 
     @Test
     fun testReplyToComment_WhenRepliesDisabled_DoesNotSendRequest() {
-        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_post1", "t1_parent")
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_post1", "t1_parent")
         serviceWithoutReplies.replyToComment(comment, "We want answers")
 
         server.verify()
@@ -221,7 +221,7 @@ class RedditServiceTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_sub1", "t1_parent")
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t1_parent")
         val result = serviceWithReplies.getCommentSubmission(comment)
 
         assertNotNull(result)
@@ -238,7 +238,7 @@ class RedditServiceTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_unknown", "t1_parent")
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_unknown", "t1_parent")
         val result = serviceWithReplies.getCommentSubmission(comment)
 
         assertNull(result)
@@ -247,7 +247,7 @@ class RedditServiceTest {
 
     @Test
     fun testFindParentComment_WhenParentIsPost_ReturnsNullWithoutCallingApi() {
-        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_sub1", "t3_sub1")
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t3_sub1")
         val result = serviceWithReplies.findParentComment(comment)
 
         assertNull(result)
@@ -283,7 +283,7 @@ class RedditServiceTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_sub1", "t1_parent1")
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t1_parent1")
         val result = serviceWithReplies.findParentComment(comment)
 
         assertNotNull(result)

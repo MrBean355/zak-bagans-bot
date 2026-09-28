@@ -10,7 +10,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.Instant
 
 class CommandServiceTest {
     @MockK
@@ -200,10 +200,11 @@ class CommandServiceTest {
         id = "abc123",
         fullName = "abc123",
         author = "tester",
-        created = Date(),
+        created = Instant.now(),
         url = "www.reddit.com",
         body = body,
         submissionFullName = "def456",
         parentFullName = "t1_parent",
     )
 }
+

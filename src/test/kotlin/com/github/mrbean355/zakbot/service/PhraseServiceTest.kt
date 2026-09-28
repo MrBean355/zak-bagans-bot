@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.Instant
 
 class PhraseServiceTest {
     @MockK
@@ -192,7 +192,7 @@ class PhraseServiceTest {
         id = "1",
         fullName = "t1_1",
         author = "tester",
-        created = Date(),
+        created = Instant.now(),
         url = "https://reddit.com",
         body = body,
         submissionFullName = "t3_1",
@@ -203,7 +203,7 @@ class PhraseServiceTest {
         id = "1",
         fullName = "t3_1",
         author = "tester",
-        created = Date(),
+        created = Instant.now(),
         url = "https://reddit.com",
         title = title,
         selfText = selfText,

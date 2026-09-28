@@ -10,7 +10,7 @@ import com.github.mrbean355.zakbot.util.SystemClock
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.util.Date
+import java.time.Instant
 
 private const val SubmissionKey = "post"
 private const val CommentKey = "comment"
@@ -24,21 +24,21 @@ class BotCache(
     private val systemClock: SystemClock,
 ) {
 
-    fun getLastSubmissionTime(): Date {
+    fun getLastSubmissionTime(): Instant {
         return lastCheckedRepository.findByIdOrNull(SubmissionKey)?.value
             ?: lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, currentTime())).value
     }
 
-    fun setLastSubmissionTime(time: Date) {
+    fun setLastSubmissionTime(time: Instant) {
         lastCheckedRepository.save(LastCheckedEntity(SubmissionKey, time))
     }
 
-    fun getLastCommentTime(): Date {
+    fun getLastCommentTime(): Instant {
         return lastCheckedRepository.findByIdOrNull(CommentKey)?.value
             ?: lastCheckedRepository.save(LastCheckedEntity(CommentKey, currentTime())).value
     }
 
-    fun setLastCommentTime(time: Date) {
+    fun setLastCommentTime(time: Instant) {
         lastCheckedRepository.save(LastCheckedEntity(CommentKey, time))
     }
 
@@ -68,5 +68,5 @@ class BotCache(
         ignoredSubmissionRepository.deleteById(fullName)
     }
 
-    private fun currentTime() = Date(systemClock.currentTimeMillis)
+    private fun currentTime(): Instant = Instant.ofEpochMilli(systemClock.currentTimeMillis)
 }

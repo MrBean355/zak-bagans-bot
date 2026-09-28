@@ -13,7 +13,7 @@ import io.mockk.justRun
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.Instant
 
 class ContributionServiceTest {
     @MockK
@@ -148,7 +148,7 @@ class ContributionServiceTest {
         id = id,
         fullName = "t3_$id",
         author = author,
-        created = Date(),
+        created = Instant.now(),
         url = "https://reddit.com/r/GhostAdventures/comments/$id",
         title = title,
         selfText = selfText,
@@ -163,7 +163,7 @@ class ContributionServiceTest {
         id = id,
         fullName = "t1_$id",
         author = author,
-        created = Date(),
+        created = Instant.now(),
         url = "https://reddit.com/r/GhostAdventures/comments/sub1/title/$id",
         body = body,
         submissionFullName = "t3_sub1",
