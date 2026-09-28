@@ -10,7 +10,6 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.ParseMode
@@ -20,8 +19,6 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.Duration
 import java.time.Instant
-
-private const val ChatId = "44692593"
 
 fun interface TelegramNotifier {
     fun sendMessage(text: String)
@@ -34,11 +31,11 @@ class TelegramBot(
     private val phraseRepository: PhraseRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
-    @Value($$"${TELEGRAM_TOKEN}") private val botToken: String,
+    private val telegramClient: TelegramClient,
     private val buildProperties: BuildProperties,
+    @Value($$"${TELEGRAM_TOKEN}") private val botToken: String,
+    @Value($$"${telegram.chat-id}") private val chatId: String,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
-
-    internal var telegramClient: TelegramClient = OkHttpTelegramClient(botToken)
 
     override fun getBotToken(): String = botToken
 
@@ -56,7 +53,7 @@ class TelegramBot(
     override fun sendMessage(text: String) {
         telegramClient.execute(
             SendMessage.builder()
-                .chatId(ChatId)
+                .chatId(chatId)
                 .text(text)
                 .parseMode(ParseMode.MARKDOWN)
                 .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())

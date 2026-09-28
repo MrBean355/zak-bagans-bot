@@ -54,10 +54,23 @@ class TelegramBotTest {
             phraseRepository = phraseRepository,
             ignoredUserRepository = ignoredUserRepository,
             ignoredSubmissionRepository = ignoredSubmissionRepository,
-            botToken = "dummy-token",
+            telegramClient = telegramClient,
             buildProperties = buildProperties,
-        ).apply {
-            this.telegramClient = this@TelegramBotTest.telegramClient
+            botToken = "dummy-token",
+            chatId = "123456",
+        )
+    }
+
+    @Test
+    fun testSendMessage_SendsToConfiguredChatId() {
+        bot.sendMessage("Hello test")
+
+        verify {
+            telegramClient.execute(
+                match<SendMessage> { message ->
+                    message.chatId == "123456" && message.text == "Hello test"
+                }
+            )
         }
     }
 
@@ -74,7 +87,8 @@ class TelegramBotTest {
         verify {
             telegramClient.execute(
                 match<SendMessage> { message ->
-                    message.text.contains("ZakBot Status") &&
+                    message.chatId == "123456" &&
+                        message.text.contains("ZakBot Status") &&
                         message.text.contains("Quotes in DB: 150") &&
                         message.text.contains("Ignored users: 7") &&
                         message.text.contains("Ignored posts: 3")
