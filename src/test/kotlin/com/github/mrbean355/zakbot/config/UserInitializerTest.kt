@@ -44,6 +44,22 @@ class UserInitializerTest {
     }
 
     @Test
+    fun testRun_WhenUserAlreadyExists_UpdatesPassword() {
+        val existingUser = AppUserEntity(id = 10, username = "admin", password = "old_password")
+        every { appUserRepository.findByUsername("admin") } returns existingUser
+        every { appUserRepository.save(any<AppUserEntity>()) } answers { firstArg() }
+
+        val initializer = UserInitializer(appUserRepository, passwordEncoder, environment, "admin", "new_secret")
+        initializer.run()
+
+        val slot = slot<AppUserEntity>()
+        verify { appUserRepository.save(capture(slot)) }
+        assertEquals(10L, slot.captured.id)
+        assertEquals("admin", slot.captured.username)
+        assertEquals("encoded_new_secret", slot.captured.password)
+    }
+
+    @Test
     fun testRun_WhenNoPasswordAndDevProfileAndNoUsers_CreatesDefaultUser() {
         every { environment.matchesProfiles("dev") } returns true
         every { appUserRepository.count() } returns 0L

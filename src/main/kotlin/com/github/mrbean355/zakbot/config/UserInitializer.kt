@@ -43,11 +43,13 @@ class UserInitializer(
 
     @Transactional
     fun createOrUpdateUser(username: String, password: String) {
-        val user = appUserRepository.findByUsername(username)
-            ?: AppUserEntity(username = username, password = "")
-
         val encoded = passwordEncoder.encode(password) ?: return
-
-        appUserRepository.save(user.copy(password = encoded))
+        val user = appUserRepository.findByUsername(username)
+        if (user != null) {
+            user.password = encoded
+            appUserRepository.save(user)
+        } else {
+            appUserRepository.save(AppUserEntity(username = username, password = encoded))
+        }
     }
 }

@@ -76,7 +76,8 @@ class PhraseService(
                 return choices.filter { it.usages == lowestUsage }
                     .random()
                     .let { entity ->
-                        phraseRepository.save(entity.copy(usages = entity.usages + 1))
+                        entity.usages++
+                        phraseRepository.save(entity)
                         val source = entity.source
                         if (source != null) {
                             getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())
