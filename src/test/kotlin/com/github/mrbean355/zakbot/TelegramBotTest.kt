@@ -10,10 +10,12 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import java.util.Properties
 
 class TelegramBotTest {
     @MockK
@@ -43,12 +45,17 @@ class TelegramBotTest {
         every { ignoredSubmissionRepository.count() } returns 3L
         every { telegramClient.execute(any<SendMessage>()) } returns mockk()
 
+        val buildProperties = BuildProperties(Properties().apply {
+            setProperty("version", "3.0.0")
+        })
+
         bot = TelegramBot(
             applicationContext = applicationContext,
             phraseRepository = phraseRepository,
             ignoredUserRepository = ignoredUserRepository,
             ignoredSubmissionRepository = ignoredSubmissionRepository,
             botToken = "dummy-token",
+            buildProperties = buildProperties,
         ).apply {
             this.telegramClient = this@TelegramBotTest.telegramClient
         }

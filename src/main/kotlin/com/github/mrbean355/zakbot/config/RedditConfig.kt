@@ -1,11 +1,11 @@
 package com.github.mrbean355.zakbot.config
 
-import com.github.mrbean355.zakbot.AppVersion
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.reddit.RedditAuthService
 import com.github.mrbean355.zakbot.reddit.RedditLoggingInterceptor
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
@@ -19,7 +19,9 @@ import org.springframework.web.client.RestClient
 import java.time.Duration
 
 @Configuration
-class RedditConfig {
+class RedditConfig(
+    private val buildProperties: BuildProperties,
+) {
 
     @Bean
     fun clientHttpRequestFactory(environment: Environment): ClientHttpRequestFactory {
@@ -85,7 +87,7 @@ class RedditConfig {
 
     fun getUserAgentHeader(environment: Environment): String {
         val isDev = environment.acceptsProfiles(Profiles.of("dev"))
-        val version = if (isDev) "$AppVersion-dev" else AppVersion
+        val version = if (isDev) "${buildProperties.version}-dev" else buildProperties.version
         return "bot:$BotUsername:$version (by /u/$AuthorUsername)"
     }
 }

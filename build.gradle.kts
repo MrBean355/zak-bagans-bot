@@ -84,16 +84,6 @@ testing {
     }
 }
 
-val generateBuildConfig = tasks.register("generateBuildConfig") {
-    group = "build"
-    description = "Generates BuildConfig.kt containing application metadata"
-    file("src/main/kotlin/com/github/mrbean355/zakbot/BuildConfig.kt").writeText(
-        "package com.github.mrbean355.zakbot\n" +
-                "\n" +
-                "const val AppVersion = \"$version\""
-    )
-}
-
-tasks.withType<KotlinCompile> {
-    dependsOn(generateBuildConfig)
+springBoot {
+    buildInfo()
 }

@@ -1,6 +1,5 @@
 package com.github.mrbean355.zakbot.config
 
-import com.github.mrbean355.zakbot.AppVersion
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.reddit.RedditAuthService
@@ -12,6 +11,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.boot.info.BuildProperties
 import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
 import org.springframework.http.HttpMethod
@@ -26,10 +26,14 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.*
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
+import java.util.Properties
 import java.util.function.Consumer
 
 class RedditConfigTest {
-    private val config = RedditConfig()
+    private val buildProperties = BuildProperties(Properties().apply {
+        setProperty("version", "3.0.0")
+    })
+    private val config = RedditConfig(buildProperties)
     private val environment: Environment = mockk()
 
     @BeforeEach
@@ -88,7 +92,7 @@ class RedditConfigTest {
 
         val header = config.getUserAgentHeader(environment)
 
-        assertEquals("bot:$BotUsername:$AppVersion-dev (by /u/$AuthorUsername)", header)
+        assertEquals("bot:$BotUsername:3.0.0-dev (by /u/$AuthorUsername)", header)
     }
 
     @Test
@@ -97,7 +101,7 @@ class RedditConfigTest {
 
         val header = config.getUserAgentHeader(environment)
 
-        assertEquals("bot:$BotUsername:$AppVersion (by /u/$AuthorUsername)", header)
+        assertEquals("bot:$BotUsername:3.0.0 (by /u/$AuthorUsername)", header)
     }
 
     @Test
@@ -108,7 +112,7 @@ class RedditConfigTest {
 
         server.expect(requestTo("https://www.reddit.com/test"))
             .andExpect(method(HttpMethod.GET))
-            .andExpect(header("User-Agent", "bot:$BotUsername:$AppVersion (by /u/$AuthorUsername)"))
+            .andExpect(header("User-Agent", "bot:$BotUsername:3.0.0 (by /u/$AuthorUsername)"))
             .andRespond(withSuccess("auth-ok", MediaType.TEXT_PLAIN))
 
         val response = authClient.get().uri("/test").retrieve().body(String::class.java)

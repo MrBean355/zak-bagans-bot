@@ -6,6 +6,7 @@ import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -34,6 +35,7 @@ class TelegramBot(
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
     @Value($$"${TELEGRAM_TOKEN}") private val botToken: String,
+    private val buildProperties: BuildProperties,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
     internal var telegramClient: TelegramClient = OkHttpTelegramClient(botToken)
@@ -65,7 +67,7 @@ class TelegramBot(
     private fun buildStatusMessage(): String {
         return getString(
             "telegram.bot_status_response",
-            AppVersion,
+            buildProperties.version,
             getUptime().ifBlank { "< 1 second" },
             getMemoryUsage(),
             SubredditName,
