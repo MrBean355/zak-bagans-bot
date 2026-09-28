@@ -4,10 +4,10 @@ import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.reddit.model.Comment
+import com.github.mrbean355.zakbot.reddit.model.Contribution
+import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.getString
-import net.dean.jraw.models.Comment
-import net.dean.jraw.models.PublicContribution
-import net.dean.jraw.models.Submission
 import org.springframework.stereotype.Service
 
 private const val SUBSTITUTION_AUTHOR_NAME = "{author}"
@@ -92,11 +92,10 @@ class ContributionService(
     /**
      * Send a Telegram notification when someone mentions something 'bot' related.
      */
-    private fun checkForBotMention(contribution: PublicContribution<*>) {
+    private fun checkForBotMention(contribution: Contribution) {
         val text = when (contribution) {
             is Submission -> contribution.title + contribution.selfText.orEmpty()
             is Comment -> contribution.body
-            else -> return
         }.lowercase().trim()
 
         if (text.isGoodBot()) {
@@ -110,13 +109,26 @@ class ContributionService(
             "bagansbot" in text
         ) {
             when (contribution) {
-                is Submission -> telegramNotifier.sendMessage(getString("telegram.new_bot_mention_submission", contribution.title, contribution.url))
-                is Comment -> telegramNotifier.sendMessage(getString("telegram.new_bot_mention_comment", contribution.body, contribution.url))
+                is Submission -> telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.new_bot_mention_submission",
+                        contribution.title,
+                        contribution.url
+                    )
+                )
+
+                is Comment -> telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.new_bot_mention_comment",
+                        contribution.body,
+                        contribution.url
+                    )
+                )
             }
         }
     }
 
-    private fun PublicContribution<*>.isAuthorIgnored(): Boolean {
+    private fun Contribution.isAuthorIgnored(): Boolean {
         return botCache.isUserIgnored(author)
     }
 
@@ -128,7 +140,7 @@ class ContributionService(
         return filter(Char::isLetter).equals("badbot", ignoreCase = true)
     }
 
-    private fun String.substitute(contribution: PublicContribution<*>): String {
+    private fun String.substitute(contribution: Contribution): String {
         return replace(SUBSTITUTION_AUTHOR_NAME, contribution.author)
     }
 }

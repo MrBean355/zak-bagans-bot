@@ -3,9 +3,9 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.util.asPlainText
 import com.github.mrbean355.zakbot.util.getString
-import net.dean.jraw.models.Comment
 import org.springframework.stereotype.Service
 
 private const val COMMAND_PREFIX = "!$BotUsername "

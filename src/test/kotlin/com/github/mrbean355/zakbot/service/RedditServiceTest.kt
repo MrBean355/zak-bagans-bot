@@ -1,237 +1,379 @@
 package com.github.mrbean355.zakbot.service
 
-import io.mockk.MockKAnnotations
-import io.mockk.confirmVerified
-import io.mockk.every
-import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.justRun
-import io.mockk.mockk
-import io.mockk.verify
-import net.dean.jraw.RedditClient
-import net.dean.jraw.models.Comment
-import net.dean.jraw.models.Flair
-import net.dean.jraw.models.Listing
-import net.dean.jraw.models.Submission
-import net.dean.jraw.models.SubredditSort
-import net.dean.jraw.pagination.BarebonesPaginator
-import net.dean.jraw.references.CommentReference
-import net.dean.jraw.references.SelfUserFlairReference
-import net.dean.jraw.references.SubmissionReference
+import com.github.mrbean355.zakbot.SubredditName
+import com.github.mrbean355.zakbot.reddit.model.Comment
+import com.github.mrbean355.zakbot.reddit.model.RedditFlair
+import com.github.mrbean355.zakbot.reddit.model.Submission
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.test.web.client.MockRestServiceServer
+import org.springframework.test.web.client.match.MockRestRequestMatchers.content
+import org.springframework.test.web.client.match.MockRestRequestMatchers.method
+import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
+import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
+import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
+import org.springframework.web.client.RestClient
+import java.util.Date
 
-internal class RedditServiceTest {
-    @RelaxedMockK
-    private lateinit var client: RedditClient
-    private lateinit var service: RedditService
+class RedditServiceTest {
+    private lateinit var server: MockRestServiceServer
+    private lateinit var serviceWithReplies: RedditService
+    private lateinit var serviceWithoutReplies: RedditService
 
     @BeforeEach
-    internal fun setUp() {
-        MockKAnnotations.init(this)
-        service = RedditService(client, true)
+    fun setUp() {
+        val builder = RestClient.builder().baseUrl("https://oauth.reddit.com")
+        server = MockRestServiceServer.bindTo(builder).bufferContent().build()
+        val client = builder.build()
+
+        serviceWithReplies = RedditService(client, sendReplies = true)
+        serviceWithoutReplies = RedditService(client, sendReplies = false)
     }
 
     @Test
-    internal fun testGetSubmissionsSince() {
-        service.getSubmissionsSince(mockk())
-
-        verify {
-            client.subreddit("GhostAdventures")
-                .posts()
-                .sorting(SubredditSort.NEW)
-                .limit(5)
-                .build()
-        }
-        confirmVerified(client)
-    }
-
-    @Test
-    internal fun testGetCommentsSince() {
-        val builder = mockk<BarebonesPaginator.Builder<Comment>> {
-            every { limit(any()) } returns this
-            every { build() } returns mockk {
-                every { iterator() } returns mockk {
-                    every { hasNext() } returns false
-                }
+    fun testGetSubmissionsSince_FiltersByDate() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "user1",
+                      "title": "Title 1",
+                      "selftext": "Text 1",
+                      "created_utc": 1700000050.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/title_1/",
+                      "url": "https://reddit.com/r/GhostAdventures/comments/sub1/title_1/"
+                    }
+                  },
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub2",
+                      "name": "t3_sub2",
+                      "author": "user2",
+                      "title": "Title 2",
+                      "selftext": "Text 2",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/sub2/title_2/",
+                      "url": null
+                    }
+                  }
+                ]
+              }
             }
-        }
-        every { client.latestComments(any()) } returns builder
+        """.trimIndent()
 
-        service.getCommentsSince(mockk())
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        verify {
-            client.latestComments("GhostAdventures")
-            builder.limit(5)
-            builder.build()
-        }
-        confirmVerified(client, builder)
+        val results = serviceWithReplies.getSubmissionsSince(Date(1700000010_000L))
+
+        assertEquals(1, results.size)
+        assertEquals("sub1", results[0].id)
+        assertEquals("t3_sub1", results[0].fullName)
+        assertEquals("user1", results[0].author)
+        assertEquals("Title 1", results[0].title)
+        assertEquals(Date(1700000050_000L), results[0].created)
+        assertEquals("https://www.reddit.com/r/GhostAdventures/comments/sub1/title_1/", results[0].url)
+        server.verify()
     }
 
     @Test
-    internal fun testReplyToSubmission() {
-        val submissionRef = mockk<SubmissionReference> {
-            every { reply(any()) } returns mockk()
-        }
-        every { client.submission(any()) } returns submissionRef
-        val submission = mockk<Submission> {
-            every { id } returns "123-456"
-        }
+    fun testGetCommentsSince_FiltersByDate() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "com1",
+                      "name": "t1_com1",
+                      "author": "user1",
+                      "body": "Body 1",
+                      "link_id": "t3_post1",
+                      "parent_id": "t1_parent1",
+                      "created_utc": 1700000050.0,
+                      "permalink": "/r/GhostAdventures/comments/post1/title/com1/"
+                    }
+                  },
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "com2",
+                      "name": "t1_com2",
+                      "author": "user2",
+                      "body": "Body 2",
+                      "link_id": "t3_post1",
+                      "parent_id": "t3_post1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/post1/title/com2/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
 
-        service.replyToSubmission(submission, "Credibility...")
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/comments?limit=5"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        verify {
-            client.submission("123-456")
-            submissionRef.reply("Credibility...")
-        }
+        val results = serviceWithReplies.getCommentsSince(Date(1700000010_000L))
+
+        assertEquals(1, results.size)
+        assertEquals("com1", results[0].id)
+        assertEquals("t1_com1", results[0].fullName)
+        assertEquals("user1", results[0].author)
+        assertEquals("Body 1", results[0].body)
+        assertEquals("t3_post1", results[0].submissionFullName)
+        assertEquals("t1_parent1", results[0].parentFullName)
+        server.verify()
     }
 
     @Test
-    internal fun testReplyToComment() {
-        val commentRef = mockk<CommentReference> {
-            every { reply(any()) } returns mockk()
-        }
-        every { client.comment(any()) } returns commentRef
-        val comment = mockk<Comment> {
-            every { id } returns "123-456"
-        }
+    fun testReplyToSubmission_WhenRepliesEnabled_SendsPostRequest() {
+        server.expect(requestTo("https://oauth.reddit.com/api/comment"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
+            .andExpect(content().formDataContains(mapOf("api_type" to "json", "thing_id" to "t3_sub1", "text" to "Credibility...")))
+            .andRespond(withSuccess())
 
-        service.replyToComment(comment, "We want answers")
+        val submission = Submission("sub1", "t3_sub1", "author", Date(), "url", "Title", null)
+        serviceWithReplies.replyToSubmission(submission, "Credibility...")
 
-        verify {
-            client.comment("123-456")
-            commentRef.reply("We want answers")
-        }
+        server.verify()
     }
 
     @Test
-    internal fun testGetCommentSubmission_CallsApiCorrectly() {
-        val comment = mockk<Comment> {
-            every { submissionFullName } returns "t1_6afe8u"
-        }
+    fun testReplyToSubmission_WhenRepliesDisabled_DoesNotSendRequest() {
+        val submission = Submission("sub1", "t3_sub1", "author", Date(), "url", "Title", null)
+        serviceWithoutReplies.replyToSubmission(submission, "Credibility...")
 
-        service.getCommentSubmission(comment)
-
-        verify {
-            client.lookup("t1_6afe8u")
-        }
+        server.verify()
     }
 
     @Test
-    internal fun testGetCommentSubmission_ApiReturnsEmptyList_ReturnsNull() {
-        val comment = mockk<Comment> {
-            every { submissionFullName } returns "t1_6afe8u"
-        }
-        every { client.lookup(*anyVararg()) } returns Listing.empty()
+    fun testReplyToComment_WhenRepliesEnabled_SendsPostRequest() {
+        server.expect(requestTo("https://oauth.reddit.com/api/comment"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
+            .andExpect(content().formDataContains(mapOf("api_type" to "json", "thing_id" to "t1_com1", "text" to "We want answers")))
+            .andRespond(withSuccess())
 
-        val result = service.getCommentSubmission(comment)
+        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_post1", "t1_parent")
+        serviceWithReplies.replyToComment(comment, "We want answers")
+
+        server.verify()
+    }
+
+    @Test
+    fun testReplyToComment_WhenRepliesDisabled_DoesNotSendRequest() {
+        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_post1", "t1_parent")
+        serviceWithoutReplies.replyToComment(comment, "We want answers")
+
+        server.verify()
+    }
+
+    @Test
+    fun testGetCommentSubmission_WhenFound_ReturnsSubmission() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "author1",
+                      "title": "Post Title",
+                      "selftext": "Self text",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/",
+                      "url": "https://reddit.com"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_sub1", "t1_parent")
+        val result = serviceWithReplies.getCommentSubmission(comment)
+
+        assertNotNull(result)
+        assertEquals("sub1", result?.id)
+        assertEquals("Post Title", result?.title)
+        server.verify()
+    }
+
+    @Test
+    fun testGetCommentSubmission_WhenNotFound_ReturnsNull() {
+        val json = """{ "kind": "Listing", "data": { "children": [] } }"""
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_unknown"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_unknown", "t1_parent")
+        val result = serviceWithReplies.getCommentSubmission(comment)
 
         assertNull(result)
+        server.verify()
     }
 
     @Test
-    internal fun testGetCommentSubmission_ApiReturnsNonEmptyList_FirstItemIsNotSubmission_ReturnsNull() {
-        val comment = mockk<Comment> {
-            every { submissionFullName } returns "t1_6afe8u"
-        }
-        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(mockk<Comment>()))
-
-        val result = service.getCommentSubmission(comment)
+    fun testFindParentComment_WhenParentIsPost_ReturnsNullWithoutCallingApi() {
+        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_sub1", "t3_sub1")
+        val result = serviceWithReplies.findParentComment(comment)
 
         assertNull(result)
+        server.verify()
     }
 
     @Test
-    internal fun testGetCommentSubmission_ApiReturnsNonEmptyList_FirstItemIsComment_ReturnsComment() {
-        val comment = mockk<Comment> {
-            every { submissionFullName } returns "t1_6afe8u"
-        }
-        val parent = mockk<Submission>()
-        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(parent))
+    fun testFindParentComment_WhenParentIsComment_ReturnsComment() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "parent1",
+                      "name": "t1_parent1",
+                      "author": "parent_author",
+                      "body": "Parent body",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/title/parent1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
 
-        val result = service.getCommentSubmission(comment)
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_parent1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        assertSame(parent, result)
+        val comment = Comment("com1", "t1_com1", "author", Date(), "url", "body", "t3_sub1", "t1_parent1")
+        val result = serviceWithReplies.findParentComment(comment)
+
+        assertNotNull(result)
+        assertEquals("parent1", result?.id)
+        assertEquals("Parent body", result?.body)
+        server.verify()
     }
 
     @Test
-    internal fun testFindParentComment_CallsApiCorrectly() {
-        val comment = mockk<Comment> {
-            every { parentFullName } returns "t1_6afe8u"
-        }
+    fun testUserExists_WhenUserFoundAndNotSuspended_ReturnsTrue() {
+        val json = """{ "data": { "is_suspended": false } }"""
 
-        service.findParentComment(comment)
+        server.expect(requestTo("https://oauth.reddit.com/user/active_user/about"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        verify {
-            client.lookup("t1_6afe8u")
-        }
+        assertTrue(serviceWithReplies.userExists("active_user"))
+        server.verify()
     }
 
     @Test
-    internal fun testFindParentComment_ApiReturnsEmptyList_ReturnsNull() {
-        val comment = mockk<Comment> {
-            every { parentFullName } returns "t1_6afe8u"
-        }
-        every { client.lookup(*anyVararg()) } returns Listing.empty()
+    fun testUserExists_WhenUserSuspended_ReturnsFalse() {
+        val json = """{ "data": { "is_suspended": true } }"""
 
-        val result = service.findParentComment(comment)
+        server.expect(requestTo("https://oauth.reddit.com/user/banned_user/about"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        assertNull(result)
+        assertFalse(serviceWithReplies.userExists("banned_user"))
+        server.verify()
     }
 
     @Test
-    internal fun testFindParentComment_ApiReturnsNonEmptyList_FirstItemIsNotComment_ReturnsNull() {
-        val comment = mockk<Comment> {
-            every { parentFullName } returns "t1_6afe8u"
-        }
-        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(mockk<Submission>()))
+    fun testUserExists_WhenUserNotFound_ReturnsFalse() {
+        server.expect(requestTo("https://oauth.reddit.com/user/ghost_user/about"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND))
 
-        val result = service.findParentComment(comment)
-
-        assertNull(result)
+        assertFalse(serviceWithReplies.userExists("ghost_user"))
+        server.verify()
     }
 
     @Test
-    internal fun testFindParentComment_ApiReturnsNonEmptyList_FirstItemIsComment_ReturnsComment() {
-        val comment = mockk<Comment> {
-            every { parentFullName } returns "t1_6afe8u"
-        }
-        val parent = mockk<Comment>()
-        every { client.lookup(*anyVararg()) } returns Listing.create(null, listOf(parent))
+    fun testUserExists_WhenDataIsNull_ReturnsFalse() {
+        val json = """{ "data": null }"""
 
-        val result = service.findParentComment(comment)
+        server.expect(requestTo("https://oauth.reddit.com/user/shadow_user/about"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        assertSame(parent, result)
+        assertFalse(serviceWithReplies.userExists("shadow_user"))
+        server.verify()
     }
 
     @Test
-    internal fun testGetFlairOptions_ReturnsApiResult() {
-        val options = mockk<List<Flair>>()
-        every { client.subreddit("GhostAdventures") } returns mockk {
-            every { userFlairOptions() } returns options
-        }
+    fun testGetFlairOptions_ReturnsMappedFlairs() {
+        val json = """
+            [
+              { "id": "flair-1", "text": "Flair One" },
+              { "id": "flair-2", "text": "Flair Two" }
+            ]
+        """.trimIndent()
 
-        val result = service.getFlairOptions()
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/user_flair_v2"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
-        assertSame(options, result)
+        val result = serviceWithReplies.getFlairOptions()
+
+        assertEquals(2, result.size)
+        assertEquals("flair-1", result[0].id)
+        assertEquals("Flair One", result[0].text)
+        server.verify()
     }
 
     @Test
-    internal fun testSetBotFlair_InvokesApi() {
-        val selfFlair = mockk<SelfUserFlairReference> {
-            justRun { updateToTemplate(any(), any()) }
-        }
-        every { client.subreddit("GhostAdventures") } returns mockk {
-            every { selfUserFlair() } returns selfFlair
-        }
-        val flairChoice = mockk<Flair> {
-            every { id } returns "flair-id"
-            every { text } returns "flair-text"
-        }
+    fun testSetBotFlair_SendsSelectFlairRequest() {
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/selectflair"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
+            .andExpect(content().formDataContains(mapOf(
+                "api_type" to "json",
+                "name" to "ZakBagansBot",
+                "flair_template_id" to "flair-1",
+                "text" to "Flair One"
+            )))
+            .andRespond(withSuccess())
 
-        service.setBotFlair(flairChoice)
+        serviceWithReplies.setBotFlair(RedditFlair("flair-1", "Flair One"))
 
-        verify { selfFlair.updateToTemplate("flair-id", "flair-text") }
+        server.verify()
     }
 }

@@ -5,17 +5,17 @@ import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.phrases.GenericPhrase
+import com.github.mrbean355.zakbot.reddit.model.Comment
+import com.github.mrbean355.zakbot.reddit.model.Submission
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.mockk
 import io.mockk.verify
-import net.dean.jraw.models.Comment
-import net.dean.jraw.models.Submission
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.Date
 
 class PhraseServiceTest {
     @MockK
@@ -48,9 +48,7 @@ class PhraseServiceTest {
 
     @Test
     fun testFindPhrase_ForComment_ConvertsToLowercase() {
-        val comment = mockk<Comment> {
-            every { body } returns "Hello Zak"
-        }
+        val comment = createComment("Hello Zak")
 
         service.findPhrase(comment)
 
@@ -59,9 +57,7 @@ class PhraseServiceTest {
 
     @Test
     fun testFindPhrase_ForComment_ExcludesUrlsFromText() {
-        val comment = mockk<Comment> {
-            every { body } returns "Hello www.Zak.com"
-        }
+        val comment = createComment("Hello www.Zak.com")
 
         service.findPhrase(comment)
 
@@ -70,9 +66,7 @@ class PhraseServiceTest {
 
     @Test
     fun testFindPhrase_ForComment_ChanceNotMet_ReturnsNull() {
-        val comment = mockk<Comment> {
-            every { body } returns "Aaron"
-        }
+        val comment = createComment("Aaron")
 
         val actual = service.findPhrase(comment)
 
@@ -81,9 +75,7 @@ class PhraseServiceTest {
 
     @Test
     fun testFindPhrase_ForComment_MatchingText_ReturnsPhraseWithLeastUsages() {
-        val comment = mockk<Comment> {
-            every { body } returns "Hello Zak"
-        }
+        val comment = createComment("Hello Zak")
 
         val actual = service.findPhrase(comment)
 
@@ -92,9 +84,7 @@ class PhraseServiceTest {
 
     @Test
     fun testFindPhrase_ForComment_MatchingText_SavesIncrementedUsageCount() {
-        val comment = mockk<Comment> {
-            every { body } returns "Hello Zak"
-        }
+        val comment = createComment("Hello Zak")
 
         service.findPhrase(comment)
 
@@ -104,9 +94,7 @@ class PhraseServiceTest {
     @Test
     fun testFindPhrase_ForComment_MatchingText_QuoteWithSource_ReturnsPhraseWithSource() {
         every { phraseRepository.findByType(PhraseType.Generic) } returns listOf(PhraseEntity(1, "This is a generic quote.", 0, PhraseType.Generic, source = "Unit tests"))
-        val comment = mockk<Comment> {
-            every { body } returns "Hello Zak"
-        }
+        val comment = createComment("Hello Zak")
 
         val actual = service.findPhrase(comment)
 
@@ -116,9 +104,7 @@ class PhraseServiceTest {
     @Test
     fun testFindPhrase_ForComment_MatchingText_QuoteWithSource_ReturnsSourceWithEscapedParentheses() {
         every { phraseRepository.findByType(PhraseType.Generic) } returns listOf(PhraseEntity(1, "This is a generic quote.", 0, PhraseType.Generic, source = "Unit tests (House Calls)"))
-        val comment = mockk<Comment> {
-            every { body } returns "Hello Zak"
-        }
+        val comment = createComment("Hello Zak")
 
         val actual = service.findPhrase(comment)
 
@@ -128,9 +114,7 @@ class PhraseServiceTest {
     @Test
     fun testFindPhrase_ForComment_MatchingText_QuoteWithoutSource_ReturnsPhraseWithoutSource() {
         every { phraseRepository.findByType(PhraseType.Generic) } returns listOf(PhraseEntity(1, "This is a generic quote.", 0, PhraseType.Generic, source = null))
-        val comment = mockk<Comment> {
-            every { body } returns "Hello Zak"
-        }
+        val comment = createComment("Hello Zak")
 
         val actual = service.findPhrase(comment)
 
@@ -138,11 +122,18 @@ class PhraseServiceTest {
     }
 
     @Test
+    fun testFindPhrase_WhenNoChoicesInDatabase_ReturnsNull() {
+        every { phraseRepository.findByType(PhraseType.Generic) } returns emptyList()
+        val comment = createComment("Hello Zak")
+
+        val actual = service.findPhrase(comment)
+
+        assertNull(actual)
+    }
+
+    @Test
     fun testFindPhrase_ForSubmission_ChecksTitleAndBody() {
-        val submission = mockk<Submission> {
-            every { title } returns "Title"
-            every { selfText } returns "Hello Zak"
-        }
+        val submission = createSubmission("Title", "Hello Zak")
 
         service.findPhrase(submission)
 
@@ -196,4 +187,25 @@ class PhraseServiceTest {
             telegramNotifier.sendMessage(match { it.contains("Zozo phrase") && it.contains("Zozo") && it.contains("None") })
         }
     }
+
+    private fun createComment(body: String) = Comment(
+        id = "1",
+        fullName = "t1_1",
+        author = "tester",
+        created = Date(),
+        url = "https://reddit.com",
+        body = body,
+        submissionFullName = "t3_1",
+        parentFullName = "t1_parent",
+    )
+
+    private fun createSubmission(title: String, selfText: String?) = Submission(
+        id = "1",
+        fullName = "t3_1",
+        author = "tester",
+        created = Date(),
+        url = "https://reddit.com",
+        title = title,
+        selfText = selfText,
+    )
 }

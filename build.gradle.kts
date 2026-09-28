@@ -52,7 +52,7 @@ sonar {
     }
 }
 
-tasks.getByName<Jar>("jar") {
+tasks.named<Jar>("jar") {
     enabled = false
 }
 
@@ -67,7 +67,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security:4.1.1")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.1.1")
     implementation("org.postgresql:postgresql:42.7.13")
-    implementation("com.faendir.jraw:JRAW:1.2.0")
     implementation("org.telegram:telegrambots-client:10.3.0")
     implementation("org.telegram:telegrambots-springboot-longpolling-starter:10.3.0")
     implementation("org.commonmark:commonmark:0.30.0")
@@ -75,9 +74,10 @@ dependencies {
 
 testing {
     suites {
-        val test by getting(JvmTestSuite::class) {
+        named<JvmTestSuite>("test") {
             useJUnitJupiter("5.12.0")
             dependencies {
+                implementation("org.springframework.boot:spring-boot-starter-test:4.1.1")
                 implementation("io.mockk:mockk:1.14.11")
             }
         }
@@ -89,8 +89,8 @@ val generateBuildConfig = tasks.register("generateBuildConfig") {
     description = "Generates BuildConfig.kt containing application metadata"
     file("src/main/kotlin/com/github/mrbean355/zakbot/BuildConfig.kt").writeText(
         "package com.github.mrbean355.zakbot\n" +
-            "\n" +
-            "const val AppVersion = \"$version\""
+                "\n" +
+                "const val AppVersion = \"$version\""
     )
 }
 

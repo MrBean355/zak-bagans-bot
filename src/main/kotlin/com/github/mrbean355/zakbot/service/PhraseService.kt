@@ -6,9 +6,9 @@ import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
+import com.github.mrbean355.zakbot.reddit.model.Comment
+import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.getString
-import net.dean.jraw.models.Comment
-import net.dean.jraw.models.Submission
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import kotlin.random.Random
@@ -68,6 +68,9 @@ class PhraseService(
 
             if (phrase != null) {
                 val choices = phraseRepository.findByType(phrase.type())
+                if (choices.isEmpty()) {
+                    return null
+                }
                 val lowestUsage = choices.minOf { it.usages }
 
                 return choices.filter { it.usages == lowestUsage }
