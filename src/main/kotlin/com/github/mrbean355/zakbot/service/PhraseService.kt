@@ -37,14 +37,14 @@ class PhraseService(
     }
 
     @Transactional
-    fun addPhrase(content: String, type: Int, source: String?): PhraseEntity {
+    fun addPhrase(content: String, type: PhraseType, source: String?): PhraseEntity {
         val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
         return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source)).also {
             telegramNotifier.sendMessage(
                 getString(
                     "telegram.new_quote",
                     content,
-                    PhraseType.name(type),
+                    type.name,
                     source.orEmpty().ifBlank { "None" }
                 )
             )
