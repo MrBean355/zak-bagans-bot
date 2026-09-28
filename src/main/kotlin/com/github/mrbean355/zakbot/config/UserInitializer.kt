@@ -26,14 +26,18 @@ class UserInitializer(
         val username = adminUsername.ifBlank { "admin" }
         val password = adminPassword.ifBlank { null }
 
-        if (password != null) {
-            createOrUpdateUser(username, password)
-            logger.info("Admin user configured: $username")
-        } else if (environment.matchesProfiles("dev") && appUserRepository.count() == 0L) {
-            createOrUpdateUser(username, "password")
-            logger.warn("Dev profile active: default admin user created ($username / password)")
-        } else if (appUserRepository.count() == 0L) {
-            logger.warn("No ADMIN_PASSWORD provided and no users exist. Skipping admin account creation.")
+        when {
+            password != null -> {
+                createOrUpdateUser(username, password)
+                logger.info("Admin user configured: $username")
+            }
+            environment.matchesProfiles("dev") && appUserRepository.count() == 0L -> {
+                createOrUpdateUser(username, "password")
+                logger.warn("Dev profile active: default admin user created ($username / password)")
+            }
+            appUserRepository.count() == 0L -> {
+                logger.warn("No ADMIN_PASSWORD provided and no users exist. Skipping admin account creation.")
+            }
         }
     }
 
