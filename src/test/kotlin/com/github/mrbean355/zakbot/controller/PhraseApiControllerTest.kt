@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot.controller
 
+import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.service.PhraseService
 import io.mockk.MockKAnnotations
@@ -26,25 +27,31 @@ class PhraseApiControllerTest {
     @Test
     fun testGetAllPhrases_MapsEntitiesToDtos() {
         every { phraseService.getAllPhrases() } returns listOf(
-            PhraseEntity(1, "Quote 1", 0, 3, "Source 1"),
-            PhraseEntity(2, "Quote 2", 1, 0, null),
+            PhraseEntity(1, "Quote 1", 0, PhraseType.Generic, "Source 1"),
+            PhraseEntity(2, "Quote 2", 1, PhraseType.Aaron, null),
         )
 
         val result = controller.getAllPhrases()
 
         assertEquals(2, result.size)
-        assertEquals(PhraseApiController.PhraseDto(1, "Quote 1", 3, "Source 1"), result[0])
-        assertEquals(PhraseApiController.PhraseDto(2, "Quote 2", 0, null), result[1])
+        assertEquals(PhraseApiController.PhraseDto(1, "Quote 1", PhraseType.Generic, "Source 1"), result[0])
+        assertEquals(PhraseApiController.PhraseDto(2, "Quote 2", PhraseType.Aaron, null), result[1])
     }
 
     @Test
     fun testAddPhrase_DelegatesToServiceAndReturnsSavedDto() {
-        val dto = PhraseApiController.CreatePhraseDto("New quote", 0, "Source")
-        every { phraseService.addPhrase("New quote", 0, "Source") } returns PhraseEntity(42, "New quote", 0, 0, "Source")
+        val dto = PhraseApiController.CreatePhraseDto("New quote", PhraseType.Aaron, "Source")
+        every { phraseService.addPhrase("New quote", PhraseType.Aaron, "Source") } returns PhraseEntity(
+            42,
+            "New quote",
+            0,
+            PhraseType.Aaron,
+            "Source"
+        )
 
         val result = controller.addPhrase(dto)
 
-        assertEquals(PhraseApiController.PhraseDto(42, "New quote", 0, "Source"), result)
-        verify { phraseService.addPhrase("New quote", 0, "Source") }
+        assertEquals(PhraseApiController.PhraseDto(42, "New quote", PhraseType.Aaron, "Source"), result)
+        verify { phraseService.addPhrase("New quote", PhraseType.Aaron, "Source") }
     }
 }

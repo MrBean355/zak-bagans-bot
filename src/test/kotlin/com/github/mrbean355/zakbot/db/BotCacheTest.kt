@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.Instant
 import java.util.Optional
 
 private const val CurrentTime = 1_000_000L
@@ -47,7 +47,7 @@ internal class BotCacheTest {
 
     @Test
     internal fun testGetLastSubmissionTime_EntityPresent_ReturnsEntityValue() {
-        val lastChecked = mockk<Date>()
+        val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.findById("post") } returns Optional.of(LastCheckedEntity("post", lastChecked))
 
         val result = botCache.getLastSubmissionTime()
@@ -59,7 +59,7 @@ internal class BotCacheTest {
     @Test
     internal fun testGetLastSubmissionTime_EntityNotPresent_SavesEntityAndReturnsValue() {
         every { lastCheckedRepository.findById("post") } returns Optional.empty()
-        val lastChecked = mockk<Date>()
+        val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.save(any()) } returns LastCheckedEntity("post", lastChecked)
 
         val result = botCache.getLastSubmissionTime()
@@ -68,13 +68,13 @@ internal class BotCacheTest {
         val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
         assertEquals("post", slot.captured.key)
-        assertEquals(CurrentTime, slot.captured.value.time)
+        assertEquals(CurrentTime, slot.captured.value.toEpochMilli())
     }
 
     @Test
     internal fun testSetLastSubmissionTime_SavesEntity() {
         every { lastCheckedRepository.save(any()) } returns mockk()
-        val lastChecked = mockk<Date>()
+        val lastChecked = mockk<Instant>()
 
         botCache.setLastSubmissionTime(lastChecked)
 
@@ -86,7 +86,7 @@ internal class BotCacheTest {
 
     @Test
     internal fun testGetLastCommentTime_EntityPresent_ReturnsEntityValue() {
-        val lastChecked = mockk<Date>()
+        val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.findById("comment") } returns Optional.of(LastCheckedEntity("comment", lastChecked))
 
         val result = botCache.getLastCommentTime()
@@ -98,7 +98,7 @@ internal class BotCacheTest {
     @Test
     internal fun testGetLastCommentTime_EntityNotPresent_SavesEntityAndReturnsValue() {
         every { lastCheckedRepository.findById("comment") } returns Optional.empty()
-        val lastChecked = mockk<Date>()
+        val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.save(any()) } returns LastCheckedEntity("comment", lastChecked)
 
         val result = botCache.getLastCommentTime()
@@ -107,13 +107,13 @@ internal class BotCacheTest {
         val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
         assertEquals("comment", slot.captured.key)
-        assertEquals(CurrentTime, slot.captured.value.time)
+        assertEquals(CurrentTime, slot.captured.value.toEpochMilli())
     }
 
     @Test
     internal fun testSetLastCommentTime_SavesEntity() {
         every { lastCheckedRepository.save(any()) } returns mockk()
-        val lastChecked = mockk<Date>()
+        val lastChecked = mockk<Instant>()
 
         botCache.setLastCommentTime(lastChecked)
 
@@ -151,7 +151,7 @@ internal class BotCacheTest {
         verify { ignoredUserRepository.save(capture(slot)) }
         assertEquals("123", slot.captured.userId)
         assertEquals("somewhere", slot.captured.source)
-        assertEquals(CurrentTime, slot.captured.since.time)
+        assertEquals(CurrentTime, slot.captured.since.toEpochMilli())
     }
 
     @Test
@@ -181,7 +181,7 @@ internal class BotCacheTest {
         val slot = slot<IgnoredSubmissionEntity>()
         verify { ignoredSubmissionRepository.save(capture(slot)) }
         assertEquals("123", slot.captured.fullName)
-        assertEquals(CurrentTime, slot.captured.since.time)
+        assertEquals(CurrentTime, slot.captured.since.toEpochMilli())
         assertEquals("Sensitive topic", slot.captured.reason)
     }
 }

@@ -25,41 +25,51 @@ internal class PhraseTypeTest {
 
     @Test
     fun testConstants() {
-        assertEquals(0, PhraseType.Aaron)
-        assertEquals(1, PhraseType.Answers)
-        assertEquals(2, PhraseType.Feeling)
-        assertEquals(3, PhraseType.Generic)
-        assertEquals(4, PhraseType.Mercury)
-        assertEquals(5, PhraseType.Situation)
-        assertEquals(6, PhraseType.Trinity)
-        assertEquals(7, PhraseType.Understand)
-        assertEquals(8, PhraseType.Zozo)
+        assertEquals(0, PhraseType.Aaron.id)
+        assertEquals(1, PhraseType.Answers.id)
+        assertEquals(2, PhraseType.Feeling.id)
+        assertEquals(3, PhraseType.Generic.id)
+        assertEquals(4, PhraseType.Mercury.id)
+        assertEquals(5, PhraseType.Situation.id)
+        assertEquals(6, PhraseType.Trinity.id)
+        assertEquals(7, PhraseType.Understand.id)
+        assertEquals(8, PhraseType.Zozo.id)
     }
 
     @Test
-    internal fun testType_MapsToInt() {
-        assertEquals(0, mockk<AaronPhrase>().type())
-        assertEquals(1, mockk<AnswersPhrase>().type())
-        assertEquals(2, mockk<FeelingPhrase>().type())
-        assertEquals(3, mockk<GenericPhrase>().type())
-        assertEquals(4, mockk<MercuryPhrase>().type())
-        assertEquals(5, mockk<SituationPhrase>().type())
-        assertEquals(6, mockk<TrinityPhrase>().type())
-        assertEquals(7, mockk<UnderstandPhrase>().type())
-        assertEquals(8, mockk<ZozoPhrase>().type())
+    internal fun testType_MapsToEnum() {
+        assertEquals(PhraseType.Aaron, mockk<AaronPhrase>().type())
+        assertEquals(PhraseType.Answers, mockk<AnswersPhrase>().type())
+        assertEquals(PhraseType.Feeling, mockk<FeelingPhrase>().type())
+        assertEquals(PhraseType.Generic, mockk<GenericPhrase>().type())
+        assertEquals(PhraseType.Mercury, mockk<MercuryPhrase>().type())
+        assertEquals(PhraseType.Situation, mockk<SituationPhrase>().type())
+        assertEquals(PhraseType.Trinity, mockk<TrinityPhrase>().type())
+        assertEquals(PhraseType.Understand, mockk<UnderstandPhrase>().type())
+        assertEquals(PhraseType.Zozo, mockk<ZozoPhrase>().type())
     }
 
     @Test
     fun testName_MapsToString() {
-        assertEquals("Aaron", PhraseType.name(PhraseType.Aaron))
-        assertEquals("Answers", PhraseType.name(PhraseType.Answers))
-        assertEquals("Feeling", PhraseType.name(PhraseType.Feeling))
-        assertEquals("Generic", PhraseType.name(PhraseType.Generic))
-        assertEquals("Mercury", PhraseType.name(PhraseType.Mercury))
-        assertEquals("Situation", PhraseType.name(PhraseType.Situation))
-        assertEquals("Trinity", PhraseType.name(PhraseType.Trinity))
-        assertEquals("Understand", PhraseType.name(PhraseType.Understand))
-        assertEquals("Zozo", PhraseType.name(PhraseType.Zozo))
+        assertEquals("Aaron", PhraseType.Aaron.name)
+        assertEquals("Answers", PhraseType.Answers.name)
+        assertEquals("Feeling", PhraseType.Feeling.name)
+        assertEquals("Generic", PhraseType.Generic.name)
+        assertEquals("Mercury", PhraseType.Mercury.name)
+        assertEquals("Situation", PhraseType.Situation.name)
+        assertEquals("Trinity", PhraseType.Trinity.name)
+        assertEquals("Understand", PhraseType.Understand.name)
+        assertEquals("Zozo", PhraseType.Zozo.name)
+        assertEquals("Aaron", PhraseType.name(0))
         assertEquals("Unknown", PhraseType.name(999))
+    }
+
+    @Test
+    fun testFromJson_ParsesIdsAndNames() {
+        assertEquals(PhraseType.Aaron, PhraseType.fromJson(0))
+        assertEquals(PhraseType.Aaron, PhraseType.fromJson("0"))
+        assertEquals(PhraseType.Aaron, PhraseType.fromJson("Aaron"))
+        assertEquals(PhraseType.Aaron, PhraseType.fromJson("aaron"))
+        assertEquals(PhraseType.Zozo, PhraseType.fromJson(8))
     }
 }

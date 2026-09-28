@@ -6,9 +6,9 @@ import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
+import com.github.mrbean355.zakbot.reddit.model.Comment
+import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.getString
-import net.dean.jraw.models.Comment
-import net.dean.jraw.models.Submission
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import kotlin.random.Random
@@ -37,14 +37,14 @@ class PhraseService(
     }
 
     @Transactional
-    fun addPhrase(content: String, type: Int, source: String?): PhraseEntity {
+    fun addPhrase(content: String, type: PhraseType, source: String?): PhraseEntity {
         val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
         return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source)).also {
             telegramNotifier.sendMessage(
                 getString(
                     "telegram.new_quote",
                     content,
-                    PhraseType.name(type),
+                    type.name,
                     source.orEmpty().ifBlank { "None" }
                 )
             )
@@ -68,12 +68,16 @@ class PhraseService(
 
             if (phrase != null) {
                 val choices = phraseRepository.findByType(phrase.type())
+                if (choices.isEmpty()) {
+                    return null
+                }
                 val lowestUsage = choices.minOf { it.usages }
 
                 return choices.filter { it.usages == lowestUsage }
                     .random()
                     .let { entity ->
-                        phraseRepository.save(entity.copy(usages = entity.usages + 1))
+                        entity.usages++
+                        phraseRepository.save(entity)
                         val source = entity.source
                         if (source != null) {
                             getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())

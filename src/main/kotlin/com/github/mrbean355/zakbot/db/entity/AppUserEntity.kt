@@ -8,9 +8,23 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "app_user")
-data class AppUserEntity(
+class AppUserEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     val username: String,
-    val password: String,
-)
+    var password: String,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppUserEntity) return false
+        return if (id != 0L && other.id != 0L) {
+            id == other.id
+        } else {
+            username == other.username
+        }
+    }
+
+    override fun hashCode(): Int = username.hashCode()
+
+    override fun toString(): String = "AppUserEntity(id=$id, username='$username')"
+}

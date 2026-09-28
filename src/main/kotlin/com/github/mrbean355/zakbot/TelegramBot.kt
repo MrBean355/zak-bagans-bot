@@ -1,15 +1,15 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.config.TelegramProperties
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.ParseMode
@@ -20,9 +20,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.Duration
 import java.time.Instant
 
-private const val ChatId = "44692593"
-
-interface TelegramNotifier {
+fun interface TelegramNotifier {
     fun sendMessage(text: String)
 }
 
@@ -33,12 +31,12 @@ class TelegramBot(
     private val phraseRepository: PhraseRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
-    @Value($$"${TELEGRAM_TOKEN}") private val botToken: String,
+    private val telegramClient: TelegramClient,
+    private val buildProperties: BuildProperties,
+    private val telegramProperties: TelegramProperties,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
-    internal var telegramClient: TelegramClient = OkHttpTelegramClient(botToken)
-
-    override fun getBotToken(): String = botToken
+    override fun getBotToken(): String = telegramProperties.token
 
     override fun getUpdatesConsumer(): LongPollingUpdateConsumer = this
 
@@ -54,7 +52,7 @@ class TelegramBot(
     override fun sendMessage(text: String) {
         telegramClient.execute(
             SendMessage.builder()
-                .chatId(ChatId)
+                .chatId(telegramProperties.chatId)
                 .text(text)
                 .parseMode(ParseMode.MARKDOWN)
                 .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
@@ -65,7 +63,7 @@ class TelegramBot(
     private fun buildStatusMessage(): String {
         return getString(
             "telegram.bot_status_response",
-            AppVersion,
+            buildProperties.version,
             getUptime().ifBlank { "< 1 second" },
             getMemoryUsage(),
             SubredditName,

@@ -1,9 +1,8 @@
 package com.github.mrbean355.zakbot.controller
 
+import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.service.PhraseService
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
@@ -37,7 +36,7 @@ class PhraseApiController(
     data class PhraseDto(
         val id: Int,
         val content: String,
-        val type: Int,
+        val type: PhraseType,
         val source: String?
     )
 
@@ -45,9 +44,7 @@ class PhraseApiController(
         @field:NotBlank
         @field:Size(max = 255)
         val content: String,
-        @field:Min(0)
-        @field:Max(8)
-        val type: Int,
+        val type: PhraseType,
         @field:Size(max = 255)
         val source: String?
     )

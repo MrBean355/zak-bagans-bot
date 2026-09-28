@@ -3,13 +3,14 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.reddit.model.Comment
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.verify
-import net.dean.jraw.models.Comment
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class CommandServiceTest {
     @MockK
@@ -21,23 +22,17 @@ class CommandServiceTest {
     @MockK
     private lateinit var telegramNotifier: TelegramNotifier
 
-    @MockK
-    private lateinit var comment: Comment
     private lateinit var service: CommandService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxUnitFun = true)
-        every { comment.fullName } returns "abc123"
-        every { comment.submissionFullName } returns "def456"
-        every { comment.author } returns "tester"
-        every { comment.url } returns "www.reddit.com"
         service = CommandService(redditService, botCache, telegramNotifier)
     }
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_AlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore_user victim"
+        val comment = createComment("!$BotUsername ignore_user victim")
         every { botCache.isUserIgnored("victim") } returns true
 
         service.processAuthorCommand(comment)
@@ -52,7 +47,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_NotAlreadyIgnored_UserDoesNotExist_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore_user victim"
+        val comment = createComment("!$BotUsername ignore_user victim")
         every { botCache.isUserIgnored("victim") } returns false
         every { redditService.userExists("victim") } returns false
 
@@ -68,7 +63,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_NotAlreadyIgnored_UserExists_IgnoresUser() {
-        every { comment.body } returns "!$BotUsername ignore_user victim"
+        val comment = createComment("!$BotUsername ignore_user victim")
         every { botCache.isUserIgnored("victim") } returns false
         every { redditService.userExists("victim") } returns true
 
@@ -83,7 +78,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignoreUser_NotAlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername unignore_user victim"
+        val comment = createComment("!$BotUsername unignore_user victim")
         every { botCache.isUserIgnored("victim") } returns false
 
         service.processAuthorCommand(comment)
@@ -99,7 +94,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignoreUser_IsIgnored_UnignoresUser() {
-        every { comment.body } returns "!$BotUsername unignore_user victim"
+        val comment = createComment("!$BotUsername unignore_user victim")
         every { botCache.isUserIgnored("victim") } returns true
 
         service.processAuthorCommand(comment)
@@ -113,7 +108,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithReason_NotAlreadyIgnored_IgnoresSubmission() {
-        every { comment.body } returns "!$BotUsername ignore_post This is a complex reason."
+        val comment = createComment("!$BotUsername ignore_post This is a complex reason.")
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -127,7 +122,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithReason_AlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore_post This is a complex reason."
+        val comment = createComment("!$BotUsername ignore_post This is a complex reason.")
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -143,7 +138,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithoutReason_NotAlreadyIgnored_IgnoresSubmission() {
-        every { comment.body } returns "!$BotUsername ignore_post"
+        val comment = createComment("!$BotUsername ignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -157,7 +152,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithoutReason_AlreadyIgnored_DoesNothing() {
-        every { comment.body } returns "!$BotUsername ignore_post"
+        val comment = createComment("!$BotUsername ignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -173,7 +168,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignorePost_IsIgnored_UnignoresSubmission() {
-        every { comment.body } returns "!$BotUsername unignore_post"
+        val comment = createComment("!$BotUsername unignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -187,7 +182,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignorePost_NotAlreadyIgnored_UnignoresSubmission() {
-        every { comment.body } returns "!$BotUsername unignore_post"
+        val comment = createComment("!$BotUsername unignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -200,4 +195,16 @@ class CommandServiceTest {
             telegramNotifier.sendMessage(any())
         }
     }
+
+    private fun createComment(body: String) = Comment(
+        id = "abc123",
+        fullName = "abc123",
+        author = "tester",
+        created = Instant.now(),
+        url = "www.reddit.com",
+        body = body,
+        submissionFullName = "def456",
+        parentFullName = "t1_parent",
+    )
 }
+

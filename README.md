@@ -1,6 +1,6 @@
 # Zak Bagans Reddit Bot
 
-![Zak Bagans](zak.jpg)
+![Zak Bagans](docs/zak.jpg)
 
 *There are things in this world we will never fully understand... <sup>understand</sup>*
 
@@ -33,14 +33,14 @@ keywords, and a reply may be sent if the keywords match. **Keywords are checked 
 6. `Aaron` - 10% chance to send a random [Aaron phrase](https://zak-bagans-bot.herokuapp.com#aaron).
 7. `understand` - 20% chance to send a random [understand phrase](https://zak-bagans-bot.herokuapp.com#understand).
 8. `we want answers` - 25% chance to send a random [answers phrase](https://zak-bagans-bot.herokuapp.com#answers).
-9. `Zak` or `Bagans` - 20% chance send a random [generic phrase](https://zak-bagans-bot.herokuapp.com#generic).
+9. `Zak` or `Bagans` - 20% chance to send a random [generic phrase](https://zak-bagans-bot.herokuapp.com#generic).
 
 Each post/comment will only receive, at most, one reply from the bot. If the bot sends a reply for one of the keywords,
 it will not check for any of the others.
 
 All keywords have a chance to send a reply. If the chance prevents a reply from being sent, the next keyword in the list
-will be checked instead. For example, if a comment mentions "situation", there's a 50% chance to reply with a "situation
-phrase", and a 50% chance to skip to the next keyword in the list.
+will be checked instead. For example, if a comment mentions "situation", there's a 20% chance to reply with a "situation
+phrase", and an 80% chance to skip to the next keyword in the list.
 
 ## Opting Out
 
@@ -74,3 +74,49 @@ the issue template to get started. If you're unfamiliar with GitHub, feel free t
 - [Open an issue on GitHub](https://github.com/MrBean355/zak-bagans-bot/issues/new/choose) for any feedback related to
   the project.
 - [Message me on Reddit](https://www.reddit.com/user/Mr_Bean355) if you'd prefer.
+
+## Local Development
+
+### Prerequisites
+
+- **Java 25** (JDK 25)
+- **PostgreSQL** running locally on port 5432 with a database named `zakbot` (credentials `postgres` / `root`),
+  configurable in `src/main/resources/application-dev.properties`.
+
+### Running Locally
+
+Start the application with the `dev` profile:
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=dev'
+```
+
+When running in `dev` mode:
+
+- **Reddit replies are disabled** (`zakbot.replies.enabled=false`) to prevent sending live replies.
+- **Telegram notifications are stubbed**, logging messages to standard output instead of contacting Telegram.
+- **Admin user**: An initial admin account (`admin` / `password`) is automatically created if no users exist.
+- **Web UI**: Access the phrase viewer at `http://localhost:8080/` and the admin panel at
+  `http://localhost:8080/admin.html`.
+
+### Configuration
+
+The bot can be configured using standard Spring Boot properties or environment variables:
+
+| Property                  | Environment Variable     | Default    | Description                                      |
+|---------------------------|--------------------------|------------|--------------------------------------------------|
+| `reddit.account-password` | `BOT_ACCOUNT_PASSWORD`   | *(empty)*  | Reddit account password for authentication       |
+| `reddit.client-secret`    | `BOT_CLIENT_SECRET`      | *(empty)*  | Reddit script application client secret          |
+| `telegram.token`          | `TELEGRAM_TOKEN`         | *(empty)*  | Telegram Bot token for status updates and alerts |
+| `telegram.chat-id`        | `TELEGRAM_CHAT_ID`       | `44692593` | Telegram chat ID to receive notifications        |
+| `admin.username`          | `ADMIN_USERNAME`         | `admin`    | Username for the admin web dashboard             |
+| `admin.password`          | `ADMIN_PASSWORD`         | *(empty)*  | Password for the admin web dashboard             |
+| `zakbot.replies.enabled`  | `ZAKBOT_REPLIES_ENABLED` | `true`     | Toggle posting live replies to Reddit            |
+
+### Testing
+
+Run unit tests and verify the build:
+
+```bash
+./gradlew check
+```

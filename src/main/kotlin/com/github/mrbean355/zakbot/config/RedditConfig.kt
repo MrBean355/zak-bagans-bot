@@ -1,34 +1,93 @@
 package com.github.mrbean355.zakbot.config
 
-import com.github.mrbean355.zakbot.AppVersion
 import com.github.mrbean355.zakbot.AuthorUsername
-import com.github.mrbean355.zakbot.BotClientId
 import com.github.mrbean355.zakbot.BotUsername
-import net.dean.jraw.RedditClient
-import net.dean.jraw.http.OkHttpNetworkAdapter
-import net.dean.jraw.http.UserAgent
-import net.dean.jraw.oauth.Credentials
-import net.dean.jraw.oauth.OAuthHelper
-import org.springframework.beans.factory.annotation.Value
+import com.github.mrbean355.zakbot.reddit.RedditAuthService
+import com.github.mrbean355.zakbot.reddit.RedditLoggingInterceptor
+import org.springframework.beans.factory.ObjectProvider
+import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
+import org.springframework.core.env.Environment
+import org.springframework.core.env.Profiles
+import org.springframework.http.HttpStatus
+import org.springframework.http.client.BufferingClientHttpRequestFactory
+import org.springframework.http.client.ClientHttpRequestFactory
+import org.springframework.http.client.JdkClientHttpRequestFactory
+import org.springframework.web.client.RestClient
+import java.time.Duration
 
 @Configuration
 class RedditConfig(
-    @Value($$"${BOT_ACCOUNT_PASSWORD:}") private val botAccountPassword: String,
-    @Value($$"${BOT_CLIENT_SECRET:}") private val botClientSecret: String,
+    private val buildProperties: BuildProperties,
 ) {
 
     @Bean
-    fun provideRedditClient(): RedditClient = OAuthHelper.automatic(
-        OkHttpNetworkAdapter(UserAgent("bot", BotUsername, AppVersion, AuthorUsername)),
-        Credentials.script(
-            BotUsername,
-            botAccountPassword,
-            BotClientId,
-            botClientSecret
-        )
-    ).apply {
-        logHttp = false
+    fun clientHttpRequestFactory(environment: Environment): ClientHttpRequestFactory {
+        val baseFactory = JdkClientHttpRequestFactory().apply {
+            setReadTimeout(Duration.ofSeconds(15))
+        }
+        return if (environment.acceptsProfiles(Profiles.of("dev"))) {
+            BufferingClientHttpRequestFactory(baseFactory)
+        } else {
+            baseFactory
+        }
+    }
+
+    @Bean
+    fun restClientBuilder(
+        requestFactory: ClientHttpRequestFactory,
+        loggingInterceptor: ObjectProvider<RedditLoggingInterceptor>,
+    ): RestClient.Builder {
+        val builder = RestClient.builder()
+            .requestFactory(requestFactory)
+
+        loggingInterceptor.ifAvailable { interceptor ->
+            builder.requestInterceptor(interceptor)
+        }
+
+        return builder
+    }
+
+    @Bean
+    fun redditAuthRestClient(
+        builder: RestClient.Builder,
+        environment: Environment
+    ): RestClient {
+        return builder.clone()
+            .baseUrl("https://www.reddit.com")
+            .defaultHeader("User-Agent", getUserAgentHeader(environment))
+            .build()
+    }
+
+    @Bean
+    @Primary
+    fun redditRestClient(
+        authService: RedditAuthService,
+        builder: RestClient.Builder,
+        environment: Environment,
+    ): RestClient {
+        return builder.clone()
+            .baseUrl("https://oauth.reddit.com")
+            .defaultHeader("User-Agent", getUserAgentHeader(environment))
+            .requestInterceptor { request, body, execution ->
+                request.headers.setBearerAuth(authService.getAccessToken())
+                var response = execution.execute(request, body)
+                if (response.statusCode == HttpStatus.UNAUTHORIZED) {
+                    response.close()
+                    authService.invalidateToken()
+                    request.headers.setBearerAuth(authService.getAccessToken())
+                    response = execution.execute(request, body)
+                }
+                response
+            }
+            .build()
+    }
+
+    fun getUserAgentHeader(environment: Environment): String {
+        val isDev = environment.acceptsProfiles(Profiles.of("dev"))
+        val version = if (isDev) "${buildProperties.version}-dev" else buildProperties.version
+        return "bot:$BotUsername:$version (by /u/$AuthorUsername)"
     }
 }

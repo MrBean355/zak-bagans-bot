@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.config.TelegramProperties
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
@@ -10,10 +11,12 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import java.util.Properties
 
 class TelegramBotTest {
     @MockK
@@ -43,14 +46,34 @@ class TelegramBotTest {
         every { ignoredSubmissionRepository.count() } returns 3L
         every { telegramClient.execute(any<SendMessage>()) } returns mockk()
 
+        val buildProperties = BuildProperties(Properties().apply {
+            setProperty("version", "3.0.0")
+        })
+
         bot = TelegramBot(
             applicationContext = applicationContext,
             phraseRepository = phraseRepository,
             ignoredUserRepository = ignoredUserRepository,
             ignoredSubmissionRepository = ignoredSubmissionRepository,
-            botToken = "dummy-token",
-        ).apply {
-            this.telegramClient = this@TelegramBotTest.telegramClient
+            telegramClient = telegramClient,
+            buildProperties = buildProperties,
+            telegramProperties = TelegramProperties(
+                token = "dummy-token",
+                chatId = "123456",
+            ),
+        )
+    }
+
+    @Test
+    fun testSendMessage_SendsToConfiguredChatId() {
+        bot.sendMessage("Hello test")
+
+        verify {
+            telegramClient.execute(
+                match<SendMessage> { message ->
+                    message.chatId == "123456" && message.text == "Hello test"
+                }
+            )
         }
     }
 
@@ -67,7 +90,8 @@ class TelegramBotTest {
         verify {
             telegramClient.execute(
                 match<SendMessage> { message ->
-                    message.text.contains("ZakBot Status") &&
+                    message.chatId == "123456" &&
+                        message.text.contains("ZakBot Status") &&
                         message.text.contains("Quotes in DB: 150") &&
                         message.text.contains("Ignored users: 7") &&
                         message.text.contains("Ignored posts: 3")
