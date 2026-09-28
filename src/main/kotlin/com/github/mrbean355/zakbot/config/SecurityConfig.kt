@@ -54,17 +54,15 @@ class SecurityConfig {
     }
 }
 
-private class SpaCsrfTokenRequestHandler : CsrfTokenRequestAttributeHandler() {
-    private val delegate: CsrfTokenRequestHandler = XorCsrfTokenRequestAttributeHandler()
-
-    override fun handle(request: HttpServletRequest, response: HttpServletResponse, csrfToken: Supplier<CsrfToken>) {
-        delegate.handle(request, response, csrfToken)
-    }
+private class SpaCsrfTokenRequestHandler(
+    private val delegate: CsrfTokenRequestHandler = XorCsrfTokenRequestAttributeHandler(),
+    private val attributeHandler: CsrfTokenRequestAttributeHandler = CsrfTokenRequestAttributeHandler()
+) : CsrfTokenRequestHandler by delegate {
 
     override fun resolveCsrfTokenValue(request: HttpServletRequest, csrfToken: CsrfToken): String? {
         val hasHeader = StringUtils.hasText(request.getHeader(csrfToken.headerName))
         return if (hasHeader) {
-            super.resolveCsrfTokenValue(request, csrfToken)
+            attributeHandler.resolveCsrfTokenValue(request, csrfToken)
         } else {
             delegate.resolveCsrfTokenValue(request, csrfToken)
         }
