@@ -72,4 +72,25 @@ internal class PhraseTypeTest {
         assertEquals(PhraseType.Aaron, PhraseType.fromJson("aaron"))
         assertEquals(PhraseType.Zozo, PhraseType.fromJson(8))
     }
+
+    @Test
+    fun testFromId_UnknownId_ThrowsIllegalArgumentException() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            PhraseType.fromId(999)
+        }
+    }
+
+    @Test
+    fun testFromJson_UnknownString_ThrowsIllegalArgumentException() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            PhraseType.fromJson("UnknownType")
+        }
+    }
+
+    @Test
+    fun testFromJson_InvalidType_ThrowsIllegalArgumentException() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            PhraseType.fromJson(true)
+        }
+    }
 }

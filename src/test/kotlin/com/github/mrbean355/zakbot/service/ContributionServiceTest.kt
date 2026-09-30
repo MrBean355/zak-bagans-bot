@@ -44,6 +44,7 @@ class ContributionServiceTest {
         every { phraseService.findPhrase(any<Submission>()) } returns null
         every { phraseService.findPhrase(any<Comment>()) } returns null
         every { redditService.getCommentSubmission(any()) } returns null
+        every { redditService.findParentComment(any()) } returns null
 
         service = ContributionService(
             redditService = redditService,
@@ -136,6 +137,65 @@ class ContributionServiceTest {
 
         verify {
             redditService.replyToComment(comment, "Aaron, get in there")
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenMentionsBot_SendsTelegramNotification() {
+        val submission = createSubmission(author = "ghost_hunter", title = "Is this zakbot real?")
+
+        service.processSubmission(submission)
+
+        verify {
+            telegramNotifier.sendMessage(match { it.contains("Is this zakbot real?") })
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenMentionsGoodBot_DoesNotSendNotification() {
+        val submission = createSubmission(author = "ghost_hunter", title = "Good bot!")
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            telegramNotifier.sendMessage(match { it.contains("Good bot!") })
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenMentionsBot_SendsTelegramNotification() {
+        val comment = createComment(author = "commenter", body = "What a bot")
+
+        service.processComment(comment)
+
+        verify {
+            telegramNotifier.sendMessage(match { it.contains("What a bot") })
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenSubmissionIsIgnored_DoesNothing() {
+        val comment = createComment(author = "commenter", body = "Hello there")
+        every { botCache.isSubmissionIgnored(comment.submissionFullName) } returns true
+
+        service.processComment(comment)
+
+        verify(exactly = 0) {
+            redditService.replyToComment(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenParentSubmissionAuthorIsIgnored_DoesNothing() {
+        val comment = createComment(author = "commenter", body = "Hello there")
+        val submission = createSubmission(author = "ignored_author")
+        every { redditService.getCommentSubmission(comment) } returns submission
+        every { botCache.isUserIgnored("ignored_author") } returns true
+
+        service.processComment(comment)
+
+        verify(exactly = 0) {
+            redditService.replyToComment(any(), any())
         }
     }
 

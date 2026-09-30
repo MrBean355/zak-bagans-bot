@@ -377,4 +377,80 @@ class RedditServiceTest {
 
         server.verify()
     }
+
+    @Test
+    fun testGetSubmissionsSince_PaginatesWhenMoreResultsAvailable() {
+        val page1Json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": "t3_sub1",
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "user1",
+                      "title": "Title 1",
+                      "selftext": "Text 1",
+                      "created_utc": 1700000050.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/title_1/",
+                      "url": "https://reddit.com/r/GhostAdventures/comments/sub1/title_1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        val page2Json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub2",
+                      "name": "t3_sub2",
+                      "author": "user2",
+                      "title": "Title 2",
+                      "selftext": "Text 2",
+                      "created_utc": 1700000020.0,
+                      "permalink": "/r/GhostAdventures/comments/sub2/title_2/",
+                      "url": "https://reddit.com/r/GhostAdventures/comments/sub2/title_2/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(page1Json, MediaType.APPLICATION_JSON))
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5&after=t3_sub1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(page2Json, MediaType.APPLICATION_JSON))
+
+        val since = Instant.ofEpochMilli(1700000030_000L)
+        val result = serviceWithReplies.getSubmissionsSince(since)
+
+        assertEquals(1, result.size)
+        assertEquals("sub1", result[0].id)
+        server.verify()
+    }
+
+    @Test
+    fun testUserExists_OnServerError_ReturnsFalse() {
+        server.expect(requestTo("https://oauth.reddit.com/user/broken_user/about"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        assertFalse(serviceWithReplies.userExists("broken_user"))
+        server.verify()
+    }
 }
