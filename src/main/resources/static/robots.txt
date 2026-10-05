@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /login
+Disallow: /logout
+Disallow: /error
+Allow: /
