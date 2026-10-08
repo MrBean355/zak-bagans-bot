@@ -5,3 +5,5 @@ Disallow: /login
 Disallow: /logout
 Disallow: /error
 Allow: /
+
+Sitemap: https://zak-bagans-bot.herokuapp.com/sitemap.xml
