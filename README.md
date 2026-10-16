@@ -47,6 +47,11 @@ phrase", and an 80% chance to skip to the next keyword in the list.
 If you find the bot annoying, you can reply to one of its comments with `bad bot`. This will make the bot ignore all of
 your future posts and comments.
 
+## Praising the Bot
+
+If you enjoy the bot, you can reply to one of its comments with `good bot`, `great bot`, or `best bot`. There is a
+10% chance the bot will respond with appreciation in true Zak Bagans style.
+
 ## Special Commands
 
 There are some commands that can be sent to the bot via comments on Reddit, and **only the bot's author can send them**.

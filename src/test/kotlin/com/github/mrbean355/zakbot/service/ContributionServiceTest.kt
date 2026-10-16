@@ -4,6 +4,7 @@ import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
 import io.mockk.MockKAnnotations
@@ -13,6 +14,8 @@ import io.mockk.justRun
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.time.Instant
 
 class ContributionServiceTest {
@@ -43,6 +46,7 @@ class ContributionServiceTest {
         every { botCache.isSubmissionIgnored(any()) } returns false
         every { phraseService.findPhrase(any<Submission>()) } returns null
         every { phraseService.findPhrase(any<Comment>()) } returns null
+        every { phraseService.getPhrase(any()) } returns null
         every { redditService.getCommentSubmission(any()) } returns null
         every { redditService.findParentComment(any()) } returns null
 
@@ -52,6 +56,7 @@ class ContributionServiceTest {
             commandService = commandService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
+            randomRoll = { 0f },
         )
     }
 
@@ -126,6 +131,64 @@ class ContributionServiceTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = ["good bot!", "great bot!", "best bot!", "goodbot", "Great bot", "BEST BOT!"])
+    fun testProcessComment_WhenGoodBotReplyToBotComment_RepliesWithAppreciationAndSendsTelegramNotification(praise: String) {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "fan", body = praise, parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { phraseService.getPhrase(PhraseType.GoodBot) } returns "Thank you, {author}!"
+
+        service.processComment(comment)
+
+        verify {
+            telegramNotifier.sendMessage(match { it.contains("fan") && it.contains("Thank you, fan!") })
+            redditService.replyToComment(comment, "Thank you, fan!")
+        }
+        verify(exactly = 0) {
+            botCache.ignoreUser(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGoodBotReplyToBotComment_NoPhraseFound_DoesNotReply() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "fan", body = "good bot!", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { phraseService.getPhrase(PhraseType.GoodBot) } returns null
+
+        service.processComment(comment)
+
+        verify(exactly = 0) {
+            redditService.replyToComment(any(), any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGoodBotReplyToBotComment_ChanceRollFails_DoesNotReply() {
+        val testService = ContributionService(
+            redditService = redditService,
+            phraseService = phraseService,
+            commandService = commandService,
+            botCache = botCache,
+            telegramNotifier = telegramNotifier,
+            randomRoll = { 0.5f },
+        )
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "fan", body = "good bot!", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { phraseService.getPhrase(PhraseType.GoodBot) } returns "Thank you, {author}!"
+
+        testService.processComment(comment)
+
+        verify(exactly = 0) {
+            redditService.replyToComment(any(), any())
+            telegramNotifier.sendMessage(any())
+            phraseService.getPhrase(any())
+        }
+    }
+
     @Test
     fun testProcessComment_WhenPhraseFound_Replies() {
         val comment = createComment(author = "critic", body = "Aaron is crazy")
@@ -151,14 +214,15 @@ class ContributionServiceTest {
         }
     }
 
-    @Test
-    fun testProcessSubmission_WhenMentionsGoodBot_DoesNotSendNotification() {
-        val submission = createSubmission(author = "ghost_hunter", title = "Good bot!")
+    @ParameterizedTest
+    @ValueSource(strings = ["Good bot!", "Great bot!", "Best bot!"])
+    fun testProcessSubmission_WhenMentionsGoodBot_DoesNotSendNotification(praise: String) {
+        val submission = createSubmission(author = "ghost_hunter", title = praise)
 
         service.processSubmission(submission)
 
         verify(exactly = 0) {
-            telegramNotifier.sendMessage(match { it.contains("Good bot!") })
+            telegramNotifier.sendMessage(match { it.contains(praise) })
         }
     }
 

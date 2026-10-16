@@ -61,30 +61,35 @@ class PhraseService(
         return findPhrase(comment.body)
     }
 
+    @Transactional
+    fun getPhrase(type: PhraseType): String? {
+        val choices = phraseRepository.findByType(type)
+        if (choices.isEmpty()) {
+            return null
+        }
+        val lowestUsage = choices.minOf { it.usages }
+
+        return choices.filter { it.usages == lowestUsage }
+            .random()
+            .let { entity ->
+                entity.usages++
+                phraseRepository.save(entity)
+                val source = entity.source
+                if (source != null) {
+                    getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())
+                } else {
+                    entity.content
+                }
+            }
+    }
+
     private fun findPhrase(vararg inputs: String?): String? {
         inputs.filterNotNull().forEach { input ->
             val text = input.lowercase().replace(UrlRegex, "")
             val phrase = phrases.find { Random.nextFloat() <= it.getReplyChance(text) }
 
             if (phrase != null) {
-                val choices = phraseRepository.findByType(phrase.type())
-                if (choices.isEmpty()) {
-                    return null
-                }
-                val lowestUsage = choices.minOf { it.usages }
-
-                return choices.filter { it.usages == lowestUsage }
-                    .random()
-                    .let { entity ->
-                        entity.usages++
-                        phraseRepository.save(entity)
-                        val source = entity.source
-                        if (source != null) {
-                            getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())
-                        } else {
-                            entity.content
-                        }
-                    }
+                return getPhrase(phrase.type())
             }
         }
         return null

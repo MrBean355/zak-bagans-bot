@@ -4,13 +4,17 @@ import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Contribution
 import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
+import kotlin.random.Random
 
 private const val SUBSTITUTION_AUTHOR_NAME = "{author}"
+private const val GOOD_BOT_REPLY_CHANCE = 0.1f
+private val GOOD_BOT_PHRASES = setOf("goodbot", "greatbot", "bestbot")
 
 private val BOT_REGEX = """\bbot\b""".toRegex()
 
@@ -21,6 +25,7 @@ class ContributionService(
     private val commandService: CommandService,
     private val botCache: BotCache,
     private val telegramNotifier: TelegramNotifier,
+    private val randomRoll: () -> Float = { Random.nextFloat() },
 ) {
 
     /**
@@ -77,6 +82,13 @@ class ContributionService(
                 botCache.ignoreUser(comment.author, comment.fullName)
                 telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+            } else if (comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE) {
+                val response = phraseService.getPhrase(PhraseType.GoodBot)
+                    ?.substitute(comment)
+                if (response != null) {
+                    telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
+                    redditService.replyToComment(comment, response)
+                }
             }
             return
         }
@@ -133,7 +145,7 @@ class ContributionService(
     }
 
     private fun String.isGoodBot(): Boolean {
-        return filter(Char::isLetter).equals("goodbot", ignoreCase = true)
+        return filter(Char::isLetter).lowercase() in GOOD_BOT_PHRASES
     }
 
     private fun String.isBadBot(): Boolean {

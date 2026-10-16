@@ -25,7 +25,8 @@ enum class PhraseType(
     Situation(5),
     Trinity(6),
     Understand(7),
-    Zozo(8);
+    Zozo(8),
+    GoodBot(9);
 
     companion object {
         @JsonCreator
