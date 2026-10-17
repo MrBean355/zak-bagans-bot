@@ -48,8 +48,8 @@ class ContributionService(
             ?.substitute(submission)
             ?: return
 
-        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))
         redditService.replyToSubmission(submission, response)
+        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))
     }
 
     /**
@@ -80,15 +80,15 @@ class ContributionService(
         if (redditService.findParentComment(comment)?.author == BotUsername) {
             if (comment.body.isBadBot()) {
                 botCache.ignoreUser(comment.author, comment.fullName)
-                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
             } else if (comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE) {
                 val phrase = phraseService.getPhrase(PhraseType.GoodBot)
                     ?.substitute(comment)
                 if (phrase != null) {
                     val response = getString("reddit.good_bot_footer", phrase)
-                    telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
                     redditService.replyToComment(comment, response)
+                    telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
                 }
             }
             return
@@ -98,8 +98,8 @@ class ContributionService(
             ?.substitute(comment)
             ?: return
 
-        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
         redditService.replyToComment(comment, response)
+        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
     }
 
     /**

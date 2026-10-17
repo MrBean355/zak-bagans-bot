@@ -160,4 +160,13 @@ class TelegramBotTest {
             )
         }
     }
+
+    @Test
+    fun testSendMessage_WhenTelegramClientThrows_CatchesAndDoesNotThrow() {
+        every { telegramClient.execute(any<SendMessage>()) } throws RuntimeException("Telegram API unavailable")
+
+        org.junit.jupiter.api.assertDoesNotThrow {
+            bot.sendMessage("Test message")
+        }
+    }
 }

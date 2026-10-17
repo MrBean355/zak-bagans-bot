@@ -64,9 +64,9 @@ fun updateBotFlair()
 2. Call `checkForBotMention(submission)`.
 3. If `botCache.isUserIgnored(submission.author)` -> `return`.
 4. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
-5. Send Telegram alert:
+5. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
+6. Send Telegram alert:
    `telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))`.
-6. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
 
 ### 3.2 `processComment(comment: Comment)`
 
@@ -81,19 +81,19 @@ fun updateBotFlair()
     - If `redditService.findParentComment(comment)?.author == BotUsername`:
         - If `comment.body.isBadBot()`:
             - `botCache.ignoreUser(comment.author, comment.fullName)`
-            - Send `telegram.new_ignored_user`
             - Reply with `reddit.new_user_ignored`
+            - Send `telegram.new_ignored_user`
         - Else if `comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE`:
             - `val phrase = phraseService.getPhrase(PhraseType.GoodBot)?.substitute(comment)`
             - If non-null:
                 - `val response = getString("reddit.good_bot_footer", phrase)`
-                - Send `telegram.good_bot_praise`
                 - Reply with `response`
+                - Send `telegram.good_bot_praise`
         - `return`
 5. Search phrase: `val response = phraseService.findPhrase(comment)?.substitute(comment) ?: return`.
-6. Send Telegram alert:
+6. Post Reddit reply: `redditService.replyToComment(comment, response)`.
+7. Send Telegram alert:
    `telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))`.
-7. Post Reddit reply: `redditService.replyToComment(comment, response)`.
 
 ---
 

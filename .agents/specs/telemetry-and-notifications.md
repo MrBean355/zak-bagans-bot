@@ -21,6 +21,8 @@ outbound event catalog.
 3. **Escaping**: Since Markdown mode is used, avoid unescaped Markdown syntax that could break Telegram message
    delivery.
 4. **Chat ID Binding**: Outbound messages are always sent to `telegramProperties.chatId`.
+5. **Resilient Delivery**: Failures in `sendMessage()` (e.g. Telegram API outages or Markdown parsing issues) MUST be
+   caught and logged as errors, never propagating exceptions that could abort background processing.
 
 ---
 
