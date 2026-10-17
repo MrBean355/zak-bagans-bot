@@ -28,6 +28,9 @@ This specification defines the scheduled polling, API pagination, contribution i
    `commandService.processAuthorCommand()` and immediately returned.
 7. **Parent Submission Caching**: `RedditService.getCommentSubmission()` MUST cache parent submissions in an in-memory
    LRU cache (capacity 100) to prevent redundant `GET /api/info` calls when multiple comments belong to the same post.
+8. **Reddit API Resilience**: Write operations (`postCommentReply`, `setBotFlair`) and lookups (`findParentComment`,
+   `getFlairOptions`) MUST catch exceptions and log errors/warnings to prevent transient API outages or network
+   glitches from crashing scheduled jobs.
 
 ---
 

@@ -172,6 +172,18 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testReplyToSubmission_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/api/comment"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val submission = Submission("sub1", "t3_sub1", "author", Instant.now(), "url", "Title", null)
+        serviceWithReplies.replyToSubmission(submission, "Credibility...")
+
+        server.verify()
+    }
+
+    @Test
     fun testReplyToComment_WhenRepliesEnabled_SendsPostRequest() {
         server.expect(requestTo("https://oauth.reddit.com/api/comment"))
             .andExpect(method(HttpMethod.POST))
@@ -189,6 +201,18 @@ class RedditServiceTest {
     fun testReplyToComment_WhenRepliesDisabled_DoesNotSendRequest() {
         val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_post1", "t1_parent")
         serviceWithoutReplies.replyToComment(comment, "We want answers")
+
+        server.verify()
+    }
+
+    @Test
+    fun testReplyToComment_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/api/comment"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_post1", "t1_parent")
+        serviceWithReplies.replyToComment(comment, "We want answers")
 
         server.verify()
     }
@@ -348,6 +372,19 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testFindParentComment_WhenApiFails_ReturnsNull() {
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_error"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t1_error")
+        val result = serviceWithReplies.findParentComment(comment)
+
+        assertNull(result)
+        server.verify()
+    }
+
+    @Test
     fun testUserExists_WhenUserFoundAndNotSuspended_ReturnsTrue() {
         val json = """{ "data": { "is_suspended": false } }"""
 
@@ -415,6 +452,18 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testGetFlairOptions_WhenApiFails_ReturnsEmptyList() {
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/user_flair_v2"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val result = serviceWithReplies.getFlairOptions()
+
+        assertTrue(result.isEmpty())
+        server.verify()
+    }
+
+    @Test
     fun testSetBotFlair_SendsSelectFlairRequest() {
         server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/selectflair"))
             .andExpect(method(HttpMethod.POST))
@@ -426,6 +475,17 @@ class RedditServiceTest {
                 "text" to "Flair One"
             )))
             .andRespond(withSuccess())
+
+        serviceWithReplies.setBotFlair(RedditFlair("flair-1", "Flair One"))
+
+        server.verify()
+    }
+
+    @Test
+    fun testSetBotFlair_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/selectflair"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
 
         serviceWithReplies.setBotFlair(RedditFlair("flair-1", "Flair One"))
 
