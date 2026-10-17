@@ -110,14 +110,29 @@ class RedditService(
         }
     }
 
+    private val submissionCache = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Submission>(64, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Submission>?) = size > 100
+        }
+    )
+
     /** @return the submission that the [comment] belongs to, or null if not found. */
     fun getCommentSubmission(comment: Comment): Submission? {
-        val response = client.get()
-            .uri("/api/info?id={id}", comment.submissionFullName)
-            .retrieve()
-            .body(object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {})
+        submissionCache[comment.submissionFullName]?.let { return it }
 
-        return response?.data?.children?.firstOrNull()?.data?.toDomain()
+        return try {
+            val response = client.get()
+                .uri("/api/info?id={id}", comment.submissionFullName)
+                .retrieve()
+                .body(object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {})
+
+            response?.data?.children?.firstOrNull()?.data?.toDomain()?.also {
+                submissionCache[comment.submissionFullName] = it
+            }
+        } catch (ex: Exception) {
+            logger.warn("Failed to get submission for comment: {}", comment.fullName, ex)
+            null
+        }
     }
 
     /** @return the parent comment of the [comment], or null if the parent is not a comment. */

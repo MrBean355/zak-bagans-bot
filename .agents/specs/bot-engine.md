@@ -25,6 +25,8 @@ This specification defines the scheduled polling, API pagination, contribution i
 5. **No Self-Replies**: Comments authored by `BotUsername` must never be evaluated for quote matching.
 6. **No Command Mixing**: Comments authored by `AuthorUsername` are routed exclusively to
    `commandService.processAuthorCommand()` and immediately returned.
+7. **Parent Submission Caching**: `RedditService.getCommentSubmission()` MUST cache parent submissions in an in-memory
+   LRU cache (capacity 100) to prevent redundant `GET /api/info` calls when multiple comments belong to the same post.
 
 ---
 

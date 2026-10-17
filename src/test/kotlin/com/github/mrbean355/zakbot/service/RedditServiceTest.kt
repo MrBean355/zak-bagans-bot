@@ -247,6 +247,60 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testGetCommentSubmission_UsesCacheForSubsequentCalls() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "author1",
+                      "title": "Post Title",
+                      "selftext": "Self text",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/",
+                      "url": "https://reddit.com"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comment1 = Comment("com1", "t1_com1", "author1", Instant.now(), "url1", "body1", "t3_sub1", "t1_parent1")
+        val comment2 = Comment("com2", "t1_com2", "author2", Instant.now(), "url2", "body2", "t3_sub1", "t1_parent2")
+
+        val result1 = serviceWithReplies.getCommentSubmission(comment1)
+        val result2 = serviceWithReplies.getCommentSubmission(comment2)
+
+        assertNotNull(result1)
+        assertNotNull(result2)
+        assertEquals(result1, result2)
+        server.verify()
+    }
+
+    @Test
+    fun testGetCommentSubmission_WhenApiFails_ReturnsNull() {
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_error"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_error", "t1_parent")
+        val result = serviceWithReplies.getCommentSubmission(comment)
+
+        assertNull(result)
+        server.verify()
+    }
+
+    @Test
     fun testFindParentComment_WhenParentIsPost_ReturnsNullWithoutCallingApi() {
         val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t3_sub1")
         val result = serviceWithReplies.findParentComment(comment)
