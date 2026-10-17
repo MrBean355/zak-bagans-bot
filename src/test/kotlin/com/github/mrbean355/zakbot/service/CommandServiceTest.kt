@@ -32,7 +32,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_AlreadyIgnored_DoesNothing() {
-        val comment = createComment("!$BotUsername ignore_user victim")
+        val comment = createComment("u/$BotUsername ignore_user victim")
         every { botCache.isUserIgnored("victim") } returns true
 
         service.processAuthorCommand(comment)
@@ -47,7 +47,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_NotAlreadyIgnored_UserDoesNotExist_DoesNothing() {
-        val comment = createComment("!$BotUsername ignore_user victim")
+        val comment = createComment("u/$BotUsername ignore_user victim")
         every { botCache.isUserIgnored("victim") } returns false
         every { redditService.userExists("victim") } returns false
 
@@ -63,7 +63,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnoreUser_NotAlreadyIgnored_UserExists_IgnoresUser() {
-        val comment = createComment("!$BotUsername ignore_user victim")
+        val comment = createComment("u/$BotUsername ignore_user victim")
         every { botCache.isUserIgnored("victim") } returns false
         every { redditService.userExists("victim") } returns true
 
@@ -78,7 +78,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignoreUser_NotAlreadyIgnored_DoesNothing() {
-        val comment = createComment("!$BotUsername unignore_user victim")
+        val comment = createComment("u/$BotUsername unignore_user victim")
         every { botCache.isUserIgnored("victim") } returns false
 
         service.processAuthorCommand(comment)
@@ -94,7 +94,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignoreUser_IsIgnored_UnignoresUser() {
-        val comment = createComment("!$BotUsername unignore_user victim")
+        val comment = createComment("u/$BotUsername unignore_user victim")
         every { botCache.isUserIgnored("victim") } returns true
 
         service.processAuthorCommand(comment)
@@ -108,7 +108,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithReason_NotAlreadyIgnored_IgnoresSubmission() {
-        val comment = createComment("!$BotUsername ignore_post This is a complex reason.")
+        val comment = createComment("u/$BotUsername ignore_post This is a complex reason.")
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -122,7 +122,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithReason_AlreadyIgnored_DoesNothing() {
-        val comment = createComment("!$BotUsername ignore_post This is a complex reason.")
+        val comment = createComment("u/$BotUsername ignore_post This is a complex reason.")
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -138,7 +138,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithoutReason_NotAlreadyIgnored_IgnoresSubmission() {
-        val comment = createComment("!$BotUsername ignore_post")
+        val comment = createComment("u/$BotUsername ignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -152,7 +152,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_IgnorePost_WithoutReason_AlreadyIgnored_DoesNothing() {
-        val comment = createComment("!$BotUsername ignore_post")
+        val comment = createComment("u/$BotUsername ignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -168,7 +168,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignorePost_IsIgnored_UnignoresSubmission() {
-        val comment = createComment("!$BotUsername unignore_post")
+        val comment = createComment("u/$BotUsername unignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns true
 
         service.processAuthorCommand(comment)
@@ -182,7 +182,7 @@ class CommandServiceTest {
 
     @Test
     fun testProcessAuthorCommand_UnignorePost_NotAlreadyIgnored_UnignoresSubmission() {
-        val comment = createComment("!$BotUsername unignore_post")
+        val comment = createComment("u/$BotUsername unignore_post")
         every { botCache.isSubmissionIgnored("def456") } returns false
 
         service.processAuthorCommand(comment)
@@ -193,6 +193,30 @@ class CommandServiceTest {
         verify(inverse = true) {
             botCache.unignoreSubmission(any())
             telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testProcessAuthorCommand_LeadingSlash_ProcessesCommand() {
+        val comment = createComment("/u/$BotUsername unignore_post")
+        every { botCache.isSubmissionIgnored("def456") } returns false
+
+        service.processAuthorCommand(comment)
+
+        verify {
+            redditService.replyToComment(comment, "Hmm, this post is not ignored 🤔")
+        }
+    }
+
+    @Test
+    fun testProcessAuthorCommand_CaseInsensitive_ProcessesCommand() {
+        val comment = createComment("U/$BotUsername unignore_post")
+        every { botCache.isSubmissionIgnored("def456") } returns false
+
+        service.processAuthorCommand(comment)
+
+        verify {
+            redditService.replyToComment(comment, "Hmm, this post is not ignored 🤔")
         }
     }
 

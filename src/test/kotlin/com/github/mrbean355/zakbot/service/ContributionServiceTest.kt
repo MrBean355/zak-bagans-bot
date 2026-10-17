@@ -99,7 +99,7 @@ class ContributionServiceTest {
 
     @Test
     fun testProcessComment_WhenAuthorIsBotAuthor_ProcessesAuthorCommand() {
-        val comment = createComment(author = AuthorUsername, body = "!$BotUsername ignore_user foo")
+        val comment = createComment(author = AuthorUsername, body = "u/$BotUsername ignore_user foo")
 
         service.processComment(comment)
 
