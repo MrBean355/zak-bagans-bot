@@ -61,6 +61,11 @@ There are some commands that can be sent to the bot via comments on Reddit, and 
 - `u/ZakBagansBot ignore_post <reason>` - Ignore all comments on the current post. The reason is optional.
 - `u/ZakBagansBot unignore_post` - Stop ignoring the current post.
 
+## Specifications
+
+Detailed functional and technical specifications for the bot's architecture, phrase detection pipeline, author commands,
+telemetry, security, and database schema can be found in the [.agents/specs](.agents/specs) directory.
+
 ## Contributing
 
 Any contributions by the community are welcome!
