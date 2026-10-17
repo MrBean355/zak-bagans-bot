@@ -142,8 +142,8 @@ class ContributionServiceTest {
         service.processComment(comment)
 
         verify {
-            telegramNotifier.sendMessage(match { it.contains("fan") && it.contains("Thank you, fan!") })
-            redditService.replyToComment(comment, "Thank you, fan!")
+            telegramNotifier.sendMessage(match { it.contains("fan") && it.contains("Thank you, fan!\n\n^(Thank you ❤️)") })
+            redditService.replyToComment(comment, "Thank you, fan!\n\n^(Thank you ❤️)")
         }
         verify(exactly = 0) {
             botCache.ignoreUser(any(), any())

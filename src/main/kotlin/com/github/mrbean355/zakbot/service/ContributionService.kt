@@ -83,9 +83,10 @@ class ContributionService(
                 telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
             } else if (comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE) {
-                val response = phraseService.getPhrase(PhraseType.GoodBot)
+                val phrase = phraseService.getPhrase(PhraseType.GoodBot)
                     ?.substitute(comment)
-                if (response != null) {
+                if (phrase != null) {
+                    val response = getString("reddit.good_bot_footer", phrase)
                     telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
                     redditService.replyToComment(comment, response)
                 }
