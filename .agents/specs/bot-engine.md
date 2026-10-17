@@ -19,7 +19,8 @@ This specification defines the scheduled polling, API pagination, contribution i
    allow Spring context, database connections, and caches to initialize.
 2. **Fixed Polling Rate**: Polling occurs strictly every 15 minutes (`fixedRate = 15 * 60 * 1000L`).
 3. **Cursor Ordering**: Submissions and comments returned by Reddit API must be sorted descending by creation time; the
-   timestamp of the first (newest) item is persisted in `BotCache` as the cursor for the next poll.
+   timestamp of the first (newest) item is persisted in `BotCache` as the cursor for the next poll only after all
+   items in the batch have been processed.
 4. **Safety Page Bounding**: Paging backwards via Reddit API `after` token must be capped at `10` pages
    (`PageHistoryLimit = 10`) with `5` items per page (`PageSizeLimit = 5`).
 5. **No Self-Replies**: Comments authored by `BotUsername` must never be evaluated for quote matching.
@@ -40,11 +41,11 @@ fun checkContributions()
 ```
 
 - Calls `redditService.getSubmissionsSince(botCache.getLastSubmissionTime())`.
-- If non-empty: sets `botCache.setLastSubmissionTime(first.created)`.
 - For each submission: invokes `contributionService.processSubmission(it)`.
+- If non-empty: sets `botCache.setLastSubmissionTime(first.created)`.
 - Calls `redditService.getCommentsSince(botCache.getLastCommentTime())`.
-- If non-empty: sets `botCache.setLastCommentTime(first.created)`.
 - For each comment: invokes `contributionService.processComment(it)`.
+- If non-empty: sets `botCache.setLastCommentTime(first.created)`.
 
 ### 2.2 `updateBotFlair()`
 

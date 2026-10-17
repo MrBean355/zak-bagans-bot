@@ -59,11 +59,30 @@ class ZakBagansBotTest {
         bot.checkContributions()
 
         verify(ordering = io.mockk.Ordering.ORDERED) {
-            botCache.setLastSubmissionTime(subTime1)
             contributionService.processSubmission(submission1)
             contributionService.processSubmission(submission2)
-            botCache.setLastCommentTime(comTime1)
+            botCache.setLastSubmissionTime(subTime1)
             contributionService.processComment(comment1)
+            botCache.setLastCommentTime(comTime1)
+        }
+    }
+
+    @Test
+    fun testCheckContributions_WhenProcessSubmissionThrows_DoesNotAdvanceSubmissionTimestamp() {
+        val lastSubmissionTime = Instant.ofEpochMilli(1000L)
+        val subTime1 = Instant.ofEpochMilli(1500L)
+        val submission1 = mockk<Submission> { every { created } returns subTime1 }
+
+        every { botCache.getLastSubmissionTime() } returns lastSubmissionTime
+        every { redditService.getSubmissionsSince(lastSubmissionTime) } returns listOf(submission1)
+        every { contributionService.processSubmission(submission1) } throws RuntimeException("Boom")
+
+        org.junit.jupiter.api.assertThrows<RuntimeException> {
+            bot.checkContributions()
+        }
+
+        verify(exactly = 0) {
+            botCache.setLastSubmissionTime(any())
         }
     }
 
