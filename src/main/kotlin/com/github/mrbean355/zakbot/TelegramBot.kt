@@ -36,6 +36,8 @@ class TelegramBot(
     private val telegramProperties: TelegramProperties,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
+    private val logger = LoggerFactory.getLogger(TelegramBot::class.java)
+
     override fun getBotToken(): String = telegramProperties.token
 
     override fun getUpdatesConsumer(): LongPollingUpdateConsumer = this
@@ -50,14 +52,18 @@ class TelegramBot(
     }
 
     override fun sendMessage(text: String) {
-        telegramClient.execute(
-            SendMessage.builder()
-                .chatId(telegramProperties.chatId)
-                .text(text)
-                .parseMode(ParseMode.MARKDOWN)
-                .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
-                .build()
-        )
+        try {
+            telegramClient.execute(
+                SendMessage.builder()
+                    .chatId(telegramProperties.chatId)
+                    .text(text)
+                    .parseMode(ParseMode.MARKDOWN)
+                    .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
+                    .build()
+            )
+        } catch (ex: Exception) {
+            logger.error("Failed to send Telegram message", ex)
+        }
     }
 
     private fun buildStatusMessage(): String {

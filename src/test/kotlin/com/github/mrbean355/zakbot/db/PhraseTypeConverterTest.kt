@@ -11,6 +11,7 @@ class PhraseTypeConverterTest {
     fun testConvertToDatabaseColumn_MapsPhraseTypeToId() {
         assertEquals(0, converter.convertToDatabaseColumn(PhraseType.Aaron))
         assertEquals(8, converter.convertToDatabaseColumn(PhraseType.Zozo))
+        assertEquals(9, converter.convertToDatabaseColumn(PhraseType.GoodBot))
         assertNull(converter.convertToDatabaseColumn(null))
     }
 
@@ -18,6 +19,7 @@ class PhraseTypeConverterTest {
     fun testConvertToEntityAttribute_MapsIdToPhraseType() {
         assertEquals(PhraseType.Aaron, converter.convertToEntityAttribute(0))
         assertEquals(PhraseType.Zozo, converter.convertToEntityAttribute(8))
+        assertEquals(PhraseType.GoodBot, converter.convertToEntityAttribute(9))
         assertNull(converter.convertToEntityAttribute(null))
         assertNull(converter.convertToEntityAttribute(999))
     }

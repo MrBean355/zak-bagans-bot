@@ -47,14 +47,24 @@ phrase", and an 80% chance to skip to the next keyword in the list.
 If you find the bot annoying, you can reply to one of its comments with `bad bot`. This will make the bot ignore all of
 your future posts and comments.
 
+## Praising the Bot
+
+If you enjoy the bot, you can reply to one of its comments with `good bot`, `great bot`, or `best bot`. There is a
+10% chance the bot will respond with appreciation in true Zak Bagans style.
+
 ## Special Commands
 
 There are some commands that can be sent to the bot via comments on Reddit, and **only the bot's author can send them**.
 
-- `!ZakBagansBot ignore_user <username>` - Ignore the user's future posts and comments.
-- `!ZakBagansBot unignore_user <username>` - Stop ignoring the user.
-- `!ZakBagansBot ignore_post <reason>` - Ignore all comments on the current post. The reason is optional.
-- `!ZakBagansBot unignore_post` - Stop ignoring the current post.
+- `u/ZakBagansBot ignore_user <username>` - Ignore the user's future posts and comments.
+- `u/ZakBagansBot unignore_user <username>` - Stop ignoring the user.
+- `u/ZakBagansBot ignore_post <reason>` - Ignore all comments on the current post. The reason is optional.
+- `u/ZakBagansBot unignore_post` - Stop ignoring the current post.
+
+## Specifications
+
+Detailed functional and technical specifications for the bot's architecture, phrase detection pipeline, author commands,
+telemetry, security, and database schema can be found in the [.agents/specs](.agents/specs) directory.
 
 ## Contributing
 

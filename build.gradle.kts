@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.sonarqube.gradle.SonarTask
 
 plugins {
@@ -13,7 +12,7 @@ plugins {
 }
 
 group = "com.github.mrbean355"
-version = "3.0.0"
+version = "3.1.0"
 
 repositories {
     mavenCentral()

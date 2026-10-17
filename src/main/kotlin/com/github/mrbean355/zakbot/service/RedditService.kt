@@ -110,14 +110,29 @@ class RedditService(
         }
     }
 
+    private val submissionCache = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Submission>(64, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Submission>?) = size > 100
+        }
+    )
+
     /** @return the submission that the [comment] belongs to, or null if not found. */
     fun getCommentSubmission(comment: Comment): Submission? {
-        val response = client.get()
-            .uri("/api/info?id={id}", comment.submissionFullName)
-            .retrieve()
-            .body(object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {})
+        submissionCache[comment.submissionFullName]?.let { return it }
 
-        return response?.data?.children?.firstOrNull()?.data?.toDomain()
+        return try {
+            val response = client.get()
+                .uri("/api/info?id={id}", comment.submissionFullName)
+                .retrieve()
+                .body(object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {})
+
+            response?.data?.children?.firstOrNull()?.data?.toDomain()?.also {
+                submissionCache[comment.submissionFullName] = it
+            }
+        } catch (ex: Exception) {
+            logger.warn("Failed to get submission for comment: {}", comment.fullName, ex)
+            null
+        }
     }
 
     /** @return the parent comment of the [comment], or null if the parent is not a comment. */
@@ -125,12 +140,17 @@ class RedditService(
         if (!comment.parentFullName.startsWith("t1_")) {
             return null
         }
-        val response = client.get()
-            .uri("/api/info?id={id}", comment.parentFullName)
-            .retrieve()
-            .body(object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {})
+        return try {
+            val response = client.get()
+                .uri("/api/info?id={id}", comment.parentFullName)
+                .retrieve()
+                .body(object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {})
 
-        return response?.data?.children?.firstOrNull()?.data?.toDomain()
+            response?.data?.children?.firstOrNull()?.data?.toDomain()
+        } catch (ex: Exception) {
+            logger.warn("Failed to find parent comment: {}", comment.parentFullName, ex)
+            null
+        }
     }
 
     fun userExists(name: String): Boolean {
@@ -150,43 +170,56 @@ class RedditService(
     }
 
     fun getFlairOptions(): List<RedditFlair> {
-        val response = client.get()
-            .uri("/r/{subreddit}/api/user_flair_v2", SubredditName)
-            .retrieve()
-            .body(object : ParameterizedTypeReference<List<RedditFlairDto>>() {})
+        return try {
+            val response = client.get()
+                .uri("/r/{subreddit}/api/user_flair_v2", SubredditName)
+                .retrieve()
+                .body(object : ParameterizedTypeReference<List<RedditFlairDto>>() {})
 
-        return response.orEmpty().map { RedditFlair(it.id, it.text) }
+            response.orEmpty().map { RedditFlair(it.id, it.text) }
+        } catch (ex: Exception) {
+            logger.warn("Failed to get flair options", ex)
+            emptyList()
+        }
     }
 
     fun setBotFlair(flair: RedditFlair) {
-        val body = LinkedMultiValueMap<String, String>().apply {
-            add("api_type", "json")
-            add("name", BotUsername)
-            add("flair_template_id", flair.id)
-            add("text", flair.text)
-        }
+        try {
+            val body = LinkedMultiValueMap<String, String>().apply {
+                add("api_type", "json")
+                add("name", BotUsername)
+                add("flair_template_id", flair.id)
+                add("text", flair.text)
+            }
 
-        client.post()
-            .uri("/r/{subreddit}/api/selectflair", SubredditName)
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .body(body)
-            .retrieve()
-            .toBodilessEntity()
+            client.post()
+                .uri("/r/{subreddit}/api/selectflair", SubredditName)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity()
+        } catch (ex: Exception) {
+            logger.error("Failed to set bot flair to: {}", flair.text, ex)
+        }
     }
 
     private fun postCommentReply(thingId: String, text: String) {
-        val body = LinkedMultiValueMap<String, String>().apply {
-            add("api_type", "json")
-            add("thing_id", thingId)
-            add("text", text)
-        }
+        try {
+            val body = LinkedMultiValueMap<String, String>().apply {
+                add("api_type", "json")
+                add("thing_id", thingId)
+                add("text", text)
+            }
 
-        client.post()
-            .uri("/api/comment")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .body(body)
-            .retrieve()
-            .toBodilessEntity()
+            client.post()
+                .uri("/api/comment")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity()
+        } catch (ex: Exception) {
+            logger.error("Failed to post comment reply to thing: {}", thingId, ex)
+        }
     }
 
     private fun RedditSubmissionDto.toDomain() = Submission(

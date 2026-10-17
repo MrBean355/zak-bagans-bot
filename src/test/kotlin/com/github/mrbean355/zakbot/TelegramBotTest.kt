@@ -114,4 +114,59 @@ class TelegramBotTest {
             telegramClient.execute(any<SendMessage>())
         }
     }
+
+    @Test
+    fun testGetBotTokenAndConsumer() {
+        org.junit.jupiter.api.Assertions.assertEquals("dummy-token", bot.getBotToken())
+        org.junit.jupiter.api.Assertions.assertSame(bot, bot.getUpdatesConsumer())
+    }
+
+    @Test
+    fun testConsume_WhenStatusMessageWithBotMention_SendsStatus() {
+        val update = mockk<Update> {
+            every { message } returns mockk {
+                every { text } returns "/status@zakbagansbot"
+            }
+        }
+
+        bot.consume(listOf(update))
+
+        verify {
+            telegramClient.execute(
+                match<SendMessage> { message ->
+                    message.text.contains("ZakBot Status")
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testStatusMessage_WhenUptimeLessThanOneSecond_ShowsDefaultUptime() {
+        every { applicationContext.startupDate } returns System.currentTimeMillis()
+
+        val update = mockk<Update> {
+            every { message } returns mockk {
+                every { text } returns "/status"
+            }
+        }
+
+        bot.consume(listOf(update))
+
+        verify {
+            telegramClient.execute(
+                match<SendMessage> { message ->
+                    message.text.contains("< 1 second")
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testSendMessage_WhenTelegramClientThrows_CatchesAndDoesNotThrow() {
+        every { telegramClient.execute(any<SendMessage>()) } throws RuntimeException("Telegram API unavailable")
+
+        org.junit.jupiter.api.assertDoesNotThrow {
+            bot.sendMessage("Test message")
+        }
+    }
 }

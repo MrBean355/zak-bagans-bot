@@ -184,4 +184,22 @@ internal class BotCacheTest {
         assertEquals(CurrentTime, slot.captured.since.toEpochMilli())
         assertEquals("Sensitive topic", slot.captured.reason)
     }
+
+    @Test
+    internal fun testUnignoreUser_DeletesEntity() {
+        every { ignoredUserRepository.deleteById("123") } returns Unit
+
+        botCache.unignoreUser("123")
+
+        verify { ignoredUserRepository.deleteById("123") }
+    }
+
+    @Test
+    internal fun testUnignoreSubmission_DeletesEntity() {
+        every { ignoredSubmissionRepository.deleteById("123") } returns Unit
+
+        botCache.unignoreSubmission("123")
+
+        verify { ignoredSubmissionRepository.deleteById("123") }
+    }
 }

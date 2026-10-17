@@ -172,6 +172,18 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testReplyToSubmission_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/api/comment"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val submission = Submission("sub1", "t3_sub1", "author", Instant.now(), "url", "Title", null)
+        serviceWithReplies.replyToSubmission(submission, "Credibility...")
+
+        server.verify()
+    }
+
+    @Test
     fun testReplyToComment_WhenRepliesEnabled_SendsPostRequest() {
         server.expect(requestTo("https://oauth.reddit.com/api/comment"))
             .andExpect(method(HttpMethod.POST))
@@ -189,6 +201,18 @@ class RedditServiceTest {
     fun testReplyToComment_WhenRepliesDisabled_DoesNotSendRequest() {
         val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_post1", "t1_parent")
         serviceWithoutReplies.replyToComment(comment, "We want answers")
+
+        server.verify()
+    }
+
+    @Test
+    fun testReplyToComment_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/api/comment"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_post1", "t1_parent")
+        serviceWithReplies.replyToComment(comment, "We want answers")
 
         server.verify()
     }
@@ -247,6 +271,60 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testGetCommentSubmission_UsesCacheForSubsequentCalls() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "author1",
+                      "title": "Post Title",
+                      "selftext": "Self text",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/",
+                      "url": "https://reddit.com"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comment1 = Comment("com1", "t1_com1", "author1", Instant.now(), "url1", "body1", "t3_sub1", "t1_parent1")
+        val comment2 = Comment("com2", "t1_com2", "author2", Instant.now(), "url2", "body2", "t3_sub1", "t1_parent2")
+
+        val result1 = serviceWithReplies.getCommentSubmission(comment1)
+        val result2 = serviceWithReplies.getCommentSubmission(comment2)
+
+        assertNotNull(result1)
+        assertNotNull(result2)
+        assertEquals(result1, result2)
+        server.verify()
+    }
+
+    @Test
+    fun testGetCommentSubmission_WhenApiFails_ReturnsNull() {
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_error"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_error", "t1_parent")
+        val result = serviceWithReplies.getCommentSubmission(comment)
+
+        assertNull(result)
+        server.verify()
+    }
+
+    @Test
     fun testFindParentComment_WhenParentIsPost_ReturnsNullWithoutCallingApi() {
         val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t3_sub1")
         val result = serviceWithReplies.findParentComment(comment)
@@ -290,6 +368,19 @@ class RedditServiceTest {
         assertNotNull(result)
         assertEquals("parent1", result?.id)
         assertEquals("Parent body", result?.body)
+        server.verify()
+    }
+
+    @Test
+    fun testFindParentComment_WhenApiFails_ReturnsNull() {
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_error"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t1_error")
+        val result = serviceWithReplies.findParentComment(comment)
+
+        assertNull(result)
         server.verify()
     }
 
@@ -361,6 +452,18 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testGetFlairOptions_WhenApiFails_ReturnsEmptyList() {
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/user_flair_v2"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val result = serviceWithReplies.getFlairOptions()
+
+        assertTrue(result.isEmpty())
+        server.verify()
+    }
+
+    @Test
     fun testSetBotFlair_SendsSelectFlairRequest() {
         server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/selectflair"))
             .andExpect(method(HttpMethod.POST))
@@ -375,6 +478,93 @@ class RedditServiceTest {
 
         serviceWithReplies.setBotFlair(RedditFlair("flair-1", "Flair One"))
 
+        server.verify()
+    }
+
+    @Test
+    fun testSetBotFlair_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/api/selectflair"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        serviceWithReplies.setBotFlair(RedditFlair("flair-1", "Flair One"))
+
+        server.verify()
+    }
+
+    @Test
+    fun testGetSubmissionsSince_PaginatesWhenMoreResultsAvailable() {
+        val page1Json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": "t3_sub1",
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "user1",
+                      "title": "Title 1",
+                      "selftext": "Text 1",
+                      "created_utc": 1700000050.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/title_1/",
+                      "url": "https://reddit.com/r/GhostAdventures/comments/sub1/title_1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        val page2Json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub2",
+                      "name": "t3_sub2",
+                      "author": "user2",
+                      "title": "Title 2",
+                      "selftext": "Text 2",
+                      "created_utc": 1700000020.0,
+                      "permalink": "/r/GhostAdventures/comments/sub2/title_2/",
+                      "url": "https://reddit.com/r/GhostAdventures/comments/sub2/title_2/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(page1Json, MediaType.APPLICATION_JSON))
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5&after=t3_sub1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(page2Json, MediaType.APPLICATION_JSON))
+
+        val since = Instant.ofEpochMilli(1700000030_000L)
+        val result = serviceWithReplies.getSubmissionsSince(since)
+
+        assertEquals(1, result.size)
+        assertEquals("sub1", result[0].id)
+        server.verify()
+    }
+
+    @Test
+    fun testUserExists_OnServerError_ReturnsFalse() {
+        server.expect(requestTo("https://oauth.reddit.com/user/broken_user/about"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        assertFalse(serviceWithReplies.userExists("broken_user"))
         server.verify()
     }
 }

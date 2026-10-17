@@ -188,6 +188,27 @@ class PhraseServiceTest {
         }
     }
 
+    @Test
+    fun testGetPhrase_WhenNoPhrases_ReturnsNull() {
+        every { phraseRepository.findByType(PhraseType.GoodBot) } returns emptyList()
+
+        val actual = service.getPhrase(PhraseType.GoodBot)
+
+        assertNull(actual)
+    }
+
+    @Test
+    fun testGetPhrase_WhenPhrasesExist_ReturnsLowestUsageAndIncrements() {
+        val p1 = PhraseEntity(1, "Quote 1", 3, PhraseType.GoodBot, "Source")
+        val p2 = PhraseEntity(2, "Quote 2", 1, PhraseType.GoodBot, null)
+        every { phraseRepository.findByType(PhraseType.GoodBot) } returns listOf(p1, p2)
+
+        val actual = service.getPhrase(PhraseType.GoodBot)
+
+        assertEquals("Quote 2", actual)
+        verify { phraseRepository.save(PhraseEntity(2, "Quote 2", 2, PhraseType.GoodBot, null)) }
+    }
+
     private fun createComment(body: String) = Comment(
         id = "1",
         fullName = "t1_1",

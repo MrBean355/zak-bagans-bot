@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /login
+Disallow: /logout
+Disallow: /error
+Allow: /
+
+Sitemap: https://zak-bagans-bot.herokuapp.com/sitemap.xml

@@ -16,13 +16,13 @@ class ZakBagansBot(
     @Scheduled(fixedRate = 15 * 60 * 1000L, initialDelay = 10_000L)
     fun checkContributions() {
         redditService.getSubmissionsSince(botCache.getLastSubmissionTime()).apply {
-            firstOrNull()?.created?.let(botCache::setLastSubmissionTime)
             forEach(contributionService::processSubmission)
+            firstOrNull()?.created?.let(botCache::setLastSubmissionTime)
         }
 
         redditService.getCommentsSince(botCache.getLastCommentTime()).apply {
-            firstOrNull()?.created?.let(botCache::setLastCommentTime)
             forEach(contributionService::processComment)
+            firstOrNull()?.created?.let(botCache::setLastCommentTime)
         }
     }
 

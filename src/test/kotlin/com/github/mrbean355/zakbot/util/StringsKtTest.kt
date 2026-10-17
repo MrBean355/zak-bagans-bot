@@ -14,4 +14,9 @@ internal class StringsKtTest {
     internal fun testGetString_WithFormatArgs() {
         assertEquals("Hello Zak!", getString("test.string.second", "Zak"))
     }
+
+    @Test
+    internal fun testGetString_KeyNotFound_ReturnsKey() {
+        assertEquals("nonexistent.key.name", getString("nonexistent.key.name"))
+    }
 }

@@ -34,6 +34,7 @@ internal class PhraseTypeTest {
         assertEquals(6, PhraseType.Trinity.id)
         assertEquals(7, PhraseType.Understand.id)
         assertEquals(8, PhraseType.Zozo.id)
+        assertEquals(9, PhraseType.GoodBot.id)
     }
 
     @Test
@@ -60,7 +61,9 @@ internal class PhraseTypeTest {
         assertEquals("Trinity", PhraseType.Trinity.name)
         assertEquals("Understand", PhraseType.Understand.name)
         assertEquals("Zozo", PhraseType.Zozo.name)
+        assertEquals("GoodBot", PhraseType.GoodBot.name)
         assertEquals("Aaron", PhraseType.name(0))
+        assertEquals("GoodBot", PhraseType.name(9))
         assertEquals("Unknown", PhraseType.name(999))
     }
 
@@ -71,5 +74,30 @@ internal class PhraseTypeTest {
         assertEquals(PhraseType.Aaron, PhraseType.fromJson("Aaron"))
         assertEquals(PhraseType.Aaron, PhraseType.fromJson("aaron"))
         assertEquals(PhraseType.Zozo, PhraseType.fromJson(8))
+        assertEquals(PhraseType.GoodBot, PhraseType.fromJson(9))
+        assertEquals(PhraseType.GoodBot, PhraseType.fromJson("9"))
+        assertEquals(PhraseType.GoodBot, PhraseType.fromJson("GoodBot"))
+        assertEquals(PhraseType.GoodBot, PhraseType.fromJson("goodbot"))
+    }
+
+    @Test
+    fun testFromId_UnknownId_ThrowsIllegalArgumentException() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            PhraseType.fromId(999)
+        }
+    }
+
+    @Test
+    fun testFromJson_UnknownString_ThrowsIllegalArgumentException() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            PhraseType.fromJson("UnknownType")
+        }
+    }
+
+    @Test
+    fun testFromJson_InvalidType_ThrowsIllegalArgumentException() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            PhraseType.fromJson(true)
+        }
     }
 }

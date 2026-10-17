@@ -8,7 +8,7 @@ import com.github.mrbean355.zakbot.util.asPlainText
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
 
-private const val COMMAND_PREFIX = "!$BotUsername "
+private const val COMMAND_PREFIX = "u/$BotUsername "
 
 @Service
 class CommandService(
@@ -18,12 +18,12 @@ class CommandService(
 ) {
 
     fun processAuthorCommand(comment: Comment) {
-        val body = comment.body.asPlainText()
-        if (!body.startsWith(COMMAND_PREFIX)) {
+        val body = comment.body.asPlainText().removePrefix("/")
+        if (!body.startsWith(COMMAND_PREFIX, ignoreCase = true)) {
             return
         }
 
-        val command = body.substringAfter(COMMAND_PREFIX).trim()
+        val command = body.substring(COMMAND_PREFIX.length).trim()
         val name = command.substringBefore(' ')
         val args = command.substringAfter(name).trim()
 
