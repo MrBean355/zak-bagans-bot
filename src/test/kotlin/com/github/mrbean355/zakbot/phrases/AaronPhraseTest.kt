@@ -9,5 +9,8 @@ internal class AaronPhraseTest : PhraseTest() {
     override val replyChances = mapOf(
         "hello world!" to 0f,
         "hello aaron!" to 0.1f,
+        "hello Aaron!" to 0.1f,
+        "yaaron" to 0f,
+        "aaronite" to 0f,
     )
 }

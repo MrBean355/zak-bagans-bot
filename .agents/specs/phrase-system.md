@@ -44,7 +44,7 @@ appreciation in `PhraseService`.
 |  **9**   | `SituationPhrase`  | `PhraseType.Situation`  |    5    | `"situation" in message`           |   20% (`0.20f`)   |
 |  **8**   | `FeelingPhrase`    | `PhraseType.Feeling`    |    2    | `"i feel" in message               |                   | "i'm feeling" in message` | 25% (`0.25f`) |
 |  **7**   | `TrinityPhrase`    | `PhraseType.Trinity`    |    6    | `"3" in message                    |                   | "three" in message` | 10% (`0.10f`) |
-|  **3**   | `AaronPhrase`      | `PhraseType.Aaron`      |    0    | `"aaron" in message`               |   10% (`0.10f`)   |
+|  **3**   | `AaronPhrase`      | `PhraseType.Aaron`      |    0    | `\b(aaron)\b` in message           |   10% (`0.10f`)   |
 |  **2**   | `UnderstandPhrase` | `PhraseType.Understand` |    7    | `"understand" in message`          |   20% (`0.20f`)   |
 |  **1**   | `AnswersPhrase`    | `PhraseType.Answers`    |    1    | `"we want answers" in message`     |   25% (`0.25f`)   |
 |  **0**   | `GenericPhrase`    | `PhraseType.Generic`    |    3    | `"zak" in message                  |                   | "bagans" in message` | 20% (`0.20f`) |
