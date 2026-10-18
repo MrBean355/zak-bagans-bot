@@ -82,6 +82,9 @@ When modifying this repository, AI agents must preserve the following non-negoti
    `src/main/resources/strings.properties` (and mirrored in `src/test/resources/strings.properties`), accessed via
    `getString()`. Never hardcode formatted messages in Kotlin code.
 8. **Test Execution**: Always run `./gradlew test` to verify changes before completing tasks.
+9. **Explicit Dependency Injection**: Spring components and services must NEVER declare default parameter values for
+   dependencies in their constructors (e.g. `zakbotProperties = ZakbotProperties()`). Dependencies must be strictly
+   required, and unit tests must explicitly supply mocks, fakes, or configured instances.
 
 ---
 

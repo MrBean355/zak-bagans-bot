@@ -24,6 +24,10 @@ in [.agents/specs/](.agents/specs/README.md).
 8. **Git Commit Conventions**: See [.agents/rules/commit-messages.md](.agents/rules/commit-messages.md) for the seven
    rules from https://cbea.ms/git-commit/ (50-char imperative subject, blank line, 72-char wrapped body explaining
    what and why vs. how).
+9. **Constructor Dependency Injection**:
+   See [.agents/rules/dependency-injection.md](.agents/rules/dependency-injection.md)
+   for rules prohibiting default parameter values on Spring component/service constructors and requiring explicit mocks
+   or fakes in unit tests.
 
 ## Testing & Verification
 
