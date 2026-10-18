@@ -52,6 +52,7 @@ data class RedditCommentDto(
     @JsonProperty("parent_id") val parentId: String,
     @JsonProperty("created_utc") val createdUtc: Double,
     val permalink: String,
+    val score: Int? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

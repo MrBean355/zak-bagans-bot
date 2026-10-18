@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot.service
 
+import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.SubredditName
 import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
@@ -21,6 +22,7 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.method
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
+import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
 import java.time.Instant
 
@@ -567,4 +569,108 @@ class RedditServiceTest {
         assertFalse(serviceWithReplies.userExists("broken_user"))
         server.verify()
     }
-}
+
+    @Test
+    fun testGetOwnRecentComments_Success_ReturnsCommentsWithScores() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "com1",
+                      "name": "t1_com1",
+                      "author": "$BotUsername",
+                      "body": "Test quote 1",
+                      "link_id": "t3_post1",
+                      "parent_id": "t1_parent1",
+                      "created_utc": 1700000050.0,
+                      "permalink": "/r/GhostAdventures/comments/post1/title/com1/",
+                      "score": -2
+                    }
+                  },
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "com2",
+                      "name": "t1_com2",
+                      "author": "$BotUsername",
+                      "body": "Test quote 2",
+                      "link_id": "t3_post1",
+                      "parent_id": "t1_parent2",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/post1/title/com2/",
+                      "score": 5
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/user/$BotUsername/comments?limit=25&sort=new"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val results = serviceWithReplies.getOwnRecentComments()
+
+        assertEquals(2, results.size)
+        assertEquals("com1", results[0].id)
+        assertEquals(-2, results[0].score)
+        assertEquals("com2", results[1].id)
+        assertEquals(5, results[1].score)
+        server.verify()
+    }
+
+    @Test
+    fun testGetOwnRecentComments_OnError_ReturnsEmptyList() {
+        server.expect(requestTo("https://oauth.reddit.com/user/$BotUsername/comments?limit=25&sort=new"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val results = serviceWithReplies.getOwnRecentComments()
+
+        assertTrue(results.isEmpty())
+        server.verify()
+    }
+
+    @Test
+    fun testDeleteComment_WhenRepliesEnabled_SendsPostToDelEndpoint() {
+        server.expect(requestTo("https://oauth.reddit.com/api/del"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
+            .andExpect(content().formData(LinkedMultiValueMap<String, String>().apply {
+                add("api_type", "json")
+                add("id", "t1_com1")
+            }))
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON))
+
+        val comment = Comment("com1", "t1_com1", BotUsername, Instant.now(), "url", "body", "t3_sub1", "t1_parent1", score = -2)
+        serviceWithReplies.deleteComment(comment)
+
+        server.verify()
+    }
+
+    @Test
+    fun testDeleteComment_WhenRepliesDisabled_DoesNotCallApi() {
+        val comment = Comment("com1", "t1_com1", BotUsername, Instant.now(), "url", "body", "t3_sub1", "t1_parent1", score = -2)
+        serviceWithoutReplies.deleteComment(comment)
+
+        server.verify()
+    }
+
+    @Test
+    fun testDeleteComment_WhenApiFails_HandlesGracefully() {
+        server.expect(requestTo("https://oauth.reddit.com/api/del"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val comment = Comment("com1", "t1_com1", BotUsername, Instant.now(), "url", "body", "t3_sub1", "t1_parent1", score = -2)
+        serviceWithReplies.deleteComment(comment)
+
+        server.verify()
+    }
+}

@@ -68,6 +68,7 @@ telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`
 | `telegram.new_bot_mention_comment`    | `ContributionService.checkForBotMention`        | `comment.body`, `comment.url`                    |
 | `telegram.new_ignored_user`           | `ContributionService.processComment` (bad bot)  | `comment.author`, `comment.url`                  |
 | `telegram.good_bot_praise`            | `ContributionService.processComment` (good bot) | `comment.author`, `response`, `comment.url`      |
+| `telegram.deleted_downvoted_comment`  | `ContributionService.checkDownvotedComments`    | `comment.score`, `comment.body`, `comment.url`   |
 | `telegram.command_ignore_user`        | `CommandService.ignoreUser`                     | `username`, `comment.url`                        |
 | `telegram.command_unignore_user`      | `CommandService.unignoreUser`                   | `username`, `comment.url`                        |
 | `telegram.command_ignore_post`        | `CommandService.ignoreSubmission`               | `reason` (or "None"), `comment.url`              |

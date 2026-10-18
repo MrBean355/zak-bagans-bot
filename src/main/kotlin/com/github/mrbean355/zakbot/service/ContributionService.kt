@@ -3,6 +3,7 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.model.Comment
@@ -10,6 +11,7 @@ import com.github.mrbean355.zakbot.reddit.model.Contribution
 import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
+import java.util.Collections
 import kotlin.random.Random
 
 private const val SUBSTITUTION_AUTHOR_NAME = "{author}"
@@ -25,8 +27,46 @@ class ContributionService(
     private val commandService: CommandService,
     private val botCache: BotCache,
     private val telegramNotifier: TelegramNotifier,
+    private val zakbotProperties: ZakbotProperties,
     private val randomRoll: () -> Float = { Random.nextFloat() },
 ) {
+
+    private val deletedCommentIds = Collections.newSetFromMap(
+        Collections.synchronizedMap(
+            object : LinkedHashMap<String, Boolean>(64, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?) = size > 200
+            }
+        )
+    )
+
+    /**
+     * Checks the bot's recent comments and deletes any that have fallen below
+     * the configured downvote threshold.
+     */
+    fun checkDownvotedComments() {
+        if (!zakbotProperties.downvotes.enabled) {
+            return
+        }
+
+        val comments = redditService.getOwnRecentComments()
+        for (comment in comments) {
+            if (comment.body != "[deleted]" &&
+                comment.fullName !in deletedCommentIds &&
+                comment.score <= zakbotProperties.downvotes.deleteThreshold
+            ) {
+                deletedCommentIds += comment.fullName
+                redditService.deleteComment(comment)
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.deleted_downvoted_comment",
+                        comment.score,
+                        comment.body,
+                        comment.url
+                    )
+                )
+            }
+        }
+    }
 
     /**
      * Ignores submissions that are:

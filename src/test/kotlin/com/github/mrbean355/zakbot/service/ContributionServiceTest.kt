@@ -3,6 +3,7 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.model.Comment
@@ -56,6 +57,7 @@ class ContributionServiceTest {
             commandService = commandService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
+            zakbotProperties = ZakbotProperties(),
             randomRoll = { 0f },
         )
     }
@@ -173,6 +175,7 @@ class ContributionServiceTest {
             commandService = commandService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
+            zakbotProperties = ZakbotProperties(),
             randomRoll = { 0.5f },
         )
         val botComment = createComment(author = BotUsername, body = "I am Zak")
@@ -263,6 +266,83 @@ class ContributionServiceTest {
         }
     }
 
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAtOrBelowThreshold_DeletesAndNotifies() {
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -2)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+        justRun { redditService.deleteComment(any()) }
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 1) {
+            redditService.deleteComment(downvoted)
+            telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") && it.contains("-2") })
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAboveThreshold_DoesNotDelete() {
+        val popular = createComment(id = "pop1", author = BotUsername, body = "Great quote", score = 3)
+        val neutral = createComment(id = "neu1", author = BotUsername, body = "Okay quote", score = 0)
+        every { redditService.getOwnRecentComments() } returns listOf(popular, neutral)
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 0) {
+            redditService.deleteComment(any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAlreadyDeleted_DoesNotDeleteOrNotify() {
+        val deleted = createComment(id = "del1", author = BotUsername, body = "[deleted]", score = -5)
+        every { redditService.getOwnRecentComments() } returns listOf(deleted)
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 0) {
+            redditService.deleteComment(any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAlreadyProcessed_DoesNotDeleteTwice() {
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -2)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+        justRun { redditService.deleteComment(any()) }
+
+        service.checkDownvotedComments()
+        service.checkDownvotedComments()
+
+        verify(exactly = 1) {
+            redditService.deleteComment(downvoted)
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenDownvotesDisabled_DoesNothing() {
+        val customService = ContributionService(
+            redditService = redditService,
+            phraseService = phraseService,
+            commandService = commandService,
+            botCache = botCache,
+            telegramNotifier = telegramNotifier,
+            zakbotProperties = ZakbotProperties(downvotes = ZakbotProperties.Downvotes(enabled = false)),
+        )
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -2)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+
+        customService.checkDownvotedComments()
+
+        verify(exactly = 0) {
+            redditService.deleteComment(any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
     private fun createSubmission(
         id: String = "sub1",
         author: String = "user1",
@@ -283,6 +363,7 @@ class ContributionServiceTest {
         author: String = "user1",
         body: String = "Body",
         parentFullName: String = "t3_sub1",
+        score: Int = 0,
     ) = Comment(
         id = id,
         fullName = "t1_$id",
@@ -292,5 +373,7 @@ class ContributionServiceTest {
         body = body,
         submissionFullName = "t3_sub1",
         parentFullName = parentFullName,
+        score = score,
     )
 }
+

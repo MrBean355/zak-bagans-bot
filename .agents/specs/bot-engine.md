@@ -28,9 +28,13 @@ This specification defines the scheduled polling, API pagination, contribution i
    `commandService.processAuthorCommand()` and immediately returned.
 7. **Parent Submission Caching**: `RedditService.getCommentSubmission()` MUST cache parent submissions in an in-memory
    LRU cache (capacity 100) to prevent redundant `GET /api/info` calls when multiple comments belong to the same post.
-8. **Reddit API Resilience**: Write operations (`postCommentReply`, `setBotFlair`) and lookups (`findParentComment`,
-   `getFlairOptions`) MUST catch exceptions and log errors/warnings to prevent transient API outages or network
+8. **Reddit API Resilience**: Write operations (`postCommentReply`, `setBotFlair`, `deleteComment`) and lookups (`findParentComment`,
+   `getFlairOptions`, `getOwnRecentComments`) MUST catch exceptions and log errors/warnings to prevent transient API outages or network
    glitches from crashing scheduled jobs.
+9. **Downvote Self-Deletion**: In each 15-minute polling cycle, `contributionService.checkDownvotedComments()` checks the bot's
+   recent comments via `redditService.getOwnRecentComments()`. If a comment has not already been deleted and has a score
+   at or below `zakbot.downvotes.delete-threshold` (default `-1`), it is deleted via Reddit `POST /api/del` (when replies are enabled),
+   tracked in an in-memory LRU set to prevent duplicate deletions, and an alert is dispatched via Telegram.
 
 ---
 
@@ -49,6 +53,7 @@ fun checkContributions()
 - Calls `redditService.getCommentsSince(botCache.getLastCommentTime())`.
 - For each comment: invokes `contributionService.processComment(it)`.
 - If non-empty: sets `botCache.setLastCommentTime(first.created)`.
+- Calls `contributionService.checkDownvotedComments()`.
 
 ### 2.2 `updateBotFlair()`
 

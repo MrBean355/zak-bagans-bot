@@ -29,4 +29,5 @@ data class Comment(
     val body: String,
     val submissionFullName: String,
     val parentFullName: String,
+    val score: Int = 0,
 ) : Contribution

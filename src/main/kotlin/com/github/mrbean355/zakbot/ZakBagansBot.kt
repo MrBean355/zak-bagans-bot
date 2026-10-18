@@ -24,6 +24,8 @@ class ZakBagansBot(
             forEach(contributionService::processComment)
             firstOrNull()?.created?.let(botCache::setLastCommentTime)
         }
+
+        contributionService.checkDownvotedComments()
     }
 
     @Scheduled(cron = "@midnight")
