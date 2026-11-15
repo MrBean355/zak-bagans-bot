@@ -3,6 +3,7 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.model.Comment
@@ -29,6 +30,9 @@ class ContributionServiceTest {
     private lateinit var commandService: CommandService
 
     @MockK
+    private lateinit var geminiService: GeminiService
+
+    @MockK
     private lateinit var botCache: BotCache
 
     @MockK
@@ -44,6 +48,9 @@ class ContributionServiceTest {
         justRun { redditService.replyToComment(any(), any()) }
         every { botCache.isUserIgnored(any()) } returns false
         every { botCache.isSubmissionIgnored(any()) } returns false
+        every { geminiService.isDryRun } returns false
+        every { geminiService.evaluateSubmission(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
+        every { geminiService.evaluateBotReply(any()) } returns GeminiService.BotSentiment.NEUTRAL
         every { phraseService.findPhrase(any<Submission>()) } returns null
         every { phraseService.findPhrase(any<Comment>()) } returns null
         every { phraseService.getPhrase(any()) } returns null
@@ -54,8 +61,10 @@ class ContributionServiceTest {
             redditService = redditService,
             phraseService = phraseService,
             commandService = commandService,
+            geminiService = geminiService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
+            zakbotProperties = ZakbotProperties(),
             randomRoll = { 0f },
         )
     }
@@ -79,6 +88,121 @@ class ContributionServiceTest {
 
         service.processSubmission(submission)
 
+        verify(exactly = 0) {
+            geminiService.evaluateSubmission(any())
+            redditService.replyToSubmission(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenAlreadyIgnored_DoesNothing() {
+        val submission = createSubmission(author = "user1", title = "Title")
+        every { botCache.isSubmissionIgnored(submission.fullName) } returns true
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            geminiService.evaluateSubmission(any())
+            redditService.replyToSubmission(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenSensitivityMeetsThreshold_IgnoresSubmissionAndSendsTelegramWithoutReplying() {
+        val submission = createSubmission(author = "user1", title = "Sad news about a crew member")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.85f,
+            reason = "Crew member obituary",
+        )
+        every { phraseService.findPhrase(submission) } returns "Some quote"
+
+        service.processSubmission(submission)
+
+        verify {
+            botCache.ignoreSubmission(submission.fullName, "Crew member obituary")
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Post Ignored") &&
+                        it.contains("Sad news about a crew member") &&
+                        it.contains("85%") &&
+                        it.contains("Crew member obituary")
+                }
+            )
+        }
+        verify(exactly = 0) {
+            phraseService.findPhrase(any<Submission>())
+            redditService.replyToSubmission(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenSensitiveAndDryRunEnabled_SendsDryRunTelegramAndStillReplies() {
+        val submission = createSubmission(author = "user1", title = "Sad news about a crew member")
+        every { geminiService.isDryRun } returns true
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.85f,
+            reason = "Crew member obituary",
+        )
+        every { phraseService.findPhrase(submission) } returns "Some quote"
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            botCache.ignoreSubmission(any(), any())
+        }
+        verify {
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Post Detected (Dry Run)") &&
+                        it.contains("Sad news about a crew member") &&
+                        it.contains("85%") &&
+                        it.contains("Crew member obituary")
+                }
+            )
+            redditService.replyToSubmission(submission, "Some quote")
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenSensitivityBelowThreshold_ProceedsToPhraseMatching() {
+        val submission = createSubmission(author = "user1", title = "Did you see Zak?")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.4f,
+            reason = null,
+        )
+        every { phraseService.findPhrase(submission) } returns "We want answers"
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            botCache.ignoreSubmission(any(), any())
+        }
+        verify {
+            redditService.replyToSubmission(submission, "We want answers")
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenSensitiveWithBlankReason_IgnoresWithNullReasonAndSendsNoneInTelegram() {
+        val submission = createSubmission(author = "user1", title = "Serious post")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.9f,
+            reason = "   ",
+        )
+
+        service.processSubmission(submission)
+
+        verify {
+            botCache.ignoreSubmission(submission.fullName, null)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Post Ignored") &&
+                        it.contains("Serious post") &&
+                        it.contains("90%") &&
+                        it.contains("None")
+                }
+            )
+        }
         verify(exactly = 0) {
             redditService.replyToSubmission(any(), any())
         }
@@ -117,7 +241,7 @@ class ContributionServiceTest {
     }
 
     @Test
-    fun testProcessComment_WhenBadBotReplyToBotComment_IgnoresUserAndReplies() {
+    fun testProcessComment_WhenBadBotReplyToBotComment_IgnoresUserAndRepliesWithoutCallingGemini() {
         val botComment = createComment(author = BotUsername, body = "I am Zak")
         val comment = createComment(author = "critic", body = "bad bot", parentFullName = "t1_bot")
         every { redditService.findParentComment(comment) } returns botComment
@@ -129,11 +253,14 @@ class ContributionServiceTest {
             telegramNotifier.sendMessage(match { it.contains("critic") })
             redditService.replyToComment(comment, match { it.contains("won't reply") })
         }
+        verify(exactly = 0) {
+            geminiService.evaluateBotReply(any())
+        }
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["good bot!", "great bot!", "best bot!", "goodbot", "Great bot", "BEST BOT!"])
-    fun testProcessComment_WhenGoodBotReplyToBotComment_RepliesWithAppreciationAndSendsTelegramNotification(praise: String) {
+    fun testProcessComment_WhenGoodBotReplyToBotComment_RepliesWithAppreciationWithoutCallingGemini(praise: String) {
         val botComment = createComment(author = BotUsername, body = "I am Zak")
         val comment = createComment(author = "fan", body = praise, parentFullName = "t1_bot")
         every { redditService.findParentComment(comment) } returns botComment
@@ -147,6 +274,134 @@ class ContributionServiceTest {
         }
         verify(exactly = 0) {
             botCache.ignoreUser(any(), any())
+            geminiService.evaluateBotReply(any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsBadBot_IgnoresUserAndReplies() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "critic", body = "shut up stupid bot", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.BAD_BOT
+
+        service.processComment(comment)
+
+        verify {
+            geminiService.evaluateBotReply(comment)
+            botCache.ignoreUser("critic", comment.fullName)
+            telegramNotifier.sendMessage(match { it.contains("User Ignored") && it.contains("critic") })
+            redditService.replyToComment(comment, match { it.contains("won't reply") })
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsGoodBot_RepliesWithAppreciation() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "fan", body = "I love this bot so much!", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.GOOD_BOT
+        every { phraseService.getPhrase(PhraseType.GoodBot) } returns "Thank you, {author}!"
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateBotReply(comment)
+            telegramNotifier.sendMessage(match { it.contains("Good Bot Praise") && it.contains("fan") })
+            redditService.replyToComment(comment, "Thank you, fan!\n\n^(Thank you ❤️)")
+        }
+        verify(exactly = 0) {
+            botCache.ignoreUser(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenReplyToBotDoesNotMentionBot_DoesNotCallGemini() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "viewer", body = "Haha classic Zak", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+
+        service.processComment(comment)
+
+        verify(exactly = 0) {
+            geminiService.evaluateBotReply(any())
+            botCache.ignoreUser(any(), any())
+            redditService.replyToComment(any(), any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsNeutral_DoesNotIgnoreOrReply() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "viewer", body = "Is this a bot?", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.NEUTRAL
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateBotReply(comment)
+            telegramNotifier.sendMessage(match { it.contains("Bot Mentioned in Comment") })
+        }
+        verify(exactly = 0) {
+            botCache.ignoreUser(any(), any())
+            redditService.replyToComment(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsBadBotInDryRun_SendsDryRunTelegramWithoutIgnoringOrReplying() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "critic", body = "shut up stupid bot", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.isDryRun } returns true
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.BAD_BOT
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateBotReply(comment)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Bot Reply Classified (Dry Run)") &&
+                        it.contains("critic") &&
+                        it.contains("shut up stupid bot") &&
+                        it.contains("BAD_BOT")
+                }
+            )
+        }
+        verify(exactly = 0) {
+            botCache.ignoreUser(any(), any())
+            redditService.replyToComment(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsGoodBotInDryRun_SendsDryRunTelegramWithoutReplying() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "fan", body = "I love this bot so much!", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.isDryRun } returns true
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.GOOD_BOT
+        every { phraseService.getPhrase(PhraseType.GoodBot) } returns "Thank you, {author}!"
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateBotReply(comment)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Bot Reply Classified (Dry Run)") &&
+                        it.contains("fan") &&
+                        it.contains("GOOD_BOT")
+                }
+            )
+        }
+        verify(exactly = 0) {
+            botCache.ignoreUser(any(), any())
+            redditService.replyToComment(any(), any())
+            phraseService.getPhrase(any())
         }
     }
 
@@ -171,8 +426,10 @@ class ContributionServiceTest {
             redditService = redditService,
             phraseService = phraseService,
             commandService = commandService,
+            geminiService = geminiService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
+            zakbotProperties = ZakbotProperties(),
             randomRoll = { 0.5f },
         )
         val botComment = createComment(author = BotUsername, body = "I am Zak")
@@ -263,6 +520,101 @@ class ContributionServiceTest {
         }
     }
 
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAtOrBelowThreshold_DeletesAndNotifies() {
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+        every { redditService.deleteComment(any()) } returns true
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 1) {
+            redditService.deleteComment(downvoted)
+            telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") && it.contains("-3") })
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenDeleteFails_DoesNotNotifyAndRetriesOnNextCheck() {
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+        every { redditService.deleteComment(downvoted) } returnsMany listOf(false, true)
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 1) { redditService.deleteComment(downvoted) }
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 2) { redditService.deleteComment(downvoted) }
+        verify(exactly = 1) { telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") }) }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAboveThreshold_DoesNotDelete() {
+        val popular = createComment(id = "pop1", author = BotUsername, body = "Great quote", score = 3)
+        val mildlyDownvoted = createComment(id = "neu1", author = BotUsername, body = "Okay quote", score = -2)
+        every { redditService.getOwnRecentComments() } returns listOf(popular, mildlyDownvoted)
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 0) {
+            redditService.deleteComment(any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAlreadyDeleted_DoesNotDeleteOrNotify() {
+        val deleted = createComment(id = "del1", author = BotUsername, body = "[deleted]", score = -5)
+        every { redditService.getOwnRecentComments() } returns listOf(deleted)
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 0) {
+            redditService.deleteComment(any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenCommentAlreadyProcessed_DoesNotDeleteTwice() {
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+        every { redditService.deleteComment(any()) } returns true
+
+        service.checkDownvotedComments()
+        service.checkDownvotedComments()
+
+        verify(exactly = 1) {
+            redditService.deleteComment(downvoted)
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenDownvotesDisabled_DoesNothing() {
+        val customService = ContributionService(
+            redditService = redditService,
+            phraseService = phraseService,
+            commandService = commandService,
+            geminiService = geminiService,
+            botCache = botCache,
+            telegramNotifier = telegramNotifier,
+            zakbotProperties = ZakbotProperties(downvotes = ZakbotProperties.Downvotes(enabled = false)),
+        )
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+
+        customService.checkDownvotedComments()
+
+        verify(exactly = 0) {
+            redditService.deleteComment(any())
+            telegramNotifier.sendMessage(any())
+        }
+    }
+
     private fun createSubmission(
         id: String = "sub1",
         author: String = "user1",
@@ -283,6 +635,7 @@ class ContributionServiceTest {
         author: String = "user1",
         body: String = "Body",
         parentFullName: String = "t3_sub1",
+        score: Int = 0,
     ) = Comment(
         id = id,
         fullName = "t1_$id",
@@ -292,5 +645,7 @@ class ContributionServiceTest {
         body = body,
         submissionFullName = "t3_sub1",
         parentFullName = parentFullName,
+        score = score,
     )
 }
+

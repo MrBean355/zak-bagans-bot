@@ -3,13 +3,17 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Contribution
 import com.github.mrbean355.zakbot.reddit.model.Submission
+import com.github.mrbean355.zakbot.service.GeminiService.BotSentiment
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
+import java.util.Collections
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 private const val SUBSTITUTION_AUTHOR_NAME = "{author}"
@@ -23,15 +27,56 @@ class ContributionService(
     private val redditService: RedditService,
     private val phraseService: PhraseService,
     private val commandService: CommandService,
+    private val geminiService: GeminiService,
     private val botCache: BotCache,
     private val telegramNotifier: TelegramNotifier,
+    private val zakbotProperties: ZakbotProperties,
     private val randomRoll: () -> Float = { Random.nextFloat() },
 ) {
+
+    private val deletedCommentIds = Collections.newSetFromMap(
+        Collections.synchronizedMap(
+            object : LinkedHashMap<String, Boolean>(64, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?) = size > 200
+            }
+        )
+    )
+
+    /**
+     * Checks the bot's recent comments and deletes any that have fallen below
+     * the configured downvote threshold.
+     */
+    fun checkDownvotedComments() {
+        if (!zakbotProperties.downvotes.enabled) {
+            return
+        }
+
+        val comments = redditService.getOwnRecentComments()
+        for (comment in comments) {
+            if (comment.body != "[deleted]" &&
+                comment.fullName !in deletedCommentIds &&
+                comment.score <= zakbotProperties.downvotes.deleteThreshold &&
+                redditService.deleteComment(comment)
+            ) {
+                deletedCommentIds += comment.fullName
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.deleted_downvoted_comment",
+                        comment.score,
+                        comment.body,
+                        comment.url
+                    )
+                )
+            }
+        }
+    }
 
     /**
      * Ignores submissions that are:
      * - sent by the bot's author, or
-     * - sent by an ignored user.
+     * - sent by an ignored user, or
+     * - already ignored, or
+     * - flagged as sensitive by Gemini.
      */
     fun processSubmission(submission: Submission) {
         if (submission.author == AuthorUsername) {
@@ -40,8 +85,37 @@ class ContributionService(
 
         checkForBotMention(submission)
 
-        if (submission.isAuthorIgnored()) {
+        if (submission.isAuthorIgnored() || botCache.isSubmissionIgnored(submission.fullName)) {
             return
+        }
+
+        val moderation = geminiService.evaluateSubmission(submission)
+        if (moderation.sensitivity >= zakbotProperties.moderation.sensitivityThreshold) {
+            val reason = moderation.reason?.ifBlank { null }
+            val sensitivityPercent = (moderation.sensitivity * 100).roundToInt()
+            if (geminiService.isDryRun) {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_submission_dry_run",
+                        submission.title,
+                        sensitivityPercent,
+                        reason ?: "None",
+                        submission.url,
+                    )
+                )
+            } else {
+                botCache.ignoreSubmission(submission.fullName, reason)
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_submission_ignored",
+                        submission.title,
+                        sensitivityPercent,
+                        reason ?: "None",
+                        submission.url,
+                    )
+                )
+                return
+            }
         }
 
         val response = phraseService.findPhrase(submission)
@@ -67,7 +141,7 @@ class ContributionService(
             return
         }
 
-        checkForBotMention(comment)
+        val mentionsBot = checkForBotMention(comment)
 
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
@@ -78,18 +152,26 @@ class ContributionService(
         }
 
         if (redditService.findParentComment(comment)?.author == BotUsername) {
-            if (comment.body.isBadBot()) {
-                botCache.ignoreUser(comment.author, comment.fullName)
-                redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
-                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
-            } else if (comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE) {
-                val phrase = phraseService.getPhrase(PhraseType.GoodBot)
-                    ?.substitute(comment)
-                if (phrase != null) {
-                    val response = getString("reddit.good_bot_footer", phrase)
-                    redditService.replyToComment(comment, response)
-                    telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
+            when (evaluateBotReplySentiment(comment, mentionsBot)) {
+                BotSentiment.BAD_BOT -> {
+                    botCache.ignoreUser(comment.author, comment.fullName)
+                    redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+                    telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 }
+
+                BotSentiment.GOOD_BOT -> {
+                    if (randomRoll() <= GOOD_BOT_REPLY_CHANCE) {
+                        val phrase = phraseService.getPhrase(PhraseType.GoodBot)
+                            ?.substitute(comment)
+                        if (phrase != null) {
+                            val response = getString("reddit.good_bot_footer", phrase)
+                            redditService.replyToComment(comment, response)
+                            telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
+                        }
+                    }
+                }
+
+                BotSentiment.NEUTRAL -> Unit
             }
             return
         }
@@ -102,17 +184,45 @@ class ContributionService(
         telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
     }
 
+    private fun evaluateBotReplySentiment(comment: Comment, mentionsBot: Boolean): BotSentiment {
+        if (comment.body.isBadBot()) {
+            return BotSentiment.BAD_BOT
+        }
+        if (comment.body.isGoodBot()) {
+            return BotSentiment.GOOD_BOT
+        }
+        if (!mentionsBot) {
+            return BotSentiment.NEUTRAL
+        }
+        val sentiment = geminiService.evaluateBotReply(comment)
+        if (geminiService.isDryRun) {
+            if (sentiment != BotSentiment.NEUTRAL) {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.bot_reply_sentiment_dry_run",
+                        comment.author,
+                        comment.body,
+                        sentiment.name,
+                        comment.url,
+                    )
+                )
+            }
+            return BotSentiment.NEUTRAL
+        }
+        return sentiment
+    }
+
     /**
      * Send a Telegram notification when someone mentions something 'bot' related.
      */
-    private fun checkForBotMention(contribution: Contribution) {
+    private fun checkForBotMention(contribution: Contribution): Boolean {
         val text = when (contribution) {
             is Submission -> contribution.title + contribution.selfText.orEmpty()
             is Comment -> contribution.body
         }.lowercase().trim()
 
         if (text.isGoodBot()) {
-            return
+            return false
         }
 
         if (text.contains(BOT_REGEX) ||
@@ -138,7 +248,9 @@ class ContributionService(
                     )
                 )
             }
+            return true
         }
+        return false
     }
 
     private fun Contribution.isAuthorIgnored(): Boolean {

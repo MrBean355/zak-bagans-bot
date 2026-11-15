@@ -44,15 +44,17 @@ phrase", and an 80% chance to skip to the next keyword in the list.
 
 ## Opting Out
 
-If you find the bot annoying, you can reply to one of its comments with `bad bot`. This will make the bot ignore all of
-your future posts and comments.
+If you find the bot annoying, you can reply to one of its comments with `bad bot` (or a similar opt-out reply). This
+will make the bot ignore all of your future posts and comments.
 
 ## Praising the Bot
 
-If you enjoy the bot, you can reply to one of its comments with `good bot`, `great bot`, or `best bot`. There is a
-10% chance the bot will respond with appreciation in true Zak Bagans style.
+If you enjoy the bot, you can reply to one of its comments with `good bot`, `great bot`, `best bot`, or similar praise.
+There is a 10% chance the bot will respond with appreciation in true Zak Bagans style.
 
 ## Special Commands
+
+### Reddit
 
 There are some commands that can be sent to the bot via comments on Reddit, and **only the bot's author can send them**.
 
@@ -60,6 +62,13 @@ There are some commands that can be sent to the bot via comments on Reddit, and 
 - `u/ZakBagansBot unignore_user <username>` - Stop ignoring the user.
 - `u/ZakBagansBot ignore_post <reason>` - Ignore all comments on the current post. The reason is optional.
 - `u/ZakBagansBot unignore_post` - Stop ignoring the current post.
+
+### Telegram
+
+The following command can be sent to the bot via Telegram:
+
+- `/status` - View the bot's runtime telemetry (version, uptime, memory usage, Gemini moderation status, and database
+  statistics).
 
 ## Specifications
 
@@ -113,15 +122,22 @@ When running in `dev` mode:
 
 The bot can be configured using standard Spring Boot properties or environment variables:
 
-| Property                  | Environment Variable     | Default    | Description                                      |
-|---------------------------|--------------------------|------------|--------------------------------------------------|
-| `reddit.account-password` | `BOT_ACCOUNT_PASSWORD`   | *(empty)*  | Reddit account password for authentication       |
-| `reddit.client-secret`    | `BOT_CLIENT_SECRET`      | *(empty)*  | Reddit script application client secret          |
-| `telegram.token`          | `TELEGRAM_TOKEN`         | *(empty)*  | Telegram Bot token for status updates and alerts |
-| `telegram.chat-id`        | `TELEGRAM_CHAT_ID`       | `44692593` | Telegram chat ID to receive notifications        |
-| `admin.username`          | `ADMIN_USERNAME`         | `admin`    | Username for the admin web dashboard             |
-| `admin.password`          | `ADMIN_PASSWORD`         | *(empty)*  | Password for the admin web dashboard             |
-| `zakbot.replies.enabled`  | `ZAKBOT_REPLIES_ENABLED` | `true`     | Toggle posting live replies to Reddit            |
+| Property                                  | Environment Variable                      | Default                 | Description                                              |
+|-------------------------------------------|-------------------------------------------|-------------------------|----------------------------------------------------------|
+| `reddit.account-password`                 | `BOT_ACCOUNT_PASSWORD`                    | *(empty)*               | Reddit account password for authentication               |
+| `reddit.client-secret`                    | `BOT_CLIENT_SECRET`                       | *(empty)*               | Reddit script application client secret                  |
+| `telegram.token`                          | `TELEGRAM_TOKEN`                          | *(empty)*               | Telegram Bot token for status updates and alerts         |
+| `telegram.chat-id`                        | `TELEGRAM_CHAT_ID`                        | `44692593`              | Telegram chat ID to receive notifications                |
+| `admin.username`                          | `ADMIN_USERNAME`                          | `admin`                 | Username for the admin web dashboard                     |
+| `admin.password`                          | `ADMIN_PASSWORD`                          | *(empty)*               | Password for the admin web dashboard                     |
+| `gemini.api-key`                          | `GEMINI_API_KEY`                          | *(empty)*               | Google Gemini API key for moderation and sentiment       |
+| `gemini.model`                            | `GEMINI_MODEL`                            | `gemini-3.5-flash-lite` | Gemini model identifier used for interactions            |
+| `gemini.enabled`                          | `GEMINI_ENABLED`                          | `true`                  | Toggle Gemini content moderation and sentiment           |
+| `gemini.dry-run`                          | `GEMINI_DRY_RUN`                          | `true`                  | Send Telegram alerts for Gemini decisions without acting |
+| `zakbot.replies.enabled`                  | `ZAKBOT_REPLIES_ENABLED`                  | `true`                  | Toggle posting live replies to Reddit                    |
+| `zakbot.downvotes.enabled`                | `ZAKBOT_DOWNVOTES_ENABLED`                | `true`                  | Toggle automatic deletion of downvoted bot comments      |
+| `zakbot.downvotes.delete-threshold`       | `ZAKBOT_DOWNVOTES_DELETE_THRESHOLD`       | `-3`                    | Score threshold at or below which bot comments delete    |
+| `zakbot.moderation.sensitivity-threshold` | `ZAKBOT_MODERATION_SENSITIVITY_THRESHOLD` | `0.7`                   | Sensitivity score threshold (0.0–1.0) to ignore posts    |
 
 ### Testing
 

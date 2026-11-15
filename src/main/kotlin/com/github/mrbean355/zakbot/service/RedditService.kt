@@ -203,6 +203,55 @@ class RedditService(
         }
     }
 
+    /** Get the bot's own recent comments to check for downvotes. */
+    fun getOwnRecentComments(limit: Int = 100): List<Comment> {
+        return try {
+            val response = client.get()
+                .uri { builder ->
+                    builder.path("/user/{username}/comments")
+                        .queryParam("limit", limit)
+                        .queryParam("sort", "new")
+                        .build(BotUsername)
+                }
+                .retrieve()
+                .body(object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {})
+
+            response?.data?.children?.map { it.data.toDomain() }.orEmpty()
+        } catch (ex: Exception) {
+            logger.warn("Failed to fetch bot comments for downvote check", ex)
+            emptyList()
+        }
+    }
+
+    fun deleteComment(comment: Comment): Boolean {
+        return if (zakbotProperties.replies.enabled) {
+            deleteComment(comment.fullName)
+        } else {
+            logger.info("Delete downvoted comment '{}' (score: {})", comment.fullName, comment.score)
+            true
+        }
+    }
+
+    private fun deleteComment(thingId: String): Boolean {
+        return try {
+            val body = LinkedMultiValueMap<String, String>().apply {
+                add("api_type", "json")
+                add("id", thingId)
+            }
+
+            client.post()
+                .uri("/api/del")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity()
+            true
+        } catch (ex: Exception) {
+            logger.error("Failed to delete comment: {}", thingId, ex)
+            false
+        }
+    }
+
     private fun postCommentReply(thingId: String, text: String) {
         try {
             val body = LinkedMultiValueMap<String, String>().apply {
@@ -241,5 +290,6 @@ class RedditService(
         body = body,
         submissionFullName = linkId,
         parentFullName = parentId,
+        score = score ?: 0,
     )
 }

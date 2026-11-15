@@ -22,6 +22,7 @@ graph TD
         Scheduler["Scheduler (@Scheduled: 15-min / Midnight)"]
         Engine["ZakBagansBot.kt"]
         ContribService["ContributionService.kt"]
+        GeminiService["GeminiService.kt (RestClient)"]
         PhraseService["PhraseService.kt"]
         CommandService["CommandService.kt"]
         RedditClient["RedditService.kt (OAuth2 RestClient)"]
@@ -31,11 +32,14 @@ graph TD
     end
 
     DB[("PostgreSQL Database")]
+    Gemini["Google Gemini API"]
 
     Scheduler --> Engine
     Engine --> RedditClient
     Engine --> ContribService
     RedditClient <--> Subreddit
+    ContribService --> GeminiService
+    GeminiService <--> Gemini
     ContribService --> PhraseService
     ContribService --> CommandService
     ContribService --> TeleBot
@@ -53,7 +57,7 @@ graph TD
 
 | Subsystem              | Primary Source Files                                                                               | Primary Test Files                                                                                | Specification File                                               |
 |:-----------------------|:---------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------|
-| **Engine & Reddit**    | `ZakBagansBot.kt`<br/>`service/RedditService.kt`<br/>`service/ContributionService.kt`              | `ZakBagansBotTest.kt`<br/>`service/RedditServiceTest.kt`<br/>`service/ContributionServiceTest.kt` | [bot-engine.md](bot-engine.md)                                   |
+| **Engine & Reddit**    | `ZakBagansBot.kt`<br/>`service/RedditService.kt`<br/>`service/ContributionService.kt`<br/>`service/GeminiService.kt` | `ZakBagansBotTest.kt`<br/>`service/RedditServiceTest.kt`<br/>`service/ContributionServiceTest.kt`<br/>`service/GeminiServiceTest.kt` | [bot-engine.md](bot-engine.md)                                   |
 | **Phrases & Quotes**   | `service/PhraseService.kt`<br/>`phrases/Phrase.kt`<br/>`phrases/*.kt`                              | `service/PhraseServiceTest.kt`                                                                    | [phrase-system.md](phrase-system.md)                             |
 | **Author Commands**    | `service/CommandService.kt`                                                                        | `service/CommandServiceTest.kt`                                                                   | [commands.md](commands.md)                                       |
 | **Telemetry & Alerts** | `TelegramBot.kt`<br/>`config/TelegramProperties.kt`                                                | `TelegramBotTest.kt`                                                                              | [telemetry-and-notifications.md](telemetry-and-notifications.md) |
@@ -82,6 +86,9 @@ When modifying this repository, AI agents must preserve the following non-negoti
    `src/main/resources/strings.properties` (and mirrored in `src/test/resources/strings.properties`), accessed via
    `getString()`. Never hardcode formatted messages in Kotlin code.
 8. **Test Execution**: Always run `./gradlew test` to verify changes before completing tasks.
+9. **Explicit Dependency Injection**: Spring components and services must NEVER declare default parameter values for
+   dependencies in their constructors (e.g. `zakbotProperties = ZakbotProperties()`). Dependencies must be strictly
+   required, and unit tests must explicitly supply mocks, fakes, or configured instances.
 
 ---
 

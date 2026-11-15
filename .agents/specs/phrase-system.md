@@ -48,7 +48,7 @@ appreciation in `PhraseService`.
 |  **2**   | `UnderstandPhrase` | `PhraseType.Understand` |    7    | `"understand" in message`          |   20% (`0.20f`)   |
 |  **1**   | `AnswersPhrase`    | `PhraseType.Answers`    |    1    | `"we want answers" in message`     |   25% (`0.25f`)   |
 |  **0**   | `GenericPhrase`    | `PhraseType.Generic`    |    3    | `"zak" in message                  |                   | "bagans" in message` | 20% (`0.20f`) |
-|   N/A    | Direct reply check | `PhraseType.GoodBot`    |    9    | `GOOD_BOT_PHRASES` in comment body |   10% (`0.10f`)   |
+|   N/A    | Direct reply check | `PhraseType.GoodBot`    |    9    | `GOOD_BOT_PHRASES` or Gemini `GOOD_BOT` | 10% (`0.10f`) |
 
 ---
 
@@ -80,8 +80,9 @@ reddit.quote_source_prefix=%s\n\n^(Quote from: %s)
 
 ### 3.3 Good Bot Praise Response
 
-- Triggered when comment is a reply to `BotUsername` and
-  `comment.body.filter(Char::isLetter).lowercase() in setOf("goodbot", "greatbot", "bestbot")`.
+- Triggered when comment is a reply to `BotUsername` and either:
+  - `comment.body.filter(Char::isLetter).lowercase() in setOf("goodbot", "greatbot", "bestbot")`, or
+  - `checkForBotMention(comment)` is `true`, `!geminiService.isDryRun`, and `geminiService.evaluateBotReply(comment) == BotSentiment.GOOD_BOT`.
 - 10% chance: `randomRoll() <= 0.1f`.
 - Quote fetched from `phraseService.getPhrase(PhraseType.GoodBot)?.substitute(comment)`.
 - Applied footer:

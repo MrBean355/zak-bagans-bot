@@ -6,10 +6,12 @@ This specification defines the scheduled polling, API pagination, contribution i
     - Engine: `src/main/kotlin/com/github/mrbean355/zakbot/ZakBagansBot.kt`
     - Reddit Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/RedditService.kt`
     - Contribution Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/ContributionService.kt`
+    - Gemini Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/GeminiService.kt`
 - **Unit Tests**:
     - `src/test/kotlin/com/github/mrbean355/zakbot/ZakBagansBotTest.kt`
     - `src/test/kotlin/com/github/mrbean355/zakbot/service/RedditServiceTest.kt`
     - `src/test/kotlin/com/github/mrbean355/zakbot/service/ContributionServiceTest.kt`
+    - `src/test/kotlin/com/github/mrbean355/zakbot/service/GeminiServiceTest.kt`
 
 ---
 
@@ -28,9 +30,13 @@ This specification defines the scheduled polling, API pagination, contribution i
    `commandService.processAuthorCommand()` and immediately returned.
 7. **Parent Submission Caching**: `RedditService.getCommentSubmission()` MUST cache parent submissions in an in-memory
    LRU cache (capacity 100) to prevent redundant `GET /api/info` calls when multiple comments belong to the same post.
-8. **Reddit API Resilience**: Write operations (`postCommentReply`, `setBotFlair`) and lookups (`findParentComment`,
-   `getFlairOptions`) MUST catch exceptions and log errors/warnings to prevent transient API outages or network
+8. **Reddit API Resilience**: Write operations (`postCommentReply`, `setBotFlair`, `deleteComment`) and lookups (`findParentComment`,
+   `getFlairOptions`, `getOwnRecentComments`) MUST catch exceptions and log errors/warnings to prevent transient API outages or network
    glitches from crashing scheduled jobs.
+9. **Downvote Self-Deletion**: In each 15-minute polling cycle, `contributionService.checkDownvotedComments()` checks the bot's
+   recent comments via `redditService.getOwnRecentComments()`. If a comment has not already been deleted and has a score
+   at or below `zakbot.downvotes.delete-threshold` (default `-3`), it is deleted via Reddit `POST /api/del` (when replies are enabled),
+   tracked in an in-memory LRU set to prevent duplicate deletions, and an alert is dispatched via Telegram.
 
 ---
 
@@ -49,6 +55,7 @@ fun checkContributions()
 - Calls `redditService.getCommentsSince(botCache.getLastCommentTime())`.
 - For each comment: invokes `contributionService.processComment(it)`.
 - If non-empty: sets `botCache.setLastCommentTime(first.created)`.
+- Calls `contributionService.checkDownvotedComments()`.
 
 ### 2.2 `updateBotFlair()`
 
@@ -68,16 +75,23 @@ fun updateBotFlair()
 
 1. If `submission.author == AuthorUsername` -> `return` (ignore author's posts).
 2. Call `checkForBotMention(submission)`.
-3. If `botCache.isUserIgnored(submission.author)` -> `return`.
-4. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
-5. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
-6. Send Telegram alert:
+3. If `botCache.isUserIgnored(submission.author)` or `botCache.isSubmissionIgnored(submission.fullName)` -> `return`.
+4. Evaluate sensitivity via `geminiService.evaluateSubmission(submission)`. If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
+    - If `geminiService.isDryRun` is `true`:
+        - Send `telegram.sensitive_submission_dry_run` notification (proceeding to step 5 without ignoring).
+    - Otherwise:
+        - `botCache.ignoreSubmission(submission.fullName, reason)`
+        - Send `telegram.sensitive_submission_ignored` notification
+        - `return`
+5. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
+6. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
+7. Send Telegram alert:
    `telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))`.
 
 ### 3.2 `processComment(comment: Comment)`
 
 1. If `comment.author == AuthorUsername` -> delegate to `commandService.processAuthorCommand(comment)` and `return`.
-2. Call `checkForBotMention(comment)`.
+2. Call `val mentionsBot = checkForBotMention(comment)`.
 3. Skip conditions (return immediately if any is true):
     - `comment.author == BotUsername`
     - `botCache.isUserIgnored(comment.author)`
@@ -85,11 +99,16 @@ fun updateBotFlair()
     - `redditService.getCommentSubmission(comment)?.let { botCache.isUserIgnored(it.author) } == true`
 4. Reply-to-Bot Check:
     - If `redditService.findParentComment(comment)?.author == BotUsername`:
-        - If `comment.body.isBadBot()`:
+        - Determine `BotSentiment`:
+            - `comment.body.isBadBot()` -> `BAD_BOT`
+            - `comment.body.isGoodBot()` -> `GOOD_BOT`
+            - `!mentionsBot` -> `NEUTRAL`
+            - Otherwise -> `geminiService.evaluateBotReply(comment)` (returns `NEUTRAL` if disabled or on error; if `geminiService.isDryRun` is `true`, non-`NEUTRAL` results send `telegram.bot_reply_sentiment_dry_run` while returning `NEUTRAL`)
+        - If `sentiment == BAD_BOT`:
             - `botCache.ignoreUser(comment.author, comment.fullName)`
             - Reply with `reddit.new_user_ignored`
             - Send `telegram.new_ignored_user`
-        - Else if `comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE`:
+        - Else if `sentiment == GOOD_BOT && randomRoll() <= GOOD_BOT_REPLY_CHANCE`:
             - `val phrase = phraseService.getPhrase(PhraseType.GoodBot)?.substitute(comment)`
             - If non-null:
                 - `val response = getString("reddit.good_bot_footer", phrase)`

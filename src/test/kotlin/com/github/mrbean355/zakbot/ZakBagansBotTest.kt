@@ -64,6 +64,7 @@ class ZakBagansBotTest {
             botCache.setLastSubmissionTime(subTime1)
             contributionService.processComment(comment1)
             botCache.setLastCommentTime(comTime1)
+            contributionService.checkDownvotedComments()
         }
     }
 
@@ -103,6 +104,9 @@ class ZakBagansBotTest {
             botCache.setLastCommentTime(any())
             contributionService.processSubmission(any())
             contributionService.processComment(any())
+        }
+        verify(exactly = 1) {
+            contributionService.checkDownvotedComments()
         }
     }
 
