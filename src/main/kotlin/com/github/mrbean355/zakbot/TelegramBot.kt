@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot
 
+import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
@@ -34,6 +35,7 @@ class TelegramBot(
     private val telegramClient: TelegramClient,
     private val buildProperties: BuildProperties,
     private val telegramProperties: TelegramProperties,
+    private val geminiProperties: GeminiProperties,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
     private val logger = LoggerFactory.getLogger(TelegramBot::class.java)
@@ -67,11 +69,17 @@ class TelegramBot(
     }
 
     private fun buildStatusMessage(): String {
+        val geminiStatus = when {
+            !geminiProperties.enabled -> "Disabled"
+            geminiProperties.apiKey.isBlank() -> "No API key"
+            else -> "Enabled"
+        }
         return getString(
             "telegram.bot_status_response",
             buildProperties.version,
             getUptime().ifBlank { "< 1 second" },
             getMemoryUsage(),
+            geminiStatus,
             SubredditName,
             phraseRepository.count(),
             ignoredUserRepository.count(),

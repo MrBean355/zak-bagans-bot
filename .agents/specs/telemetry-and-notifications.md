@@ -42,7 +42,7 @@ if (text == "/status" || text.startsWith("/status@")) {
 `buildStatusMessage()` aggregates runtime data using the template `telegram.bot_status_response`:
 
 ```text
-telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`\n• Uptime: %s\n• Memory: `%s`\n\n*Reddit (/r/%s)*\n• Quotes in DB: %d\n• Ignored users: %d\n• Ignored posts: %d
+telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`\n• Uptime: %s\n• Memory: `%s`\n• Gemini: `%s`\n\n*Reddit (/r/%s)*\n• Quotes in DB: %d\n• Ignored users: %d\n• Ignored posts: %d
 ```
 
 - **Version**: `buildProperties.version`
@@ -51,6 +51,7 @@ telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`
 - **Memory**: `${usedMb}MB / ${maxMb}MB` where:
     - `usedMb = (totalMemory - freeMemory) / (1024 * 1024)`
     - `maxMb = maxMemory / (1024 * 1024)`
+- **Gemini**: `"Disabled"` if `!geminiProperties.enabled`, `"No API key"` if `geminiProperties.apiKey.isBlank()`, otherwise `"Enabled"`.
 - **Subreddit**: `SubredditName` constant.
 - **Counters**:
     - Quotes in DB: `phraseRepository.count()`

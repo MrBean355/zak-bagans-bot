@@ -54,12 +54,21 @@ If you enjoy the bot, you can reply to one of its comments with `good bot`, `gre
 
 ## Special Commands
 
+### Reddit
+
 There are some commands that can be sent to the bot via comments on Reddit, and **only the bot's author can send them**.
 
 - `u/ZakBagansBot ignore_user <username>` - Ignore the user's future posts and comments.
 - `u/ZakBagansBot unignore_user <username>` - Stop ignoring the user.
 - `u/ZakBagansBot ignore_post <reason>` - Ignore all comments on the current post. The reason is optional.
 - `u/ZakBagansBot unignore_post` - Stop ignoring the current post.
+
+### Telegram
+
+The following command can be sent to the bot via Telegram:
+
+- `/status` - View the bot's runtime telemetry (version, uptime, memory usage, Gemini moderation status, and database
+  statistics).
 
 ## Specifications
 
@@ -121,6 +130,8 @@ The bot can be configured using standard Spring Boot properties or environment v
 | `telegram.chat-id`        | `TELEGRAM_CHAT_ID`       | `44692593` | Telegram chat ID to receive notifications        |
 | `admin.username`          | `ADMIN_USERNAME`         | `admin`    | Username for the admin web dashboard             |
 | `admin.password`          | `ADMIN_PASSWORD`         | *(empty)*  | Password for the admin web dashboard             |
+| `gemini.api-key`          | `GEMINI_API_KEY`         | *(empty)*  | Google Gemini API key for content moderation     |
+| `gemini.enabled`          | `GEMINI_ENABLED`         | `true`     | Toggle Gemini content moderation                 |
 | `zakbot.replies.enabled`  | `ZAKBOT_REPLIES_ENABLED` | `true`     | Toggle posting live replies to Reddit            |
 
 ### Testing

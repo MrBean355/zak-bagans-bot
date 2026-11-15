@@ -23,7 +23,7 @@ class GeminiService(
     private val jsonMapper = JsonMapper.builder().build()
 
     fun evaluateSubmission(submission: Submission): ModerationResult {
-        if (geminiProperties.apiKey.isBlank()) {
+        if (!geminiProperties.enabled || geminiProperties.apiKey.isBlank()) {
             return ModerationResult(sensitivity = 0f, reason = null)
         }
 

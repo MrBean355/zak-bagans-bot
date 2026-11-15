@@ -6,4 +6,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class GeminiProperties(
     val apiKey: String = "",
     val model: String = "gemini-3.5-flash-lite",
+    val enabled: Boolean = true,
 )

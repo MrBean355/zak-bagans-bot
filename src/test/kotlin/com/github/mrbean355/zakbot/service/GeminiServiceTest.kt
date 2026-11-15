@@ -50,6 +50,23 @@ class GeminiServiceTest {
     }
 
     @Test
+    fun testEvaluateSubmission_WhenDisabled_ReturnsZeroSensitivityWithoutCallingApi() {
+        val disabledService = GeminiService(
+            client = client,
+            geminiProperties = GeminiProperties(apiKey = "test-api-key", enabled = false),
+            telegramNotifier = telegramNotifier,
+        )
+        val submission = createSubmission(title = "RIP to a great investigator")
+
+        val result = disabledService.evaluateSubmission(submission)
+
+        assertEquals(0f, result.sensitivity)
+        assertNull(result.reason)
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+        server.verify()
+    }
+
+    @Test
     fun testEvaluateSubmission_WhenApiKeyBlank_ReturnsZeroSensitivityWithoutCallingApi() {
         val unconfiguredService = GeminiService(
             client = client,
