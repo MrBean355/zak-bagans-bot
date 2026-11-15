@@ -9,6 +9,7 @@ import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Contribution
 import com.github.mrbean355.zakbot.reddit.model.Submission
+import com.github.mrbean355.zakbot.service.GeminiService.BotSentiment
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
 import java.util.Collections
@@ -127,32 +128,45 @@ class ContributionService(
             return
         }
 
-        checkForBotMention(comment)
-
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
             botCache.isSubmissionIgnored(comment.submissionFullName) ||
             redditService.getCommentSubmission(comment)?.isAuthorIgnored() == true
         ) {
+            checkForBotMention(comment)
             return
         }
 
         if (redditService.findParentComment(comment)?.author == BotUsername) {
-            if (comment.body.isBadBot()) {
-                botCache.ignoreUser(comment.author, comment.fullName)
-                redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
-                telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
-            } else if (comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE) {
-                val phrase = phraseService.getPhrase(PhraseType.GoodBot)
-                    ?.substitute(comment)
-                if (phrase != null) {
-                    val response = getString("reddit.good_bot_footer", phrase)
-                    redditService.replyToComment(comment, response)
-                    telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
+            val sentiment = evaluateBotReplySentiment(comment)
+            if (sentiment != BotSentiment.GOOD_BOT) {
+                checkForBotMention(comment)
+            }
+            when (sentiment) {
+                BotSentiment.BAD_BOT -> {
+                    botCache.ignoreUser(comment.author, comment.fullName)
+                    redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+                    telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
                 }
+
+                BotSentiment.GOOD_BOT -> {
+                    if (randomRoll() <= GOOD_BOT_REPLY_CHANCE) {
+                        val phrase = phraseService.getPhrase(PhraseType.GoodBot)
+                            ?.substitute(comment)
+                        if (phrase != null) {
+                            val response = getString("reddit.good_bot_footer", phrase)
+                            redditService.replyToComment(comment, response)
+                            telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
+                        }
+                    }
+                }
+
+                BotSentiment.NEUTRAL -> Unit
             }
             return
         }
+
+        checkForBotMention(comment)
 
         val response = phraseService.findPhrase(comment)
             ?.substitute(comment)
@@ -160,6 +174,14 @@ class ContributionService(
 
         redditService.replyToComment(comment, response)
         telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
+    }
+
+    private fun evaluateBotReplySentiment(comment: Comment): BotSentiment {
+        return when {
+            comment.body.isBadBot() -> BotSentiment.BAD_BOT
+            comment.body.isGoodBot() -> BotSentiment.GOOD_BOT
+            else -> geminiService.evaluateBotReply(comment)
+        }
     }
 
     /**

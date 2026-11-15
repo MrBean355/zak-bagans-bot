@@ -44,13 +44,13 @@ phrase", and an 80% chance to skip to the next keyword in the list.
 
 ## Opting Out
 
-If you find the bot annoying, you can reply to one of its comments with `bad bot`. This will make the bot ignore all of
-your future posts and comments.
+If you find the bot annoying, you can reply to one of its comments with `bad bot` (or a similar opt-out reply). This
+will make the bot ignore all of your future posts and comments.
 
 ## Praising the Bot
 
-If you enjoy the bot, you can reply to one of its comments with `good bot`, `great bot`, or `best bot`. There is a
-10% chance the bot will respond with appreciation in true Zak Bagans style.
+If you enjoy the bot, you can reply to one of its comments with `good bot`, `great bot`, `best bot`, or similar praise.
+There is a 10% chance the bot will respond with appreciation in true Zak Bagans style.
 
 ## Special Commands
 
@@ -130,8 +130,8 @@ The bot can be configured using standard Spring Boot properties or environment v
 | `telegram.chat-id`        | `TELEGRAM_CHAT_ID`       | `44692593` | Telegram chat ID to receive notifications        |
 | `admin.username`          | `ADMIN_USERNAME`         | `admin`    | Username for the admin web dashboard             |
 | `admin.password`          | `ADMIN_PASSWORD`         | *(empty)*  | Password for the admin web dashboard             |
-| `gemini.api-key`          | `GEMINI_API_KEY`         | *(empty)*  | Google Gemini API key for content moderation     |
-| `gemini.enabled`          | `GEMINI_ENABLED`         | `true`     | Toggle Gemini content moderation                 |
+| `gemini.api-key`          | `GEMINI_API_KEY`         | *(empty)*  | Google Gemini API key for moderation and sentiment |
+| `gemini.enabled`          | `GEMINI_ENABLED`         | `true`     | Toggle Gemini content moderation and sentiment   |
 | `zakbot.replies.enabled`  | `ZAKBOT_REPLIES_ENABLED` | `true`     | Toggle posting live replies to Reddit            |
 
 ### Testing

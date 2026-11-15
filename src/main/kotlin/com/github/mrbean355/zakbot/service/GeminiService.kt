@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
+import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
@@ -23,10 +24,6 @@ class GeminiService(
     private val jsonMapper = JsonMapper.builder().build()
 
     fun evaluateSubmission(submission: Submission): ModerationResult {
-        if (!geminiProperties.enabled || geminiProperties.apiKey.isBlank()) {
-            return ModerationResult(sensitivity = 0f, reason = null)
-        }
-
         val input = buildString {
             append("Title: ").append(submission.title)
             if (!submission.selfText.isNullOrBlank()) {
@@ -34,15 +31,51 @@ class GeminiService(
             }
         }
 
+        return generateStructuredOutput(
+            systemInstruction = SUBMISSION_SYSTEM_INSTRUCTION,
+            input = input,
+            schema = SUBMISSION_RESPONSE_SCHEMA,
+            responseType = ModerationResult::class.java,
+            logDescription = "submission sensitivity (${submission.fullName})",
+            telegramContextText = submission.title,
+            telegramContextUrl = submission.url,
+        ) ?: ModerationResult(sensitivity = 0f, reason = null)
+    }
+
+    fun evaluateBotReply(comment: Comment): BotSentiment {
+        return generateStructuredOutput(
+            systemInstruction = BOT_REPLY_SYSTEM_INSTRUCTION,
+            input = comment.body,
+            schema = BOT_REPLY_RESPONSE_SCHEMA,
+            responseType = SentimentResult::class.java,
+            logDescription = "bot reply sentiment (${comment.fullName})",
+            telegramContextText = comment.body,
+            telegramContextUrl = comment.url,
+        )?.sentiment ?: BotSentiment.NEUTRAL
+    }
+
+    private fun <T : Any> generateStructuredOutput(
+        systemInstruction: String,
+        input: String,
+        schema: Map<String, Any>,
+        responseType: Class<T>,
+        logDescription: String,
+        telegramContextText: String,
+        telegramContextUrl: String,
+    ): T? {
+        if (!geminiProperties.enabled || geminiProperties.apiKey.isBlank()) {
+            return null
+        }
+
         val request = InteractionRequest(
             model = geminiProperties.model,
-            systemInstruction = SYSTEM_INSTRUCTION,
+            systemInstruction = systemInstruction,
             input = input,
             store = false,
             responseFormat = ResponseFormat(
                 type = "text",
                 mimeType = "application/json",
-                schema = RESPONSE_SCHEMA,
+                schema = schema,
             ),
         )
 
@@ -59,11 +92,11 @@ class GeminiService(
                 ?.content
                 ?.lastOrNull { it.type == "text" }
                 ?.text
-                ?: return ModerationResult(sensitivity = 0f, reason = null)
+                ?: return null
 
-            jsonMapper.readValue(outputText, ModerationResult::class.java)
+            jsonMapper.readValue(outputText, responseType)
         } catch (ex: Exception) {
-            logger.warn("Failed to evaluate submission sensitivity: {}", submission.fullName, ex)
+            logger.warn("Failed to evaluate {}", logDescription, ex)
             val errorDetail = ex.message?.lineSequence()?.firstOrNull()?.take(150)?.replace("`", "'")
             val errorSummary = buildString {
                 append(ex::class.simpleName ?: "Exception")
@@ -74,19 +107,30 @@ class GeminiService(
             telegramNotifier.sendMessage(
                 getString(
                     "telegram.gemini_evaluation_failed",
-                    submission.title,
+                    telegramContextText,
                     errorSummary,
-                    submission.url,
+                    telegramContextUrl,
                 )
             )
-            ModerationResult(sensitivity = 0f, reason = null)
+            null
         }
+    }
+
+    enum class BotSentiment {
+        GOOD_BOT,
+        BAD_BOT,
+        NEUTRAL,
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class ModerationResult(
         val sensitivity: Float,
         val reason: String?,
+    )
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class SentimentResult(
+        val sentiment: BotSentiment,
     )
 
     data class InteractionRequest(
@@ -121,7 +165,7 @@ class GeminiService(
     )
 
     private companion object {
-        private val SYSTEM_INSTRUCTION = """
+        private val SUBMISSION_SYSTEM_INSTRUCTION = """
             You are a content moderation assistant for a comedy Reddit bot on r/GhostAdventures that replies with funny Zak Bagans quotes.
             Rate the sensitivity (from 0.0 to 1.0) of a Reddit submission based on whether it discusses a genuinely serious, tragic, or sensitive real-life topic where a comedy quote reply would be inappropriate or disrespectful.
             Assign high sensitivity (0.7 to 1.0) ONLY for real-life serious topics such as:
@@ -134,7 +178,7 @@ class GeminiService(
             If sensitivity is 0.5 or higher, provide a concise reason (under 100 characters). Otherwise set reason to null.
         """.trimIndent()
 
-        private val RESPONSE_SCHEMA = mapOf(
+        private val SUBMISSION_RESPONSE_SCHEMA = mapOf(
             "type" to "object",
             "properties" to mapOf(
                 "sensitivity" to mapOf(
@@ -149,6 +193,27 @@ class GeminiService(
                 ),
             ),
             "required" to listOf("sensitivity", "reason"),
+        )
+
+        private val BOT_REPLY_SYSTEM_INSTRUCTION = """
+            You are a sentiment classifier for a comedy Reddit bot on r/GhostAdventures that replies with funny Zak Bagans quotes.
+            Classify a user's comment replying directly to the bot into one of three categories:
+            - GOOD_BOT: Clear praise, appreciation, or positive feedback directed at the bot (e.g., "good bot", "best bot ever", "I love this bot", "thank you zakbot").
+            - BAD_BOT: Clear criticism, hostility, annoyance, or an opt-out request directed at the bot (e.g., "bad bot", "worst bot", "stupid bot", "shut up", "stop replying to me").
+            - NEUTRAL: Anything else, including jokes playing along with the quote, general discussion about Zak Bagans or Ghost Adventures, questions, or ambiguous comments.
+            Because BAD_BOT permanently opts the user out of future bot replies, only classify as BAD_BOT when the negative sentiment or opt-out intent toward the bot is clear.
+        """.trimIndent()
+
+        private val BOT_REPLY_RESPONSE_SCHEMA = mapOf(
+            "type" to "object",
+            "properties" to mapOf(
+                "sentiment" to mapOf(
+                    "type" to "string",
+                    "enum" to listOf("GOOD_BOT", "BAD_BOT", "NEUTRAL"),
+                    "description" to "The sentiment classification of the user's reply toward the bot.",
+                ),
+            ),
+            "required" to listOf("sentiment"),
         )
     }
 }

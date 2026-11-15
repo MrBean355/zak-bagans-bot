@@ -49,6 +49,7 @@ class ContributionServiceTest {
         every { botCache.isUserIgnored(any()) } returns false
         every { botCache.isSubmissionIgnored(any()) } returns false
         every { geminiService.evaluateSubmission(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
+        every { geminiService.evaluateBotReply(any()) } returns GeminiService.BotSentiment.NEUTRAL
         every { phraseService.findPhrase(any<Submission>()) } returns null
         every { phraseService.findPhrase(any<Comment>()) } returns null
         every { phraseService.getPhrase(any()) } returns null
@@ -211,7 +212,7 @@ class ContributionServiceTest {
     }
 
     @Test
-    fun testProcessComment_WhenBadBotReplyToBotComment_IgnoresUserAndReplies() {
+    fun testProcessComment_WhenBadBotReplyToBotComment_IgnoresUserAndRepliesWithoutCallingGemini() {
         val botComment = createComment(author = BotUsername, body = "I am Zak")
         val comment = createComment(author = "critic", body = "bad bot", parentFullName = "t1_bot")
         every { redditService.findParentComment(comment) } returns botComment
@@ -223,11 +224,14 @@ class ContributionServiceTest {
             telegramNotifier.sendMessage(match { it.contains("critic") })
             redditService.replyToComment(comment, match { it.contains("won't reply") })
         }
+        verify(exactly = 0) {
+            geminiService.evaluateBotReply(any())
+        }
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["good bot!", "great bot!", "best bot!", "goodbot", "Great bot", "BEST BOT!"])
-    fun testProcessComment_WhenGoodBotReplyToBotComment_RepliesWithAppreciationAndSendsTelegramNotification(praise: String) {
+    fun testProcessComment_WhenGoodBotReplyToBotComment_RepliesWithAppreciationWithoutCallingGemini(praise: String) {
         val botComment = createComment(author = BotUsername, body = "I am Zak")
         val comment = createComment(author = "fan", body = praise, parentFullName = "t1_bot")
         every { redditService.findParentComment(comment) } returns botComment
@@ -241,6 +245,63 @@ class ContributionServiceTest {
         }
         verify(exactly = 0) {
             botCache.ignoreUser(any(), any())
+            geminiService.evaluateBotReply(any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsBadBot_IgnoresUserAndReplies() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "critic", body = "shut up stupid bot", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.BAD_BOT
+
+        service.processComment(comment)
+
+        verify {
+            geminiService.evaluateBotReply(comment)
+            botCache.ignoreUser("critic", comment.fullName)
+            telegramNotifier.sendMessage(match { it.contains("User Ignored") && it.contains("critic") })
+            redditService.replyToComment(comment, match { it.contains("won't reply") })
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsGoodBot_RepliesWithAppreciationWithoutMentionNotification() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "fan", body = "I love this bot so much!", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.GOOD_BOT
+        every { phraseService.getPhrase(PhraseType.GoodBot) } returns "Thank you, {author}!"
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateBotReply(comment)
+            telegramNotifier.sendMessage(match { it.contains("Good Bot Praise") && it.contains("fan") })
+            redditService.replyToComment(comment, "Thank you, fan!\n\n^(Thank you ❤️)")
+        }
+        verify(exactly = 0) {
+            botCache.ignoreUser(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenGeminiClassifiesReplyAsNeutral_DoesNotIgnoreOrReply() {
+        val botComment = createComment(author = BotUsername, body = "I am Zak")
+        val comment = createComment(author = "viewer", body = "Haha classic Zak", parentFullName = "t1_bot")
+        every { redditService.findParentComment(comment) } returns botComment
+        every { geminiService.evaluateBotReply(comment) } returns GeminiService.BotSentiment.NEUTRAL
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateBotReply(comment)
+        }
+        verify(exactly = 0) {
+            botCache.ignoreUser(any(), any())
+            redditService.replyToComment(any(), any())
+            telegramNotifier.sendMessage(any())
         }
     }
 

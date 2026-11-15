@@ -2,7 +2,9 @@ package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
+import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
+import com.github.mrbean355.zakbot.service.GeminiService.BotSentiment
 import io.mockk.MockKAnnotations
 import io.mockk.impl.annotations.MockK
 import io.mockk.justRun
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -239,6 +243,99 @@ class GeminiServiceTest {
         server.verify()
     }
 
+    @Test
+    fun testEvaluateBotReply_WhenDisabled_ReturnsNeutralWithoutCallingApi() {
+        val disabledService = GeminiService(
+            client = client,
+            geminiProperties = GeminiProperties(apiKey = "test-api-key", enabled = false),
+            telegramNotifier = telegramNotifier,
+        )
+        val comment = createComment(body = "I love this bot so much!")
+
+        val result = disabledService.evaluateBotReply(comment)
+
+        assertEquals(BotSentiment.NEUTRAL, result)
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+        server.verify()
+    }
+
+    @Test
+    fun testEvaluateBotReply_WhenApiKeyBlank_ReturnsNeutralWithoutCallingApi() {
+        val unconfiguredService = GeminiService(
+            client = client,
+            geminiProperties = GeminiProperties(apiKey = ""),
+            telegramNotifier = telegramNotifier,
+        )
+        val comment = createComment(body = "I love this bot so much!")
+
+        val result = unconfiguredService.evaluateBotReply(comment)
+
+        assertEquals(BotSentiment.NEUTRAL, result)
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+        server.verify()
+    }
+
+    @ParameterizedTest
+    @EnumSource(BotSentiment::class)
+    fun testEvaluateBotReply_ReturnsExpectedSentiment(expectedSentiment: BotSentiment) {
+        val responseJson = """
+            {
+              "id": "int_comment",
+              "steps": [
+                {
+                  "type": "model_output",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "{\"sentiment\":\"${expectedSentiment.name}\"}"
+                    }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://generativelanguage.googleapis.com/v1/interactions"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.model").value("gemini-3.5-flash-lite"))
+            .andExpect(jsonPath("$.store").value(false))
+            .andExpect(jsonPath("$.input").value("Sample reply text"))
+            .andExpect(jsonPath("$.response_format.type").value("text"))
+            .andExpect(jsonPath("$.response_format.mime_type").value("application/json"))
+            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON))
+
+        val comment = createComment(body = "Sample reply text")
+        val result = service.evaluateBotReply(comment)
+
+        assertEquals(expectedSentiment, result)
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+        server.verify()
+    }
+
+    @Test
+    fun testEvaluateBotReply_WhenApiFails_SendsTelegramNotificationAndReturnsNeutral() {
+        server.expect(requestTo("https://generativelanguage.googleapis.com/v1/interactions"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS))
+
+        val comment = createComment(body = "Best bot on Reddit!")
+        val result = service.evaluateBotReply(comment)
+
+        assertEquals(BotSentiment.NEUTRAL, result)
+        verify(exactly = 1) {
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Gemini Evaluation Failed") &&
+                        it.contains("Best bot on Reddit!") &&
+                        it.contains("429") &&
+                        it.contains(comment.url)
+                }
+            )
+        }
+        server.verify()
+    }
+
     private fun createSubmission(
         id: String = "sub1",
         author: String = "user1",
@@ -252,5 +349,21 @@ class GeminiServiceTest {
         url = "https://reddit.com/r/GhostAdventures/comments/$id",
         title = title,
         selfText = selfText,
+    )
+
+    private fun createComment(
+        id: String = "com1",
+        author: String = "user1",
+        body: String = "Body",
+    ) = Comment(
+        id = id,
+        fullName = "t1_$id",
+        author = author,
+        created = Instant.now(),
+        url = "https://reddit.com/r/GhostAdventures/comments/sub1/title/$id",
+        body = body,
+        submissionFullName = "t3_sub1",
+        parentFullName = "t1_bot",
+        score = 0,
     )
 }

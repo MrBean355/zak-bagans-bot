@@ -88,25 +88,30 @@ fun updateBotFlair()
 ### 3.2 `processComment(comment: Comment)`
 
 1. If `comment.author == AuthorUsername` -> delegate to `commandService.processAuthorCommand(comment)` and `return`.
-2. Call `checkForBotMention(comment)`.
-3. Skip conditions (return immediately if any is true):
+2. Skip conditions (call `checkForBotMention(comment)` and return immediately if any is true):
     - `comment.author == BotUsername`
     - `botCache.isUserIgnored(comment.author)`
     - `botCache.isSubmissionIgnored(comment.submissionFullName)`
     - `redditService.getCommentSubmission(comment)?.let { botCache.isUserIgnored(it.author) } == true`
-4. Reply-to-Bot Check:
+3. Reply-to-Bot Check:
     - If `redditService.findParentComment(comment)?.author == BotUsername`:
-        - If `comment.body.isBadBot()`:
+        - Determine `BotSentiment`:
+            - `comment.body.isBadBot()` -> `BAD_BOT`
+            - `comment.body.isGoodBot()` -> `GOOD_BOT`
+            - Otherwise -> `geminiService.evaluateBotReply(comment)` (returns `NEUTRAL` if disabled or on error)
+        - If `sentiment != GOOD_BOT`, call `checkForBotMention(comment)`.
+        - If `sentiment == BAD_BOT`:
             - `botCache.ignoreUser(comment.author, comment.fullName)`
             - Reply with `reddit.new_user_ignored`
             - Send `telegram.new_ignored_user`
-        - Else if `comment.body.isGoodBot() && randomRoll() <= GOOD_BOT_REPLY_CHANCE`:
+        - Else if `sentiment == GOOD_BOT && randomRoll() <= GOOD_BOT_REPLY_CHANCE`:
             - `val phrase = phraseService.getPhrase(PhraseType.GoodBot)?.substitute(comment)`
             - If non-null:
                 - `val response = getString("reddit.good_bot_footer", phrase)`
                 - Reply with `response`
                 - Send `telegram.good_bot_praise`
         - `return`
+4. Call `checkForBotMention(comment)`.
 5. Search phrase: `val response = phraseService.findPhrase(comment)?.substitute(comment) ?: return`.
 6. Post Reddit reply: `redditService.replyToComment(comment, response)`.
 7. Send Telegram alert:
