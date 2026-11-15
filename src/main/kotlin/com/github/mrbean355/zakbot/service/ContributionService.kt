@@ -12,6 +12,7 @@ import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
 import java.util.Collections
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 private const val SUBSTITUTION_AUTHOR_NAME = "{author}"
@@ -25,6 +26,7 @@ class ContributionService(
     private val redditService: RedditService,
     private val phraseService: PhraseService,
     private val commandService: CommandService,
+    private val geminiService: GeminiService,
     private val botCache: BotCache,
     private val telegramNotifier: TelegramNotifier,
     private val zakbotProperties: ZakbotProperties,
@@ -71,7 +73,9 @@ class ContributionService(
     /**
      * Ignores submissions that are:
      * - sent by the bot's author, or
-     * - sent by an ignored user.
+     * - sent by an ignored user, or
+     * - already ignored, or
+     * - flagged as sensitive by Gemini.
      */
     fun processSubmission(submission: Submission) {
         if (submission.author == AuthorUsername) {
@@ -80,7 +84,23 @@ class ContributionService(
 
         checkForBotMention(submission)
 
-        if (submission.isAuthorIgnored()) {
+        if (submission.isAuthorIgnored() || botCache.isSubmissionIgnored(submission.fullName)) {
+            return
+        }
+
+        val moderation = geminiService.evaluateSubmission(submission)
+        if (moderation.sensitivity >= zakbotProperties.moderation.sensitivityThreshold) {
+            val reason = moderation.reason?.ifBlank { null }
+            botCache.ignoreSubmission(submission.fullName, reason)
+            telegramNotifier.sendMessage(
+                getString(
+                    "telegram.sensitive_submission_ignored",
+                    submission.title,
+                    (moderation.sensitivity * 100).roundToInt(),
+                    reason ?: "None",
+                    submission.url,
+                )
+            )
             return
         }
 

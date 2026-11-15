@@ -6,10 +6,12 @@ This specification defines the scheduled polling, API pagination, contribution i
     - Engine: `src/main/kotlin/com/github/mrbean355/zakbot/ZakBagansBot.kt`
     - Reddit Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/RedditService.kt`
     - Contribution Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/ContributionService.kt`
+    - Gemini Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/GeminiService.kt`
 - **Unit Tests**:
     - `src/test/kotlin/com/github/mrbean355/zakbot/ZakBagansBotTest.kt`
     - `src/test/kotlin/com/github/mrbean355/zakbot/service/RedditServiceTest.kt`
     - `src/test/kotlin/com/github/mrbean355/zakbot/service/ContributionServiceTest.kt`
+    - `src/test/kotlin/com/github/mrbean355/zakbot/service/GeminiServiceTest.kt`
 
 ---
 
@@ -73,10 +75,14 @@ fun updateBotFlair()
 
 1. If `submission.author == AuthorUsername` -> `return` (ignore author's posts).
 2. Call `checkForBotMention(submission)`.
-3. If `botCache.isUserIgnored(submission.author)` -> `return`.
-4. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
-5. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
-6. Send Telegram alert:
+3. If `botCache.isUserIgnored(submission.author)` or `botCache.isSubmissionIgnored(submission.fullName)` -> `return`.
+4. Evaluate sensitivity via `geminiService.evaluateSubmission(submission)`. If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
+    - `botCache.ignoreSubmission(submission.fullName, reason)`
+    - Send `telegram.sensitive_submission_ignored` notification
+    - `return`
+5. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
+6. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
+7. Send Telegram alert:
    `telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))`.
 
 ### 3.2 `processComment(comment: Comment)`

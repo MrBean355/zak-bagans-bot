@@ -40,6 +40,7 @@ if (text == "/status" || text.startsWith("/status@")) {
 ### 2.1 Telemetry Composition
 
 `buildStatusMessage()` aggregates runtime data using the template `telegram.bot_status_response`:
+
 ```text
 telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`\n• Uptime: %s\n• Memory: `%s`\n\n*Reddit (/r/%s)*\n• Quotes in DB: %d\n• Ignored users: %d\n• Ignored posts: %d
 ```
@@ -60,20 +61,22 @@ telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`
 
 ## 3. Outbound Event Notification Catalog
 
-| String Resource Key                   | Trigger Location                                | Parameters                                       |
-|:--------------------------------------|:------------------------------------------------|:-------------------------------------------------|
-| `telegram.new_submission`             | `ContributionService.processSubmission`         | `submission.title`, `response`, `submission.url` |
-| `telegram.new_comment`                | `ContributionService.processComment`            | `comment.body`, `response`, `comment.url`        |
-| `telegram.new_bot_mention_submission` | `ContributionService.checkForBotMention`        | `submission.title`, `submission.url`             |
-| `telegram.new_bot_mention_comment`    | `ContributionService.checkForBotMention`        | `comment.body`, `comment.url`                    |
-| `telegram.new_ignored_user`           | `ContributionService.processComment` (bad bot)  | `comment.author`, `comment.url`                  |
-| `telegram.good_bot_praise`            | `ContributionService.processComment` (good bot) | `comment.author`, `response`, `comment.url`      |
-| `telegram.deleted_downvoted_comment`  | `ContributionService.checkDownvotedComments`    | `comment.score`, `comment.body`, `comment.url`   |
-| `telegram.command_ignore_user`        | `CommandService.ignoreUser`                     | `username`, `comment.url`                        |
-| `telegram.command_unignore_user`      | `CommandService.unignoreUser`                   | `username`, `comment.url`                        |
-| `telegram.command_ignore_post`        | `CommandService.ignoreSubmission`               | `reason` (or "None"), `comment.url`              |
-| `telegram.command_unignore_post`      | `CommandService.unignoreSubmission`             | `comment.url`                                    |
-| `telegram.new_quote`                  | `PhraseService.addPhrase`                       | `content`, `type.name`, `source` (or "None")     |
+| String Resource Key                     | Trigger Location                                | Parameters                                                                       |
+|:----------------------------------------|:------------------------------------------------|:---------------------------------------------------------------------------------|
+| `telegram.new_submission`               | `ContributionService.processSubmission`         | `submission.title`, `response`, `submission.url`                                 |
+| `telegram.new_comment`                  | `ContributionService.processComment`            | `comment.body`, `response`, `comment.url`                                        |
+| `telegram.new_bot_mention_submission`   | `ContributionService.checkForBotMention`        | `submission.title`, `submission.url`                                             |
+| `telegram.new_bot_mention_comment`      | `ContributionService.checkForBotMention`        | `comment.body`, `comment.url`                                                    |
+| `telegram.new_ignored_user`             | `ContributionService.processComment` (bad bot)  | `comment.author`, `comment.url`                                                  |
+| `telegram.good_bot_praise`              | `ContributionService.processComment` (good bot) | `comment.author`, `response`, `comment.url`                                      |
+| `telegram.deleted_downvoted_comment`    | `ContributionService.checkDownvotedComments`    | `comment.score`, `comment.body`, `comment.url`                                   |
+| `telegram.sensitive_submission_ignored` | `ContributionService.processSubmission`         | `submission.title`, `sensitivityPercent`, `reason` (or "None"), `submission.url` |
+| `telegram.gemini_evaluation_failed`     | `GeminiService.evaluateSubmission`              | `submission.title`, `errorSummary`, `submission.url`                             |
+| `telegram.command_ignore_user`          | `CommandService.ignoreUser`                     | `username`, `comment.url`                                                        |
+| `telegram.command_unignore_user`        | `CommandService.unignoreUser`                   | `username`, `comment.url`                                                        |
+| `telegram.command_ignore_post`          | `CommandService.ignoreSubmission`               | `reason` (or "None"), `comment.url`                                              |
+| `telegram.command_unignore_post`        | `CommandService.unignoreSubmission`             | `comment.url`                                                                    |
+| `telegram.new_quote`                    | `PhraseService.addPhrase`                       | `content`, `type.name`, `source` (or "None")                                     |
 
 ---
 

@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class ZakbotProperties(
     val replies: Replies = Replies(),
     val downvotes: Downvotes = Downvotes(),
+    val moderation: Moderation = Moderation(),
 ) {
     data class Replies(
         val enabled: Boolean = true,
@@ -14,5 +15,9 @@ data class ZakbotProperties(
     data class Downvotes(
         val enabled: Boolean = true,
         val deleteThreshold: Int = -1,
+    )
+
+    data class Moderation(
+        val sensitivityThreshold: Float = 0.7f,
     )
 }

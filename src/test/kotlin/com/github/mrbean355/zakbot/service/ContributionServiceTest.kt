@@ -30,6 +30,9 @@ class ContributionServiceTest {
     private lateinit var commandService: CommandService
 
     @MockK
+    private lateinit var geminiService: GeminiService
+
+    @MockK
     private lateinit var botCache: BotCache
 
     @MockK
@@ -45,6 +48,7 @@ class ContributionServiceTest {
         justRun { redditService.replyToComment(any(), any()) }
         every { botCache.isUserIgnored(any()) } returns false
         every { botCache.isSubmissionIgnored(any()) } returns false
+        every { geminiService.evaluateSubmission(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
         every { phraseService.findPhrase(any<Submission>()) } returns null
         every { phraseService.findPhrase(any<Comment>()) } returns null
         every { phraseService.getPhrase(any()) } returns null
@@ -55,6 +59,7 @@ class ContributionServiceTest {
             redditService = redditService,
             phraseService = phraseService,
             commandService = commandService,
+            geminiService = geminiService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(),
@@ -81,6 +86,93 @@ class ContributionServiceTest {
 
         service.processSubmission(submission)
 
+        verify(exactly = 0) {
+            geminiService.evaluateSubmission(any())
+            redditService.replyToSubmission(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenAlreadyIgnored_DoesNothing() {
+        val submission = createSubmission(author = "user1", title = "Title")
+        every { botCache.isSubmissionIgnored(submission.fullName) } returns true
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            geminiService.evaluateSubmission(any())
+            redditService.replyToSubmission(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenSensitivityMeetsThreshold_IgnoresSubmissionAndSendsTelegramWithoutReplying() {
+        val submission = createSubmission(author = "user1", title = "Sad news about a crew member")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.85f,
+            reason = "Crew member obituary",
+        )
+        every { phraseService.findPhrase(submission) } returns "Some quote"
+
+        service.processSubmission(submission)
+
+        verify {
+            botCache.ignoreSubmission(submission.fullName, "Crew member obituary")
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Post Ignored") &&
+                        it.contains("Sad news about a crew member") &&
+                        it.contains("85%") &&
+                        it.contains("Crew member obituary")
+                }
+            )
+        }
+        verify(exactly = 0) {
+            phraseService.findPhrase(any<Submission>())
+            redditService.replyToSubmission(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenSensitivityBelowThreshold_ProceedsToPhraseMatching() {
+        val submission = createSubmission(author = "user1", title = "Did you see Zak?")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.4f,
+            reason = null,
+        )
+        every { phraseService.findPhrase(submission) } returns "We want answers"
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            botCache.ignoreSubmission(any(), any())
+        }
+        verify {
+            redditService.replyToSubmission(submission, "We want answers")
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenSensitiveWithBlankReason_IgnoresWithNullReasonAndSendsNoneInTelegram() {
+        val submission = createSubmission(author = "user1", title = "Serious post")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.9f,
+            reason = "   ",
+        )
+
+        service.processSubmission(submission)
+
+        verify {
+            botCache.ignoreSubmission(submission.fullName, null)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Post Ignored") &&
+                        it.contains("Serious post") &&
+                        it.contains("90%") &&
+                        it.contains("None")
+                }
+            )
+        }
         verify(exactly = 0) {
             redditService.replyToSubmission(any(), any())
         }
@@ -173,6 +265,7 @@ class ContributionServiceTest {
             redditService = redditService,
             phraseService = phraseService,
             commandService = commandService,
+            geminiService = geminiService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(),
@@ -328,6 +421,7 @@ class ContributionServiceTest {
             redditService = redditService,
             phraseService = phraseService,
             commandService = commandService,
+            geminiService = geminiService,
             botCache = botCache,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(downvotes = ZakbotProperties.Downvotes(enabled = false)),
