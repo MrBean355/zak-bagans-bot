@@ -23,6 +23,9 @@ class GeminiService(
     private val logger = LoggerFactory.getLogger(GeminiService::class.java)
     private val jsonMapper = JsonMapper.builder().build()
 
+    val isDryRun: Boolean
+        get() = geminiProperties.dryRun
+
     fun evaluateSubmission(submission: Submission): ModerationResult {
         val input = buildString {
             append("Title: ").append(submission.title)

@@ -51,7 +51,7 @@ telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`
 - **Memory**: `${usedMb}MB / ${maxMb}MB` where:
     - `usedMb = (totalMemory - freeMemory) / (1024 * 1024)`
     - `maxMb = maxMemory / (1024 * 1024)`
-- **Gemini**: `"Disabled"` if `!geminiProperties.enabled`, `"No API key"` if `geminiProperties.apiKey.isBlank()`, otherwise `"Enabled"`.
+- **Gemini**: `"Disabled"` if `!geminiProperties.enabled`, `"No API key"` if `geminiProperties.apiKey.isBlank()`, `"Dry run"` if `geminiProperties.dryRun`, otherwise `"Enabled"`.
 - **Subreddit**: `SubredditName` constant.
 - **Counters**:
     - Quotes in DB: `phraseRepository.count()`
@@ -72,6 +72,8 @@ telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`
 | `telegram.good_bot_praise`              | `ContributionService.processComment` (good bot) | `comment.author`, `response`, `comment.url`                                      |
 | `telegram.deleted_downvoted_comment`    | `ContributionService.checkDownvotedComments`    | `comment.score`, `comment.body`, `comment.url`                                   |
 | `telegram.sensitive_submission_ignored` | `ContributionService.processSubmission`         | `submission.title`, `sensitivityPercent`, `reason` (or "None"), `submission.url` |
+| `telegram.sensitive_submission_dry_run` | `ContributionService.processSubmission`         | `submission.title`, `sensitivityPercent`, `reason` (or "None"), `submission.url` |
+| `telegram.bot_reply_sentiment_dry_run`  | `ContributionService.evaluateBotReplySentiment` | `comment.author`, `comment.body`, `sentiment.name`, `comment.url`                |
 | `telegram.gemini_evaluation_failed`     | `GeminiService`                                 | `contextText`, `errorSummary`, `contextUrl`                                      |
 | `telegram.command_ignore_user`          | `CommandService.ignoreUser`                     | `username`, `comment.url`                                                        |
 | `telegram.command_unignore_user`        | `CommandService.unignoreUser`                   | `username`, `comment.url`                                                        |

@@ -92,17 +92,30 @@ class ContributionService(
         val moderation = geminiService.evaluateSubmission(submission)
         if (moderation.sensitivity >= zakbotProperties.moderation.sensitivityThreshold) {
             val reason = moderation.reason?.ifBlank { null }
-            botCache.ignoreSubmission(submission.fullName, reason)
-            telegramNotifier.sendMessage(
-                getString(
-                    "telegram.sensitive_submission_ignored",
-                    submission.title,
-                    (moderation.sensitivity * 100).roundToInt(),
-                    reason ?: "None",
-                    submission.url,
+            val sensitivityPercent = (moderation.sensitivity * 100).roundToInt()
+            if (geminiService.isDryRun) {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_submission_dry_run",
+                        submission.title,
+                        sensitivityPercent,
+                        reason ?: "None",
+                        submission.url,
+                    )
                 )
-            )
-            return
+            } else {
+                botCache.ignoreSubmission(submission.fullName, reason)
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_submission_ignored",
+                        submission.title,
+                        sensitivityPercent,
+                        reason ?: "None",
+                        submission.url,
+                    )
+                )
+                return
+            }
         }
 
         val response = phraseService.findPhrase(submission)
@@ -128,21 +141,18 @@ class ContributionService(
             return
         }
 
+        val mentionsBot = checkForBotMention(comment)
+
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
             botCache.isSubmissionIgnored(comment.submissionFullName) ||
             redditService.getCommentSubmission(comment)?.isAuthorIgnored() == true
         ) {
-            checkForBotMention(comment)
             return
         }
 
         if (redditService.findParentComment(comment)?.author == BotUsername) {
-            val sentiment = evaluateBotReplySentiment(comment)
-            if (sentiment != BotSentiment.GOOD_BOT) {
-                checkForBotMention(comment)
-            }
-            when (sentiment) {
+            when (evaluateBotReplySentiment(comment, mentionsBot)) {
                 BotSentiment.BAD_BOT -> {
                     botCache.ignoreUser(comment.author, comment.fullName)
                     redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
@@ -166,8 +176,6 @@ class ContributionService(
             return
         }
 
-        checkForBotMention(comment)
-
         val response = phraseService.findPhrase(comment)
             ?.substitute(comment)
             ?: return
@@ -176,25 +184,45 @@ class ContributionService(
         telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
     }
 
-    private fun evaluateBotReplySentiment(comment: Comment): BotSentiment {
-        return when {
-            comment.body.isBadBot() -> BotSentiment.BAD_BOT
-            comment.body.isGoodBot() -> BotSentiment.GOOD_BOT
-            else -> geminiService.evaluateBotReply(comment)
+    private fun evaluateBotReplySentiment(comment: Comment, mentionsBot: Boolean): BotSentiment {
+        if (comment.body.isBadBot()) {
+            return BotSentiment.BAD_BOT
         }
+        if (comment.body.isGoodBot()) {
+            return BotSentiment.GOOD_BOT
+        }
+        if (!mentionsBot) {
+            return BotSentiment.NEUTRAL
+        }
+        val sentiment = geminiService.evaluateBotReply(comment)
+        if (geminiService.isDryRun) {
+            if (sentiment != BotSentiment.NEUTRAL) {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.bot_reply_sentiment_dry_run",
+                        comment.author,
+                        comment.body,
+                        sentiment.name,
+                        comment.url,
+                    )
+                )
+            }
+            return BotSentiment.NEUTRAL
+        }
+        return sentiment
     }
 
     /**
      * Send a Telegram notification when someone mentions something 'bot' related.
      */
-    private fun checkForBotMention(contribution: Contribution) {
+    private fun checkForBotMention(contribution: Contribution): Boolean {
         val text = when (contribution) {
             is Submission -> contribution.title + contribution.selfText.orEmpty()
             is Comment -> contribution.body
         }.lowercase().trim()
 
         if (text.isGoodBot()) {
-            return
+            return false
         }
 
         if (text.contains(BOT_REGEX) ||
@@ -220,7 +248,9 @@ class ContributionService(
                     )
                 )
             }
+            return true
         }
+        return false
     }
 
     private fun Contribution.isAuthorIgnored(): Boolean {

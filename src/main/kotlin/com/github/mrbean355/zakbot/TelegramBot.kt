@@ -72,6 +72,7 @@ class TelegramBot(
         val geminiStatus = when {
             !geminiProperties.enabled -> "Disabled"
             geminiProperties.apiKey.isBlank() -> "No API key"
+            geminiProperties.dryRun -> "Dry run"
             else -> "Enabled"
         }
         return getString(

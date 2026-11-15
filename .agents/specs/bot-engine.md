@@ -77,9 +77,12 @@ fun updateBotFlair()
 2. Call `checkForBotMention(submission)`.
 3. If `botCache.isUserIgnored(submission.author)` or `botCache.isSubmissionIgnored(submission.fullName)` -> `return`.
 4. Evaluate sensitivity via `geminiService.evaluateSubmission(submission)`. If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
-    - `botCache.ignoreSubmission(submission.fullName, reason)`
-    - Send `telegram.sensitive_submission_ignored` notification
-    - `return`
+    - If `geminiService.isDryRun` is `true`:
+        - Send `telegram.sensitive_submission_dry_run` notification (proceeding to step 5 without ignoring).
+    - Otherwise:
+        - `botCache.ignoreSubmission(submission.fullName, reason)`
+        - Send `telegram.sensitive_submission_ignored` notification
+        - `return`
 5. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
 6. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
 7. Send Telegram alert:
@@ -88,18 +91,19 @@ fun updateBotFlair()
 ### 3.2 `processComment(comment: Comment)`
 
 1. If `comment.author == AuthorUsername` -> delegate to `commandService.processAuthorCommand(comment)` and `return`.
-2. Skip conditions (call `checkForBotMention(comment)` and return immediately if any is true):
+2. Call `val mentionsBot = checkForBotMention(comment)`.
+3. Skip conditions (return immediately if any is true):
     - `comment.author == BotUsername`
     - `botCache.isUserIgnored(comment.author)`
     - `botCache.isSubmissionIgnored(comment.submissionFullName)`
     - `redditService.getCommentSubmission(comment)?.let { botCache.isUserIgnored(it.author) } == true`
-3. Reply-to-Bot Check:
+4. Reply-to-Bot Check:
     - If `redditService.findParentComment(comment)?.author == BotUsername`:
         - Determine `BotSentiment`:
             - `comment.body.isBadBot()` -> `BAD_BOT`
             - `comment.body.isGoodBot()` -> `GOOD_BOT`
-            - Otherwise -> `geminiService.evaluateBotReply(comment)` (returns `NEUTRAL` if disabled or on error)
-        - If `sentiment != GOOD_BOT`, call `checkForBotMention(comment)`.
+            - `!mentionsBot` -> `NEUTRAL`
+            - Otherwise -> `geminiService.evaluateBotReply(comment)` (returns `NEUTRAL` if disabled or on error; if `geminiService.isDryRun` is `true`, non-`NEUTRAL` results send `telegram.bot_reply_sentiment_dry_run` while returning `NEUTRAL`)
         - If `sentiment == BAD_BOT`:
             - `botCache.ignoreUser(comment.author, comment.fullName)`
             - Reply with `reddit.new_user_ignored`
@@ -111,7 +115,6 @@ fun updateBotFlair()
                 - Reply with `response`
                 - Send `telegram.good_bot_praise`
         - `return`
-4. Call `checkForBotMention(comment)`.
 5. Search phrase: `val response = phraseService.findPhrase(comment)?.substitute(comment) ?: return`.
 6. Post Reddit reply: `redditService.replyToComment(comment, response)`.
 7. Send Telegram alert:

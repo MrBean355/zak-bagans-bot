@@ -82,7 +82,7 @@ reddit.quote_source_prefix=%s\n\n^(Quote from: %s)
 
 - Triggered when comment is a reply to `BotUsername` and either:
   - `comment.body.filter(Char::isLetter).lowercase() in setOf("goodbot", "greatbot", "bestbot")`, or
-  - `geminiService.evaluateBotReply(comment) == BotSentiment.GOOD_BOT`.
+  - `checkForBotMention(comment)` is `true`, `!geminiService.isDryRun`, and `geminiService.evaluateBotReply(comment) == BotSentiment.GOOD_BOT`.
 - 10% chance: `randomRoll() <= 0.1f`.
 - Quote fetched from `phraseService.getPhrase(PhraseType.GoodBot)?.substitute(comment)`.
 - Applied footer:

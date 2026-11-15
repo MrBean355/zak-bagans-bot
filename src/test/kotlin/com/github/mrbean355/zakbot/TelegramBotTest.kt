@@ -51,7 +51,7 @@ class TelegramBotTest {
         val buildProperties = BuildProperties(Properties().apply {
             setProperty("version", "3.0.0")
         })
-        geminiProperties = GeminiProperties(apiKey = "test-key", enabled = true)
+        geminiProperties = GeminiProperties(apiKey = "test-key", enabled = true, dryRun = false)
 
         bot = TelegramBot(
             applicationContext = applicationContext,
@@ -166,6 +166,39 @@ class TelegramBotTest {
             telegramClient.execute(
                 match<SendMessage> { message ->
                     message.text.contains("Gemini: `Disabled`")
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testConsume_WhenStatusMessageAndGeminiDryRun_ShowsDryRun() {
+        geminiProperties = GeminiProperties(apiKey = "test-key", enabled = true, dryRun = true)
+        val buildProperties = BuildProperties(Properties().apply {
+            setProperty("version", "3.0.0")
+        })
+        bot = TelegramBot(
+            applicationContext = applicationContext,
+            phraseRepository = phraseRepository,
+            ignoredUserRepository = ignoredUserRepository,
+            ignoredSubmissionRepository = ignoredSubmissionRepository,
+            telegramClient = telegramClient,
+            buildProperties = buildProperties,
+            telegramProperties = TelegramProperties(token = "dummy-token", chatId = "123456"),
+            geminiProperties = geminiProperties,
+        )
+        val update = mockk<Update> {
+            every { message } returns mockk {
+                every { text } returns "/status"
+            }
+        }
+
+        bot.consume(listOf(update))
+
+        verify {
+            telegramClient.execute(
+                match<SendMessage> { message ->
+                    message.text.contains("Gemini: `Dry run`")
                 }
             )
         }

@@ -132,6 +132,7 @@ The bot can be configured using standard Spring Boot properties or environment v
 | `admin.password`          | `ADMIN_PASSWORD`         | *(empty)*  | Password for the admin web dashboard             |
 | `gemini.api-key`          | `GEMINI_API_KEY`         | *(empty)*  | Google Gemini API key for moderation and sentiment |
 | `gemini.enabled`          | `GEMINI_ENABLED`         | `true`     | Toggle Gemini content moderation and sentiment   |
+| `gemini.dry-run`          | `GEMINI_DRY_RUN`         | `true`     | Send Telegram alerts for Gemini decisions without acting |
 | `zakbot.replies.enabled`  | `ZAKBOT_REPLIES_ENABLED` | `true`     | Toggle posting live replies to Reddit            |
 
 ### Testing
