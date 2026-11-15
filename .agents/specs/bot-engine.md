@@ -116,8 +116,13 @@ fun updateBotFlair()
                 - Send `telegram.good_bot_praise`
         - `return`
 5. Search phrase: `val response = phraseService.findPhrase(comment)?.substitute(comment) ?: return`.
-6. Post Reddit reply: `redditService.replyToComment(comment, response)`.
-7. Send Telegram alert:
+6. Evaluate sensitivity via `geminiService.evaluateComment(comment)`. If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
+    - If `geminiService.isDryRun` is `true`:
+        - Send `telegram.sensitive_comment_dry_run` notification (proceeding to step 7 without skipping).
+    - Otherwise:
+        - Send `telegram.sensitive_comment_skipped` notification and `return`.
+7. Post Reddit reply: `redditService.replyToComment(comment, response)`.
+8. Send Telegram alert:
    `telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))`.
 
 ---

@@ -73,6 +73,8 @@ telegram.bot_status_response=📊 *ZakBot Status*\n\n*System*\n• Version: `%s`
 | `telegram.deleted_downvoted_comment`    | `ContributionService.checkDownvotedComments`    | `comment.score`, `comment.body`, `comment.url`                                   |
 | `telegram.sensitive_submission_ignored` | `ContributionService.processSubmission`         | `submission.title`, `sensitivityPercent`, `reason` (or "None"), `submission.url` |
 | `telegram.sensitive_submission_dry_run` | `ContributionService.processSubmission`         | `submission.title`, `sensitivityPercent`, `reason` (or "None"), `submission.url` |
+| `telegram.sensitive_comment_skipped`    | `ContributionService.processComment`            | `comment.body`, `sensitivityPercent`, `reason` (or "None"), `comment.url`        |
+| `telegram.sensitive_comment_dry_run`    | `ContributionService.processComment`            | `comment.body`, `sensitivityPercent`, `reason` (or "None"), `comment.url`        |
 | `telegram.bot_reply_sentiment_dry_run`  | `ContributionService.evaluateBotReplySentiment` | `comment.author`, `comment.body`, `sentiment.name`, `comment.url`                |
 | `telegram.gemini_evaluation_failed`     | `GeminiService`                                 | `contextText`, `errorSummary`, `contextUrl`                                      |
 | `telegram.command_ignore_user`          | `CommandService.ignoreUser`                     | `username`, `comment.url`                                                        |

@@ -133,7 +133,8 @@ class ContributionService(
      * - sent by an ignored user, or
      * - replies to an ignored submission (via ignore command), or
      * - replies to a submission created by an ignored user, or
-     * - replies to a comment sent by the bot.
+     * - replies to a comment sent by the bot, or
+     * - flagged as sensitive by Gemini.
      */
     fun processComment(comment: Comment) {
         if (comment.author == AuthorUsername) {
@@ -179,6 +180,34 @@ class ContributionService(
         val response = phraseService.findPhrase(comment)
             ?.substitute(comment)
             ?: return
+
+        val moderation = geminiService.evaluateComment(comment)
+        if (moderation.sensitivity >= zakbotProperties.moderation.sensitivityThreshold) {
+            val reason = moderation.reason?.ifBlank { null } ?: "None"
+            val sensitivityPercent = (moderation.sensitivity * 100).roundToInt()
+            if (geminiService.isDryRun) {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_comment_dry_run",
+                        comment.body,
+                        sensitivityPercent,
+                        reason,
+                        comment.url,
+                    )
+                )
+            } else {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_comment_skipped",
+                        comment.body,
+                        sensitivityPercent,
+                        reason,
+                        comment.url,
+                    )
+                )
+                return
+            }
+        }
 
         redditService.replyToComment(comment, response)
         telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))

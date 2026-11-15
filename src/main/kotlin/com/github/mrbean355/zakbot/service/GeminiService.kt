@@ -35,13 +35,25 @@ class GeminiService(
         }
 
         return generateStructuredOutput(
-            systemInstruction = SUBMISSION_SYSTEM_INSTRUCTION,
+            systemInstruction = MODERATION_SYSTEM_INSTRUCTION,
             input = input,
-            schema = SUBMISSION_RESPONSE_SCHEMA,
+            schema = MODERATION_RESPONSE_SCHEMA,
             responseType = ModerationResult::class.java,
             logDescription = "submission sensitivity (${submission.fullName})",
             telegramContextText = submission.title,
             telegramContextUrl = submission.url,
+        ) ?: ModerationResult(sensitivity = 0f, reason = null)
+    }
+
+    fun evaluateComment(comment: Comment): ModerationResult {
+        return generateStructuredOutput(
+            systemInstruction = MODERATION_SYSTEM_INSTRUCTION,
+            input = comment.body,
+            schema = MODERATION_RESPONSE_SCHEMA,
+            responseType = ModerationResult::class.java,
+            logDescription = "comment sensitivity (${comment.fullName})",
+            telegramContextText = comment.body,
+            telegramContextUrl = comment.url,
         ) ?: ModerationResult(sensitivity = 0f, reason = null)
     }
 
@@ -168,31 +180,31 @@ class GeminiService(
     )
 
     private companion object {
-        private val SUBMISSION_SYSTEM_INSTRUCTION = """
+        private val MODERATION_SYSTEM_INSTRUCTION = """
             You are a content moderation assistant for a comedy Reddit bot on r/GhostAdventures that replies with funny Zak Bagans quotes.
-            Rate the sensitivity (from 0.0 to 1.0) of a Reddit submission based on whether it discusses a genuinely serious, tragic, or sensitive real-life topic where a comedy quote reply would be inappropriate or disrespectful.
+            Rate the sensitivity (from 0.0 to 1.0) of a Reddit post or comment based on whether it discusses a genuinely serious, tragic, or sensitive real-life topic where a comedy quote reply would be inappropriate or disrespectful.
             Assign high sensitivity (0.7 to 1.0) ONLY for real-life serious topics such as:
             - Real-life death, obituary, mourning, or grief (e.g., a cast or crew member, fan, or family member passing away)
             - Severe real-life illness, injury, hospitalization, mental health crisis, self-harm, suicide, or abuse
             - Real-life violent crime, domestic violence, or tragedy involving real people
-            Assign low sensitivity (0.0 to 0.2) for normal subreddit posts, including:
+            Assign low sensitivity (0.0 to 0.2) for normal subreddit posts and comments, including:
             - Paranormal topics, ghosts, demons, possessions, hauntings, or historical deaths discussed as lore on the TV show Ghost Adventures
             - Memes, jokes, rants, episode discussions, or complaints about Zak Bagans or the crew
             If sensitivity is 0.5 or higher, provide a concise reason (under 100 characters). Otherwise set reason to null.
         """.trimIndent()
 
-        private val SUBMISSION_RESPONSE_SCHEMA = mapOf(
+        private val MODERATION_RESPONSE_SCHEMA = mapOf(
             "type" to "object",
             "properties" to mapOf(
                 "sensitivity" to mapOf(
                     "type" to "number",
                     "minimum" to 0.0,
                     "maximum" to 1.0,
-                    "description" to "Sensitivity score from 0.0 (normal/lighthearted post) to 1.0 (deeply serious, tragic, or sensitive real-life topic that a comedy quote bot should ignore).",
+                    "description" to "Sensitivity score from 0.0 (normal/lighthearted content) to 1.0 (deeply serious, tragic, or sensitive real-life topic that a comedy quote bot should ignore).",
                 ),
                 "reason" to mapOf(
                     "type" to listOf("string", "null"),
-                    "description" to "Short reason why the post is sensitive, or null if not sensitive.",
+                    "description" to "Short reason why the content is sensitive, or null if not sensitive.",
                 ),
             ),
             "required" to listOf("sensitivity", "reason"),

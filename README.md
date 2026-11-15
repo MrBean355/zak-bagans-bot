@@ -137,7 +137,7 @@ The bot can be configured using standard Spring Boot properties or environment v
 | `zakbot.replies.enabled`                  | `ZAKBOT_REPLIES_ENABLED`                  | `true`                  | Toggle posting live replies to Reddit                    |
 | `zakbot.downvotes.enabled`                | `ZAKBOT_DOWNVOTES_ENABLED`                | `true`                  | Toggle automatic deletion of downvoted bot comments      |
 | `zakbot.downvotes.delete-threshold`       | `ZAKBOT_DOWNVOTES_DELETE_THRESHOLD`       | `-3`                    | Score threshold at or below which bot comments delete    |
-| `zakbot.moderation.sensitivity-threshold` | `ZAKBOT_MODERATION_SENSITIVITY_THRESHOLD` | `0.7`                   | Sensitivity score threshold (0.0–1.0) to ignore posts    |
+| `zakbot.moderation.sensitivity-threshold` | `ZAKBOT_MODERATION_SENSITIVITY_THRESHOLD` | `0.7`                   | Sensitivity score threshold (0.0–1.0) for moderation     |
 
 ### Testing
 

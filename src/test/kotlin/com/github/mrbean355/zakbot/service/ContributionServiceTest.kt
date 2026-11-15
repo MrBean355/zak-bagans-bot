@@ -50,6 +50,7 @@ class ContributionServiceTest {
         every { botCache.isSubmissionIgnored(any()) } returns false
         every { geminiService.isDryRun } returns false
         every { geminiService.evaluateSubmission(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
+        every { geminiService.evaluateComment(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
         every { geminiService.evaluateBotReply(any()) } returns GeminiService.BotSentiment.NEUTRAL
         every { phraseService.findPhrase(any<Submission>()) } returns null
         every { phraseService.findPhrase(any<Comment>()) } returns null
@@ -114,11 +115,11 @@ class ContributionServiceTest {
             sensitivity = 0.85f,
             reason = "Crew member obituary",
         )
-        every { phraseService.findPhrase(submission) } returns "Some quote"
 
         service.processSubmission(submission)
 
         verify {
+            geminiService.evaluateSubmission(submission)
             botCache.ignoreSubmission(submission.fullName, "Crew member obituary")
             telegramNotifier.sendMessage(
                 match {
@@ -164,7 +165,7 @@ class ContributionServiceTest {
     }
 
     @Test
-    fun testProcessSubmission_WhenSensitivityBelowThreshold_ProceedsToPhraseMatching() {
+    fun testProcessSubmission_WhenSensitivityBelowThreshold_Replies() {
         val submission = createSubmission(author = "user1", title = "Did you see Zak?")
         every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
             sensitivity = 0.4f,
@@ -456,7 +457,74 @@ class ContributionServiceTest {
         service.processComment(comment)
 
         verify {
+            geminiService.evaluateComment(comment)
             redditService.replyToComment(comment, "Aaron, get in there")
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenNoPhraseFound_DoesNotCallEvaluateComment() {
+        val comment = createComment(author = "critic", body = "Nothing matching here")
+        every { phraseService.findPhrase(comment) } returns null
+
+        service.processComment(comment)
+
+        verify(exactly = 0) {
+            geminiService.evaluateComment(any())
+            redditService.replyToComment(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenPhraseFoundAndCommentSensitive_SkipsReplyAndSendsTelegram() {
+        val comment = createComment(author = "user1", body = "My dad passed away, I feel so sad")
+        every { phraseService.findPhrase(comment) } returns "Some quote"
+        every { geminiService.evaluateComment(comment) } returns GeminiService.ModerationResult(
+            sensitivity = 0.9f,
+            reason = "Personal bereavement",
+        )
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateComment(comment)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Comment Skipped") &&
+                        it.contains("My dad passed away, I feel so sad") &&
+                        it.contains("90%") &&
+                        it.contains("Personal bereavement")
+                }
+            )
+        }
+        verify(exactly = 0) {
+            redditService.replyToComment(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenPhraseFoundAndCommentSensitiveInDryRun_SendsDryRunTelegramAndStillReplies() {
+        val comment = createComment(author = "user1", body = "My dad passed away, I feel so sad")
+        every { phraseService.findPhrase(comment) } returns "Some quote"
+        every { geminiService.isDryRun } returns true
+        every { geminiService.evaluateComment(comment) } returns GeminiService.ModerationResult(
+            sensitivity = 0.9f,
+            reason = "Personal bereavement",
+        )
+
+        service.processComment(comment)
+
+        verify {
+            geminiService.evaluateComment(comment)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Comment Detected (Dry Run)") &&
+                        it.contains("My dad passed away, I feel so sad") &&
+                        it.contains("90%") &&
+                        it.contains("Personal bereavement")
+                }
+            )
+            redditService.replyToComment(comment, "Some quote")
         }
     }
 

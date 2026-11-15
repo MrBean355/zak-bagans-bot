@@ -244,6 +244,61 @@ class GeminiServiceTest {
     }
 
     @Test
+    fun testEvaluateComment_WhenSensitiveComment_ReturnsSensitivityAndReason() {
+        val responseJson = """
+            {
+              "id": "int_com_1",
+              "steps": [
+                {
+                  "type": "model_output",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "{\"sensitivity\":0.9,\"reason\":\"Personal bereavement\"}"
+                    }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://generativelanguage.googleapis.com/v1/interactions"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.model").value("gemini-3.5-flash-lite"))
+            .andExpect(jsonPath("$.store").value(false))
+            .andExpect(jsonPath("$.input").value("My dad passed away last week, I feel so lost"))
+            .andExpect(jsonPath("$.response_format.type").value("text"))
+            .andExpect(jsonPath("$.response_format.mime_type").value("application/json"))
+            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON))
+
+        val comment = createComment(body = "My dad passed away last week, I feel so lost")
+        val result = service.evaluateComment(comment)
+
+        assertEquals(0.9f, result.sensitivity)
+        assertEquals("Personal bereavement", result.reason)
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+        server.verify()
+    }
+
+    @Test
+    fun testEvaluateComment_WhenDisabled_ReturnsZeroSensitivityWithoutCallingApi() {
+        val disabledService = GeminiService(
+            client = client,
+            geminiProperties = GeminiProperties(apiKey = "test-api-key", enabled = false),
+            telegramNotifier = telegramNotifier,
+        )
+        val comment = createComment(body = "My dad passed away last week, I feel so lost")
+
+        val result = disabledService.evaluateComment(comment)
+
+        assertEquals(0f, result.sensitivity)
+        assertNull(result.reason)
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+        server.verify()
+    }
+
+    @Test
     fun testEvaluateBotReply_WhenDisabled_ReturnsNeutralWithoutCallingApi() {
         val disabledService = GeminiService(
             client = client,
