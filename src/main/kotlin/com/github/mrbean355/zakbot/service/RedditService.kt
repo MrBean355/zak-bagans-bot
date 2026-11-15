@@ -204,7 +204,7 @@ class RedditService(
     }
 
     /** Get the bot's own recent comments to check for downvotes. */
-    fun getOwnRecentComments(limit: Int = 25): List<Comment> {
+    fun getOwnRecentComments(limit: Int = 100): List<Comment> {
         return try {
             val response = client.get()
                 .uri { builder ->
@@ -223,16 +223,17 @@ class RedditService(
         }
     }
 
-    fun deleteComment(comment: Comment) {
-        if (zakbotProperties.replies.enabled) {
+    fun deleteComment(comment: Comment): Boolean {
+        return if (zakbotProperties.replies.enabled) {
             deleteComment(comment.fullName)
         } else {
             logger.info("Delete downvoted comment '{}' (score: {})", comment.fullName, comment.score)
+            true
         }
     }
 
-    private fun deleteComment(thingId: String) {
-        try {
+    private fun deleteComment(thingId: String): Boolean {
+        return try {
             val body = LinkedMultiValueMap<String, String>().apply {
                 add("api_type", "json")
                 add("id", thingId)
@@ -244,8 +245,10 @@ class RedditService(
                 .body(body)
                 .retrieve()
                 .toBodilessEntity()
+            true
         } catch (ex: Exception) {
             logger.error("Failed to delete comment: {}", thingId, ex)
+            false
         }
     }
 

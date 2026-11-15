@@ -611,7 +611,7 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/user/$BotUsername/comments?limit=25&sort=new"))
+        server.expect(requestTo("https://oauth.reddit.com/user/$BotUsername/comments?limit=100&sort=new"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
@@ -627,7 +627,7 @@ class RedditServiceTest {
 
     @Test
     fun testGetOwnRecentComments_OnError_ReturnsEmptyList() {
-        server.expect(requestTo("https://oauth.reddit.com/user/$BotUsername/comments?limit=25&sort=new"))
+        server.expect(requestTo("https://oauth.reddit.com/user/$BotUsername/comments?limit=100&sort=new"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
 
@@ -638,7 +638,7 @@ class RedditServiceTest {
     }
 
     @Test
-    fun testDeleteComment_WhenRepliesEnabled_SendsPostToDelEndpoint() {
+    fun testDeleteComment_WhenRepliesEnabled_SendsPostToDelEndpointAndReturnsTrue() {
         server.expect(requestTo("https://oauth.reddit.com/api/del"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
@@ -649,27 +649,27 @@ class RedditServiceTest {
             .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON))
 
         val comment = Comment("com1", "t1_com1", BotUsername, Instant.now(), "url", "body", "t3_sub1", "t1_parent1", score = -2)
-        serviceWithReplies.deleteComment(comment)
+        assertTrue(serviceWithReplies.deleteComment(comment))
 
         server.verify()
     }
 
     @Test
-    fun testDeleteComment_WhenRepliesDisabled_DoesNotCallApi() {
+    fun testDeleteComment_WhenRepliesDisabled_DoesNotCallApiAndReturnsTrue() {
         val comment = Comment("com1", "t1_com1", BotUsername, Instant.now(), "url", "body", "t3_sub1", "t1_parent1", score = -2)
-        serviceWithoutReplies.deleteComment(comment)
+        assertTrue(serviceWithoutReplies.deleteComment(comment))
 
         server.verify()
     }
 
     @Test
-    fun testDeleteComment_WhenApiFails_HandlesGracefully() {
+    fun testDeleteComment_WhenApiFails_ReturnsFalse() {
         server.expect(requestTo("https://oauth.reddit.com/api/del"))
             .andExpect(method(HttpMethod.POST))
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
 
         val comment = Comment("com1", "t1_com1", BotUsername, Instant.now(), "url", "body", "t3_sub1", "t1_parent1", score = -2)
-        serviceWithReplies.deleteComment(comment)
+        assertFalse(serviceWithReplies.deleteComment(comment))
 
         server.verify()
     }

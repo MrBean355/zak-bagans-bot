@@ -522,23 +522,40 @@ class ContributionServiceTest {
 
     @Test
     fun testCheckDownvotedComments_WhenCommentAtOrBelowThreshold_DeletesAndNotifies() {
-        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -2)
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
         every { redditService.getOwnRecentComments() } returns listOf(downvoted)
-        justRun { redditService.deleteComment(any()) }
+        every { redditService.deleteComment(any()) } returns true
 
         service.checkDownvotedComments()
 
         verify(exactly = 1) {
             redditService.deleteComment(downvoted)
-            telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") && it.contains("-2") })
+            telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") && it.contains("-3") })
         }
+    }
+
+    @Test
+    fun testCheckDownvotedComments_WhenDeleteFails_DoesNotNotifyAndRetriesOnNextCheck() {
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
+        every { redditService.getOwnRecentComments() } returns listOf(downvoted)
+        every { redditService.deleteComment(downvoted) } returnsMany listOf(false, true)
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 1) { redditService.deleteComment(downvoted) }
+        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+
+        service.checkDownvotedComments()
+
+        verify(exactly = 2) { redditService.deleteComment(downvoted) }
+        verify(exactly = 1) { telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") }) }
     }
 
     @Test
     fun testCheckDownvotedComments_WhenCommentAboveThreshold_DoesNotDelete() {
         val popular = createComment(id = "pop1", author = BotUsername, body = "Great quote", score = 3)
-        val neutral = createComment(id = "neu1", author = BotUsername, body = "Okay quote", score = 0)
-        every { redditService.getOwnRecentComments() } returns listOf(popular, neutral)
+        val mildlyDownvoted = createComment(id = "neu1", author = BotUsername, body = "Okay quote", score = -2)
+        every { redditService.getOwnRecentComments() } returns listOf(popular, mildlyDownvoted)
 
         service.checkDownvotedComments()
 
@@ -563,9 +580,9 @@ class ContributionServiceTest {
 
     @Test
     fun testCheckDownvotedComments_WhenCommentAlreadyProcessed_DoesNotDeleteTwice() {
-        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -2)
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
         every { redditService.getOwnRecentComments() } returns listOf(downvoted)
-        justRun { redditService.deleteComment(any()) }
+        every { redditService.deleteComment(any()) } returns true
 
         service.checkDownvotedComments()
         service.checkDownvotedComments()
@@ -587,7 +604,7 @@ class ContributionServiceTest {
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(downvotes = ZakbotProperties.Downvotes(enabled = false)),
         )
-        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -2)
+        val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
         every { redditService.getOwnRecentComments() } returns listOf(downvoted)
 
         customService.checkDownvotedComments()

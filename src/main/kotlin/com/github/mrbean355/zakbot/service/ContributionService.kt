@@ -55,10 +55,10 @@ class ContributionService(
         for (comment in comments) {
             if (comment.body != "[deleted]" &&
                 comment.fullName !in deletedCommentIds &&
-                comment.score <= zakbotProperties.downvotes.deleteThreshold
+                comment.score <= zakbotProperties.downvotes.deleteThreshold &&
+                redditService.deleteComment(comment)
             ) {
                 deletedCommentIds += comment.fullName
-                redditService.deleteComment(comment)
                 telegramNotifier.sendMessage(
                     getString(
                         "telegram.deleted_downvoted_comment",

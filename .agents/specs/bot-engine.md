@@ -35,7 +35,7 @@ This specification defines the scheduled polling, API pagination, contribution i
    glitches from crashing scheduled jobs.
 9. **Downvote Self-Deletion**: In each 15-minute polling cycle, `contributionService.checkDownvotedComments()` checks the bot's
    recent comments via `redditService.getOwnRecentComments()`. If a comment has not already been deleted and has a score
-   at or below `zakbot.downvotes.delete-threshold` (default `-1`), it is deleted via Reddit `POST /api/del` (when replies are enabled),
+   at or below `zakbot.downvotes.delete-threshold` (default `-3`), it is deleted via Reddit `POST /api/del` (when replies are enabled),
    tracked in an in-memory LRU set to prevent duplicate deletions, and an alert is dispatched via Telegram.
 
 ---

@@ -14,7 +14,7 @@ data class ZakbotProperties(
 
     data class Downvotes(
         val enabled: Boolean = true,
-        val deleteThreshold: Int = -1,
+        val deleteThreshold: Int = -3,
     )
 
     data class Moderation(
