@@ -122,18 +122,22 @@ When running in `dev` mode:
 
 The bot can be configured using standard Spring Boot properties or environment variables:
 
-| Property                  | Environment Variable     | Default    | Description                                      |
-|---------------------------|--------------------------|------------|--------------------------------------------------|
-| `reddit.account-password` | `BOT_ACCOUNT_PASSWORD`   | *(empty)*  | Reddit account password for authentication       |
-| `reddit.client-secret`    | `BOT_CLIENT_SECRET`      | *(empty)*  | Reddit script application client secret          |
-| `telegram.token`          | `TELEGRAM_TOKEN`         | *(empty)*  | Telegram Bot token for status updates and alerts |
-| `telegram.chat-id`        | `TELEGRAM_CHAT_ID`       | `44692593` | Telegram chat ID to receive notifications        |
-| `admin.username`          | `ADMIN_USERNAME`         | `admin`    | Username for the admin web dashboard             |
-| `admin.password`          | `ADMIN_PASSWORD`         | *(empty)*  | Password for the admin web dashboard             |
-| `gemini.api-key`          | `GEMINI_API_KEY`         | *(empty)*  | Google Gemini API key for moderation and sentiment |
-| `gemini.enabled`          | `GEMINI_ENABLED`         | `true`     | Toggle Gemini content moderation and sentiment   |
-| `gemini.dry-run`          | `GEMINI_DRY_RUN`         | `true`     | Send Telegram alerts for Gemini decisions without acting |
-| `zakbot.replies.enabled`  | `ZAKBOT_REPLIES_ENABLED` | `true`     | Toggle posting live replies to Reddit            |
+| Property                                  | Environment Variable                      | Default                 | Description                                              |
+|-------------------------------------------|-------------------------------------------|-------------------------|----------------------------------------------------------|
+| `reddit.account-password`                 | `BOT_ACCOUNT_PASSWORD`                    | *(empty)*               | Reddit account password for authentication               |
+| `reddit.client-secret`                    | `BOT_CLIENT_SECRET`                       | *(empty)*               | Reddit script application client secret                  |
+| `telegram.token`                          | `TELEGRAM_TOKEN`                          | *(empty)*               | Telegram Bot token for status updates and alerts         |
+| `telegram.chat-id`                        | `TELEGRAM_CHAT_ID`                        | `44692593`              | Telegram chat ID to receive notifications                |
+| `admin.username`                          | `ADMIN_USERNAME`                          | `admin`                 | Username for the admin web dashboard                     |
+| `admin.password`                          | `ADMIN_PASSWORD`                          | *(empty)*               | Password for the admin web dashboard                     |
+| `gemini.api-key`                          | `GEMINI_API_KEY`                          | *(empty)*               | Google Gemini API key for moderation and sentiment       |
+| `gemini.model`                            | `GEMINI_MODEL`                            | `gemini-3.5-flash-lite` | Gemini model identifier used for interactions            |
+| `gemini.enabled`                          | `GEMINI_ENABLED`                          | `true`                  | Toggle Gemini content moderation and sentiment           |
+| `gemini.dry-run`                          | `GEMINI_DRY_RUN`                          | `true`                  | Send Telegram alerts for Gemini decisions without acting |
+| `zakbot.replies.enabled`                  | `ZAKBOT_REPLIES_ENABLED`                  | `true`                  | Toggle posting live replies to Reddit                    |
+| `zakbot.downvotes.enabled`                | `ZAKBOT_DOWNVOTES_ENABLED`                | `true`                  | Toggle automatic deletion of downvoted bot comments      |
+| `zakbot.downvotes.delete-threshold`       | `ZAKBOT_DOWNVOTES_DELETE_THRESHOLD`       | `-1`                    | Score threshold at or below which bot comments delete    |
+| `zakbot.moderation.sensitivity-threshold` | `ZAKBOT_MODERATION_SENSITIVITY_THRESHOLD` | `0.7`                   | Sensitivity score threshold (0.0–1.0) to ignore posts    |
 
 ### Testing
 
