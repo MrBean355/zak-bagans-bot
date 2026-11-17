@@ -7,10 +7,11 @@ Policy in `PhraseApiController` and `SecurityConfig`.
   - Controller: `src/main/kotlin/com/github/mrbean355/zakbot/controller/PhraseApiController.kt`
   - Global Exception Handler: `src/main/kotlin/com/github/mrbean355/zakbot/controller/GlobalExceptionHandler.kt`
   - Security Config: `src/main/kotlin/com/github/mrbean355/zakbot/config/SecurityConfig.kt`
-  - User Bootstrapping: `src/main/kotlin/com/github/mrbean355/zakbot/config/UserInitializer.kt`
+  - User Bootstrapping: `src/main/kotlin/com/github/mrbean355/zakbot/db/UserInitializer.kt`
 - **Unit Tests**:
   - `src/test/kotlin/com/github/mrbean355/zakbot/controller/PhraseApiControllerTest.kt`
   - `src/test/kotlin/com/github/mrbean355/zakbot/controller/GlobalExceptionHandlerTest.kt`
+  - `src/test/kotlin/com/github/mrbean355/zakbot/db/UserInitializerTest.kt`
 
 ---
 

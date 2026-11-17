@@ -70,3 +70,24 @@ data class RedditFlairDto(
     val id: String,
     val text: String,
 )
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RedditCommentReplyResponse(
+    val json: RedditCommentReplyJson? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RedditCommentReplyJson(
+    val data: RedditCommentReplyData? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RedditCommentReplyData(
+    val things: List<RedditThing<RedditCreatedThingData>> = emptyList(),
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RedditCreatedThingData(
+    val id: String? = null,
+    val name: String? = null,
+)

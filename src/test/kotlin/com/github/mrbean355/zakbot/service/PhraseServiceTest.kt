@@ -1,6 +1,6 @@
 package com.github.mrbean355.zakbot.service
 
-import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository

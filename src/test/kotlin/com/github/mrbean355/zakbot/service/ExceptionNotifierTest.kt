@@ -1,6 +1,6 @@
 package com.github.mrbean355.zakbot.service
 
-import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

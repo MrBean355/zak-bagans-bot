@@ -2,10 +2,12 @@ package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
-import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.telegram.TelegramAction
+import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
+import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Contribution
 import com.github.mrbean355.zakbot.reddit.model.Submission
@@ -64,8 +66,8 @@ class ContributionService(
                         "telegram.deleted_downvoted_comment",
                         comment.score,
                         comment.body,
-                        comment.url
-                    )
+                    ),
+                    listOf(TelegramAction.OpenUrl(comment.url)),
                 )
             }
         }
@@ -100,8 +102,12 @@ class ContributionService(
                         submission.title,
                         sensitivityPercent,
                         reason ?: "None",
-                        submission.url,
-                    )
+                    ),
+                    listOf(
+                        TelegramAction.IgnoreUser(submission.author),
+                        TelegramAction.IgnoreSubmission(submission.fullName),
+                        TelegramAction.OpenUrl(submission.url),
+                    ),
                 )
             } else {
                 botCache.ignoreSubmission(submission.fullName, reason)
@@ -111,8 +117,12 @@ class ContributionService(
                         submission.title,
                         sensitivityPercent,
                         reason ?: "None",
-                        submission.url,
-                    )
+                    ),
+                    listOf(
+                        TelegramAction.IgnoreUser(submission.author),
+                        TelegramAction.UnignoreSubmission(submission.fullName),
+                        TelegramAction.OpenUrl(submission.url),
+                    ),
                 )
                 return
             }
@@ -122,8 +132,11 @@ class ContributionService(
             ?.substitute(submission)
             ?: return
 
-        redditService.replyToSubmission(submission, response)
-        telegramNotifier.sendMessage(getString("telegram.new_submission", submission.title, response, submission.url))
+        val replyId = redditService.replyToSubmission(submission, response)
+        telegramNotifier.sendMessage(
+            getString("telegram.new_submission", submission.title, response),
+            replyActions(submission.author, submission.fullName, submission.url, replyId),
+        )
     }
 
     /**
@@ -133,7 +146,8 @@ class ContributionService(
      * - sent by an ignored user, or
      * - replies to an ignored submission (via ignore command), or
      * - replies to a submission created by an ignored user, or
-     * - replies to a comment sent by the bot.
+     * - replies to a comment sent by the bot, or
+     * - flagged as sensitive by Gemini.
      */
     fun processComment(comment: Comment) {
         if (comment.author == AuthorUsername) {
@@ -156,7 +170,10 @@ class ContributionService(
                 BotSentiment.BAD_BOT -> {
                     botCache.ignoreUser(comment.author, comment.fullName)
                     redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
-                    telegramNotifier.sendMessage(getString("telegram.new_ignored_user", comment.author, comment.url))
+                    telegramNotifier.sendMessage(
+                        getString("telegram.new_ignored_user", comment.author),
+                        listOf(TelegramAction.UnignoreUser(comment.author), TelegramAction.OpenUrl(comment.url)),
+                    )
                 }
 
                 BotSentiment.GOOD_BOT -> {
@@ -165,8 +182,17 @@ class ContributionService(
                             ?.substitute(comment)
                         if (phrase != null) {
                             val response = getString("reddit.good_bot_footer", phrase)
-                            redditService.replyToComment(comment, response)
-                            telegramNotifier.sendMessage(getString("telegram.good_bot_praise", comment.author, response, comment.url))
+                            val replyId = redditService.replyToComment(comment, response)
+                            telegramNotifier.sendMessage(
+                                getString("telegram.good_bot_praise", comment.author, response),
+                                buildList {
+                                    add(TelegramAction.IgnoreUser(comment.author))
+                                    if (replyId != null) {
+                                        add(TelegramAction.DeleteComment(replyId))
+                                    }
+                                    add(TelegramAction.OpenUrl(comment.url))
+                                },
+                            )
                         }
                     }
                 }
@@ -180,8 +206,47 @@ class ContributionService(
             ?.substitute(comment)
             ?: return
 
-        redditService.replyToComment(comment, response)
-        telegramNotifier.sendMessage(getString("telegram.new_comment", comment.body, response, comment.url))
+        val moderation = geminiService.evaluateComment(comment)
+        if (moderation.sensitivity >= zakbotProperties.moderation.sensitivityThreshold) {
+            val reason = moderation.reason?.ifBlank { null } ?: "None"
+            val sensitivityPercent = (moderation.sensitivity * 100).roundToInt()
+            if (geminiService.isDryRun) {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_comment_dry_run",
+                        comment.body,
+                        sensitivityPercent,
+                        reason,
+                    ),
+                    listOf(
+                        TelegramAction.IgnoreUser(comment.author),
+                        TelegramAction.IgnoreSubmission(comment.submissionFullName),
+                        TelegramAction.OpenUrl(comment.url),
+                    ),
+                )
+            } else {
+                telegramNotifier.sendMessage(
+                    getString(
+                        "telegram.sensitive_comment_skipped",
+                        comment.body,
+                        sensitivityPercent,
+                        reason,
+                    ),
+                    listOf(
+                        TelegramAction.IgnoreUser(comment.author),
+                        TelegramAction.IgnoreSubmission(comment.submissionFullName),
+                        TelegramAction.OpenUrl(comment.url),
+                    ),
+                )
+                return
+            }
+        }
+
+        val replyId = redditService.replyToComment(comment, response)
+        telegramNotifier.sendMessage(
+            getString("telegram.new_comment", comment.body, response),
+            replyActions(comment.author, comment.submissionFullName, comment.url, replyId),
+        )
     }
 
     private fun evaluateBotReplySentiment(comment: Comment, mentionsBot: Boolean): BotSentiment {
@@ -203,8 +268,8 @@ class ContributionService(
                         comment.author,
                         comment.body,
                         sentiment.name,
-                        comment.url,
-                    )
+                    ),
+                    listOf(TelegramAction.IgnoreUser(comment.author), TelegramAction.OpenUrl(comment.url)),
                 )
             }
             return BotSentiment.NEUTRAL
@@ -233,24 +298,44 @@ class ContributionService(
         ) {
             when (contribution) {
                 is Submission -> telegramNotifier.sendMessage(
-                    getString(
-                        "telegram.new_bot_mention_submission",
-                        contribution.title,
-                        contribution.url
-                    )
+                    getString("telegram.new_bot_mention_submission", contribution.title),
+                    buildList {
+                        if (contribution.author != BotUsername) {
+                            add(TelegramAction.IgnoreUser(contribution.author))
+                        }
+                        add(TelegramAction.IgnoreSubmission(contribution.fullName))
+                        add(TelegramAction.OpenUrl(contribution.url))
+                    },
                 )
 
                 is Comment -> telegramNotifier.sendMessage(
-                    getString(
-                        "telegram.new_bot_mention_comment",
-                        contribution.body,
-                        contribution.url
-                    )
+                    getString("telegram.new_bot_mention_comment", contribution.body),
+                    buildList {
+                        if (contribution.author != BotUsername) {
+                            add(TelegramAction.IgnoreUser(contribution.author))
+                        }
+                        add(TelegramAction.IgnoreSubmission(contribution.submissionFullName))
+                        add(TelegramAction.OpenUrl(contribution.url))
+                    },
                 )
             }
             return true
         }
         return false
+    }
+
+    private fun replyActions(
+        author: String,
+        submissionFullName: String,
+        url: String,
+        replyFullName: String?,
+    ): List<TelegramAction> = buildList {
+        add(TelegramAction.IgnoreUser(author))
+        add(TelegramAction.IgnoreSubmission(submissionFullName))
+        if (replyFullName != null) {
+            add(TelegramAction.DeleteComment(replyFullName))
+        }
+        add(TelegramAction.OpenUrl(url))
     }
 
     private fun Contribution.isAuthorIgnored(): Boolean {

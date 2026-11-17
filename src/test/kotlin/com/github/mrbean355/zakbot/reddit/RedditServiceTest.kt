@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot.service
+package com.github.mrbean355.zakbot.reddit
 
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.SubredditName
@@ -670,6 +670,34 @@ class RedditServiceTest {
 
         val comment = Comment("com1", "t1_com1", BotUsername, Instant.now(), "url", "body", "t3_sub1", "t1_parent1", score = -2)
         assertFalse(serviceWithReplies.deleteComment(comment))
+
+        server.verify()
+    }
+
+    @Test
+    fun testReplyToSubmission_WhenApiReturnsCreatedThing_ReturnsFullName() {
+        val responseJson = """{"json":{"errors":[],"data":{"things":[{"kind":"t1","data":{"id":"reply1","name":"t1_reply1"}}]}}}"""
+        server.expect(requestTo("https://oauth.reddit.com/api/comment"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON))
+
+        val submission = Submission("sub1", "t3_sub1", "author", Instant.now(), "url", "Title", null)
+        assertEquals("t1_reply1", serviceWithReplies.replyToSubmission(submission, "Credibility..."))
+
+        server.verify()
+    }
+
+    @Test
+    fun testDeleteCommentById_WhenRepliesEnabled_SendsPostToDelEndpointAndReturnsTrue() {
+        server.expect(requestTo("https://oauth.reddit.com/api/del"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().formData(LinkedMultiValueMap<String, String>().apply {
+                add("api_type", "json")
+                add("id", "t1_reply1")
+            }))
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON))
+
+        assertTrue(serviceWithReplies.deleteCommentById("t1_reply1"))
 
         server.verify()
     }

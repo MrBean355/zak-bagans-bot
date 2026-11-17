@@ -2,10 +2,12 @@ package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.AuthorUsername
 import com.github.mrbean355.zakbot.BotUsername
-import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.telegram.TelegramAction
+import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
+import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
 import io.mockk.MockKAnnotations
@@ -44,12 +46,14 @@ class ContributionServiceTest {
     fun setUp() {
         MockKAnnotations.init(this, relaxUnitFun = true)
         justRun { telegramNotifier.sendMessage(any()) }
-        justRun { redditService.replyToSubmission(any(), any()) }
-        justRun { redditService.replyToComment(any(), any()) }
+        justRun { telegramNotifier.sendMessage(any(), any()) }
+        every { redditService.replyToSubmission(any(), any()) } returns "t1_reply"
+        every { redditService.replyToComment(any(), any()) } returns "t1_reply"
         every { botCache.isUserIgnored(any()) } returns false
         every { botCache.isSubmissionIgnored(any()) } returns false
         every { geminiService.isDryRun } returns false
         every { geminiService.evaluateSubmission(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
+        every { geminiService.evaluateComment(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
         every { geminiService.evaluateBotReply(any()) } returns GeminiService.BotSentiment.NEUTRAL
         every { phraseService.findPhrase(any<Submission>()) } returns null
         every { phraseService.findPhrase(any<Comment>()) } returns null
@@ -114,11 +118,11 @@ class ContributionServiceTest {
             sensitivity = 0.85f,
             reason = "Crew member obituary",
         )
-        every { phraseService.findPhrase(submission) } returns "Some quote"
 
         service.processSubmission(submission)
 
         verify {
+            geminiService.evaluateSubmission(submission)
             botCache.ignoreSubmission(submission.fullName, "Crew member obituary")
             telegramNotifier.sendMessage(
                 match {
@@ -126,7 +130,8 @@ class ContributionServiceTest {
                         it.contains("Sad news about a crew member") &&
                         it.contains("85%") &&
                         it.contains("Crew member obituary")
-                }
+                },
+                any(),
             )
         }
         verify(exactly = 0) {
@@ -157,14 +162,15 @@ class ContributionServiceTest {
                         it.contains("Sad news about a crew member") &&
                         it.contains("85%") &&
                         it.contains("Crew member obituary")
-                }
+                },
+                any(),
             )
             redditService.replyToSubmission(submission, "Some quote")
         }
     }
 
     @Test
-    fun testProcessSubmission_WhenSensitivityBelowThreshold_ProceedsToPhraseMatching() {
+    fun testProcessSubmission_WhenSensitivityBelowThreshold_Replies() {
         val submission = createSubmission(author = "user1", title = "Did you see Zak?")
         every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
             sensitivity = 0.4f,
@@ -200,7 +206,8 @@ class ContributionServiceTest {
                         it.contains("Serious post") &&
                         it.contains("90%") &&
                         it.contains("None")
-                }
+                },
+                any(),
             )
         }
         verify(exactly = 0) {
@@ -216,7 +223,15 @@ class ContributionServiceTest {
         service.processSubmission(submission)
 
         verify {
-            telegramNotifier.sendMessage(match { it.contains("ghost_hunter") || it.contains("Did you see Zak?") })
+            telegramNotifier.sendMessage(
+                match { it.contains("ghost_hunter") || it.contains("Did you see Zak?") },
+                listOf(
+                    TelegramAction.IgnoreUser("ghost_hunter"),
+                    TelegramAction.IgnoreSubmission(submission.fullName),
+                    TelegramAction.DeleteComment("t1_reply"),
+                    TelegramAction.OpenUrl(submission.url),
+                ),
+            )
             redditService.replyToSubmission(submission, "Look at this ghost_hunter")
         }
     }
@@ -250,7 +265,10 @@ class ContributionServiceTest {
 
         verify {
             botCache.ignoreUser("critic", comment.fullName)
-            telegramNotifier.sendMessage(match { it.contains("critic") })
+            telegramNotifier.sendMessage(
+                match { it.contains("critic") },
+                listOf(TelegramAction.UnignoreUser("critic"), TelegramAction.OpenUrl(comment.url)),
+            )
             redditService.replyToComment(comment, match { it.contains("won't reply") })
         }
         verify(exactly = 0) {
@@ -269,7 +287,14 @@ class ContributionServiceTest {
         service.processComment(comment)
 
         verify {
-            telegramNotifier.sendMessage(match { it.contains("fan") && it.contains("Thank you, fan!\n\n^(Thank you ❤️)") })
+            telegramNotifier.sendMessage(
+                match { it.contains("fan") && it.contains("Thank you, fan!\n\n^(Thank you ❤️)") },
+                listOf(
+                    TelegramAction.IgnoreUser("fan"),
+                    TelegramAction.DeleteComment("t1_reply"),
+                    TelegramAction.OpenUrl(comment.url),
+                ),
+            )
             redditService.replyToComment(comment, "Thank you, fan!\n\n^(Thank you ❤️)")
         }
         verify(exactly = 0) {
@@ -290,7 +315,10 @@ class ContributionServiceTest {
         verify {
             geminiService.evaluateBotReply(comment)
             botCache.ignoreUser("critic", comment.fullName)
-            telegramNotifier.sendMessage(match { it.contains("User Ignored") && it.contains("critic") })
+            telegramNotifier.sendMessage(
+                match { it.contains("User Ignored") && it.contains("critic") },
+                listOf(TelegramAction.UnignoreUser("critic"), TelegramAction.OpenUrl(comment.url)),
+            )
             redditService.replyToComment(comment, match { it.contains("won't reply") })
         }
     }
@@ -307,7 +335,10 @@ class ContributionServiceTest {
 
         verify(exactly = 1) {
             geminiService.evaluateBotReply(comment)
-            telegramNotifier.sendMessage(match { it.contains("Good Bot Praise") && it.contains("fan") })
+            telegramNotifier.sendMessage(
+                match { it.contains("Good Bot Praise") && it.contains("fan") },
+                any(),
+            )
             redditService.replyToComment(comment, "Thank you, fan!\n\n^(Thank you ❤️)")
         }
         verify(exactly = 0) {
@@ -342,7 +373,7 @@ class ContributionServiceTest {
 
         verify(exactly = 1) {
             geminiService.evaluateBotReply(comment)
-            telegramNotifier.sendMessage(match { it.contains("Bot Mentioned in Comment") })
+            telegramNotifier.sendMessage(match { it.contains("Bot Mentioned in Comment") }, any())
         }
         verify(exactly = 0) {
             botCache.ignoreUser(any(), any())
@@ -368,7 +399,8 @@ class ContributionServiceTest {
                         it.contains("critic") &&
                         it.contains("shut up stupid bot") &&
                         it.contains("BAD_BOT")
-                }
+                },
+                any(),
             )
         }
         verify(exactly = 0) {
@@ -395,7 +427,8 @@ class ContributionServiceTest {
                     it.contains("Bot Reply Classified (Dry Run)") &&
                         it.contains("fan") &&
                         it.contains("GOOD_BOT")
-                }
+                },
+                any(),
             )
         }
         verify(exactly = 0) {
@@ -456,7 +489,76 @@ class ContributionServiceTest {
         service.processComment(comment)
 
         verify {
+            geminiService.evaluateComment(comment)
             redditService.replyToComment(comment, "Aaron, get in there")
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenNoPhraseFound_DoesNotCallEvaluateComment() {
+        val comment = createComment(author = "critic", body = "Nothing matching here")
+        every { phraseService.findPhrase(comment) } returns null
+
+        service.processComment(comment)
+
+        verify(exactly = 0) {
+            geminiService.evaluateComment(any())
+            redditService.replyToComment(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenPhraseFoundAndCommentSensitive_SkipsReplyAndSendsTelegram() {
+        val comment = createComment(author = "user1", body = "My dad passed away, I feel so sad")
+        every { phraseService.findPhrase(comment) } returns "Some quote"
+        every { geminiService.evaluateComment(comment) } returns GeminiService.ModerationResult(
+            sensitivity = 0.9f,
+            reason = "Personal bereavement",
+        )
+
+        service.processComment(comment)
+
+        verify(exactly = 1) {
+            geminiService.evaluateComment(comment)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Comment Skipped") &&
+                        it.contains("My dad passed away, I feel so sad") &&
+                        it.contains("90%") &&
+                        it.contains("Personal bereavement")
+                },
+                any(),
+            )
+        }
+        verify(exactly = 0) {
+            redditService.replyToComment(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessComment_WhenPhraseFoundAndCommentSensitiveInDryRun_SendsDryRunTelegramAndStillReplies() {
+        val comment = createComment(author = "user1", body = "My dad passed away, I feel so sad")
+        every { phraseService.findPhrase(comment) } returns "Some quote"
+        every { geminiService.isDryRun } returns true
+        every { geminiService.evaluateComment(comment) } returns GeminiService.ModerationResult(
+            sensitivity = 0.9f,
+            reason = "Personal bereavement",
+        )
+
+        service.processComment(comment)
+
+        verify {
+            geminiService.evaluateComment(comment)
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Sensitive Comment Detected (Dry Run)") &&
+                        it.contains("My dad passed away, I feel so sad") &&
+                        it.contains("90%") &&
+                        it.contains("Personal bereavement")
+                },
+                any(),
+            )
+            redditService.replyToComment(comment, "Some quote")
         }
     }
 
@@ -467,7 +569,7 @@ class ContributionServiceTest {
         service.processSubmission(submission)
 
         verify {
-            telegramNotifier.sendMessage(match { it.contains("Is this zakbot real?") })
+            telegramNotifier.sendMessage(match { it.contains("Is this zakbot real?") }, any())
         }
     }
 
@@ -479,7 +581,7 @@ class ContributionServiceTest {
         service.processSubmission(submission)
 
         verify(exactly = 0) {
-            telegramNotifier.sendMessage(match { it.contains(praise) })
+            telegramNotifier.sendMessage(match { it.contains(praise) }, any())
         }
     }
 
@@ -490,7 +592,7 @@ class ContributionServiceTest {
         service.processComment(comment)
 
         verify {
-            telegramNotifier.sendMessage(match { it.contains("What a bot") })
+            telegramNotifier.sendMessage(match { it.contains("What a bot") }, any())
         }
     }
 
@@ -530,7 +632,10 @@ class ContributionServiceTest {
 
         verify(exactly = 1) {
             redditService.deleteComment(downvoted)
-            telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") && it.contains("-3") })
+            telegramNotifier.sendMessage(
+                match { it.contains("Downvoted Comment Deleted") && it.contains("-3") },
+                listOf(TelegramAction.OpenUrl(downvoted.url)),
+            )
         }
     }
 
@@ -543,12 +648,12 @@ class ContributionServiceTest {
         service.checkDownvotedComments()
 
         verify(exactly = 1) { redditService.deleteComment(downvoted) }
-        verify(exactly = 0) { telegramNotifier.sendMessage(any()) }
+        verify(exactly = 0) { telegramNotifier.sendMessage(any(), any()) }
 
         service.checkDownvotedComments()
 
         verify(exactly = 2) { redditService.deleteComment(downvoted) }
-        verify(exactly = 1) { telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") }) }
+        verify(exactly = 1) { telegramNotifier.sendMessage(match { it.contains("Downvoted Comment Deleted") }, any()) }
     }
 
     @Test
@@ -589,7 +694,7 @@ class ContributionServiceTest {
 
         verify(exactly = 1) {
             redditService.deleteComment(downvoted)
-            telegramNotifier.sendMessage(any())
+            telegramNotifier.sendMessage(any(), any())
         }
     }
 
