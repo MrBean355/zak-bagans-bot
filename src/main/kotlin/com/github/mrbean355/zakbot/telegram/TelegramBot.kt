@@ -7,7 +7,7 @@ import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
-import com.github.mrbean355.zakbot.service.RedditService
+import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.boot.info.BuildProperties

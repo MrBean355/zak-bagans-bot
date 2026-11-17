@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot.service
+package com.github.mrbean355.zakbot.reddit
 
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.SubredditName

@@ -5,7 +5,7 @@ import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.RedditFlair
 import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.service.ContributionService
-import com.github.mrbean355.zakbot.service.RedditService
+import com.github.mrbean355.zakbot.reddit.RedditService
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

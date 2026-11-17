@@ -4,12 +4,12 @@ This specification defines the scheduled polling, API pagination, contribution i
 
 - **Primary Implementation**:
     - Engine: `src/main/kotlin/com/github/mrbean355/zakbot/ZakBagansBot.kt`
-    - Reddit Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/RedditService.kt`
+    - Reddit Service: `src/main/kotlin/com/github/mrbean355/zakbot/reddit/RedditService.kt`
     - Contribution Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/ContributionService.kt`
     - Gemini Service: `src/main/kotlin/com/github/mrbean355/zakbot/service/GeminiService.kt`
 - **Unit Tests**:
     - `src/test/kotlin/com/github/mrbean355/zakbot/ZakBagansBotTest.kt`
-    - `src/test/kotlin/com/github/mrbean355/zakbot/service/RedditServiceTest.kt`
+    - `src/test/kotlin/com/github/mrbean355/zakbot/reddit/RedditServiceTest.kt`
     - `src/test/kotlin/com/github/mrbean355/zakbot/service/ContributionServiceTest.kt`
     - `src/test/kotlin/com/github/mrbean355/zakbot/service/GeminiServiceTest.kt`
 

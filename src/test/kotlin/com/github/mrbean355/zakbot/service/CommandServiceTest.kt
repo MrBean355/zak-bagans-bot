@@ -4,6 +4,7 @@ import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.telegram.TelegramAction
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import io.mockk.MockKAnnotations
 import io.mockk.every

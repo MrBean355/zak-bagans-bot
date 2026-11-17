@@ -57,11 +57,11 @@ graph TD
 
 | Subsystem              | Primary Source Files                                                                               | Primary Test Files                                                                                | Specification File                                               |
 |:-----------------------|:---------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------|
-| **Engine & Reddit**    | `ZakBagansBot.kt`<br/>`service/RedditService.kt`<br/>`service/ContributionService.kt`<br/>`service/GeminiService.kt` | `ZakBagansBotTest.kt`<br/>`service/RedditServiceTest.kt`<br/>`service/ContributionServiceTest.kt`<br/>`service/GeminiServiceTest.kt` | [bot-engine.md](bot-engine.md)                                   |
+| **Engine & Reddit**    | `ZakBagansBot.kt`<br/>`reddit/RedditService.kt`<br/>`service/ContributionService.kt`<br/>`service/GeminiService.kt` | `ZakBagansBotTest.kt`<br/>`reddit/RedditServiceTest.kt`<br/>`service/ContributionServiceTest.kt`<br/>`service/GeminiServiceTest.kt` | [bot-engine.md](bot-engine.md)                                   |
 | **Phrases & Quotes**   | `service/PhraseService.kt`<br/>`phrases/Phrase.kt`<br/>`phrases/*.kt`                              | `service/PhraseServiceTest.kt`                                                                    | [phrase-system.md](phrase-system.md)                             |
 | **Author Commands**    | `service/CommandService.kt`                                                                        | `service/CommandServiceTest.kt`                                                                   | [commands.md](commands.md)                                       |
 | **Telemetry & Alerts** | `telegram/TelegramBot.kt`<br/>`telegram/TelegramAction.kt`<br/>`telegram/TelegramNotifier.kt`<br/>`config/TelegramProperties.kt` | `telegram/TelegramBotTest.kt`                                                                     | [telemetry-and-notifications.md](telemetry-and-notifications.md) |
-| **Web API & Security** | `controller/PhraseApiController.kt`<br/>`config/SecurityConfig.kt`<br/>`config/UserInitializer.kt` | `controller/PhraseApiControllerTest.kt`<br/>`controller/GlobalExceptionHandlerTest.kt`            | [api-and-security.md](api-and-security.md)                       |
+| **Web API & Security** | `controller/PhraseApiController.kt`<br/>`config/SecurityConfig.kt`<br/>`db/UserInitializer.kt`     | `controller/PhraseApiControllerTest.kt`<br/>`controller/GlobalExceptionHandlerTest.kt`<br/>`db/UserInitializerTest.kt` | [api-and-security.md](api-and-security.md)                       |
 | **Data & Persistence** | `db/entity/*.kt`<br/>`db/repo/*.kt`<br/>`db/BotCache.kt`<br/>`db/PhraseType.kt`                    | `db/PhraseTypeTest.kt`<br/>`db/PhraseTypeConverterTest.kt`                                        | [data-models.md](data-models.md)                                 |
 
 ---
@@ -83,8 +83,8 @@ When modifying this repository, AI agents must preserve the following non-negoti
 6. **Parentheses Escaping**: All quote sources MUST escape closing parentheses
    (`source.replace("(", "\\(").replace(")", "\\)")`) before markdown formatting to prevent broken Reddit superscript.
 7. **String Resource Externalization**: User-facing Reddit and Telegram messages MUST be stored in
-   `src/main/resources/strings.properties` (and mirrored in `src/test/resources/strings.properties`), accessed via
-   `getString()`. Never hardcode formatted messages in Kotlin code.
+   `src/main/resources/strings.properties`, accessed via `getString()`. Never hardcode formatted messages in Kotlin
+   code.
 8. **Test Execution**: Always run `./gradlew test` to verify changes before completing tasks.
 9. **Explicit Dependency Injection**: Spring components and services must NEVER declare default parameter values for
    dependencies in their constructors (e.g. `zakbotProperties = ZakbotProperties()`). Dependencies must be strictly
@@ -107,6 +107,6 @@ When modifying this repository, AI agents must preserve the following non-negoti
 
 1. Add command parsing logic in `CommandService.processAuthorCommand()`.
 2. Add necessary repository/cache methods in `BotCache` or `RedditService`.
-3. Add response strings to `src/main/resources/strings.properties` and `src/test/resources/strings.properties`.
+3. Add response strings to `src/main/resources/strings.properties`.
 4. Document the command in [commands.md](commands.md) and [README.md](../../README.md#special-commands).
 5. Add unit tests in `CommandServiceTest.kt`.
