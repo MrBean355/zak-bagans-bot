@@ -3,6 +3,7 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.SubredditName
 import com.github.mrbean355.zakbot.reddit.dto.RedditCommentDto
+import com.github.mrbean355.zakbot.reddit.dto.RedditCommentReplyResponse
 import com.github.mrbean355.zakbot.reddit.dto.RedditFlairDto
 import com.github.mrbean355.zakbot.reddit.dto.RedditListing
 import com.github.mrbean355.zakbot.reddit.dto.RedditSubmissionDto
@@ -94,19 +95,21 @@ class RedditService(
         return items
     }
 
-    fun replyToSubmission(submission: Submission, response: String) {
-        if (zakbotProperties.replies.enabled) {
+    fun replyToSubmission(submission: Submission, response: String): String? {
+        return if (zakbotProperties.replies.enabled) {
             postCommentReply(submission.fullName, response)
         } else {
             logger.info("Reply to submission '{}': {}", submission.title, response)
+            null
         }
     }
 
-    fun replyToComment(comment: Comment, response: String) {
-        if (zakbotProperties.replies.enabled) {
+    fun replyToComment(comment: Comment, response: String): String? {
+        return if (zakbotProperties.replies.enabled) {
             postCommentReply(comment.fullName, response)
         } else {
             logger.info("Reply to comment '{}': {}", comment.body, response)
+            null
         }
     }
 
@@ -225,14 +228,23 @@ class RedditService(
 
     fun deleteComment(comment: Comment): Boolean {
         return if (zakbotProperties.replies.enabled) {
-            deleteComment(comment.fullName)
+            performDeleteComment(comment.fullName)
         } else {
             logger.info("Delete downvoted comment '{}' (score: {})", comment.fullName, comment.score)
             true
         }
     }
 
-    private fun deleteComment(thingId: String): Boolean {
+    fun deleteCommentById(thingId: String): Boolean {
+        return if (zakbotProperties.replies.enabled) {
+            performDeleteComment(thingId)
+        } else {
+            logger.info("Delete comment '{}'", thingId)
+            true
+        }
+    }
+
+    private fun performDeleteComment(thingId: String): Boolean {
         return try {
             val body = LinkedMultiValueMap<String, String>().apply {
                 add("api_type", "json")
@@ -252,22 +264,24 @@ class RedditService(
         }
     }
 
-    private fun postCommentReply(thingId: String, text: String) {
-        try {
+    private fun postCommentReply(thingId: String, text: String): String? {
+        return try {
             val body = LinkedMultiValueMap<String, String>().apply {
                 add("api_type", "json")
                 add("thing_id", thingId)
                 add("text", text)
             }
 
-            client.post()
+            val response = client.post()
                 .uri("/api/comment")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(body)
                 .retrieve()
-                .toBodilessEntity()
+                .body(RedditCommentReplyResponse::class.java)
+            response?.json?.data?.things?.firstOrNull()?.data?.name
         } catch (ex: Exception) {
             logger.error("Failed to post comment reply to thing: {}", thingId, ex)
+            null
         }
     }
 

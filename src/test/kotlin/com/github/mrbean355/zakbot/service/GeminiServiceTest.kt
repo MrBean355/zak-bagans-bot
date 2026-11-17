@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot.service
 
-import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.telegram.TelegramAction
+import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
@@ -195,9 +196,9 @@ class GeminiServiceTest {
                 match {
                     it.contains("Gemini Evaluation Failed") &&
                         it.contains("Post title") &&
-                        it.contains("429") &&
-                        it.contains(submission.url)
-                }
+                        it.contains("429")
+                },
+                listOf(TelegramAction.OpenUrl(submission.url)),
             )
         }
         server.verify()
@@ -235,9 +236,9 @@ class GeminiServiceTest {
             telegramNotifier.sendMessage(
                 match {
                     it.contains("Gemini Evaluation Failed") &&
-                        it.contains("Post title") &&
-                        it.contains(submission.url)
-                }
+                        it.contains("Post title")
+                },
+                listOf(TelegramAction.OpenUrl(submission.url)),
             )
         }
         server.verify()
@@ -383,9 +384,9 @@ class GeminiServiceTest {
                 match {
                     it.contains("Gemini Evaluation Failed") &&
                         it.contains("Best bot on Reddit!") &&
-                        it.contains("429") &&
-                        it.contains(comment.url)
-                }
+                        it.contains("429")
+                },
+                listOf(TelegramAction.OpenUrl(comment.url)),
             )
         }
         server.verify()

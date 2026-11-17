@@ -2,7 +2,8 @@ package com.github.mrbean355.zakbot.service
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.github.mrbean355.zakbot.TelegramNotifier
+import com.github.mrbean355.zakbot.telegram.TelegramAction
+import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
@@ -124,8 +125,8 @@ class GeminiService(
                     "telegram.gemini_evaluation_failed",
                     telegramContextText,
                     errorSummary,
-                    telegramContextUrl,
-                )
+                ),
+                listOf(TelegramAction.OpenUrl(telegramContextUrl)),
             )
             null
         }

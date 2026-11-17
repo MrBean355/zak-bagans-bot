@@ -8,7 +8,7 @@ class TelegramConfigTest {
     @Test
     fun testTelegramClient_InstantiatesClient() {
         val config = TelegramConfig()
-        val client = config.telegramClient(TelegramProperties(token = "dummy-token"))
+        val client = config.telegramClient(TelegramProperties(token = "dummy-token", chatId = "123456"))
         assertNotNull(client)
     }
 }

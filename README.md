@@ -113,7 +113,8 @@ Start the application with the `dev` profile:
 When running in `dev` mode:
 
 - **Reddit replies are disabled** (`zakbot.replies.enabled=false`) to prevent sending live replies.
-- **Telegram notifications are stubbed**, logging messages to standard output instead of contacting Telegram.
+- **Telegram notifications remain enabled** and require `TELEGRAM_TOKEN` and `TELEGRAM_CHAT_ID` (`telegram.token` and
+  `telegram.chat-id`).
 - **Admin user**: An initial admin account (`admin` / `password`) is automatically created if no users exist.
 - **Web UI**: Access the phrase viewer at `http://localhost:8080/` and the admin panel at
   `http://localhost:8080/admin.html`.
@@ -126,8 +127,8 @@ The bot can be configured using standard Spring Boot properties or environment v
 |-------------------------------------------|-------------------------------------------|-------------------------|----------------------------------------------------------|
 | `reddit.account-password`                 | `BOT_ACCOUNT_PASSWORD`                    | *(empty)*               | Reddit account password for authentication               |
 | `reddit.client-secret`                    | `BOT_CLIENT_SECRET`                       | *(empty)*               | Reddit script application client secret                  |
-| `telegram.token`                          | `TELEGRAM_TOKEN`                          | *(empty)*               | Telegram Bot token for status updates and alerts         |
-| `telegram.chat-id`                        | `TELEGRAM_CHAT_ID`                        | `44692593`              | Telegram chat ID to receive notifications                |
+| `telegram.token`                          | `TELEGRAM_TOKEN`                          | *(required)*            | Telegram Bot token for status updates and alerts         |
+| `telegram.chat-id`                        | `TELEGRAM_CHAT_ID`                        | *(required)*            | Telegram chat ID to receive notifications                |
 | `admin.username`                          | `ADMIN_USERNAME`                          | `admin`                 | Username for the admin web dashboard                     |
 | `admin.password`                          | `ADMIN_PASSWORD`                          | *(empty)*               | Password for the admin web dashboard                     |
 | `gemini.api-key`                          | `GEMINI_API_KEY`                          | *(empty)*               | Google Gemini API key for moderation and sentiment       |
