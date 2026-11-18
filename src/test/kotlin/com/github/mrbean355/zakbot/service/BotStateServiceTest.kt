@@ -6,7 +6,6 @@ import com.github.mrbean355.zakbot.db.entity.LastCheckedEntity
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
-import com.github.mrbean355.zakbot.util.SystemClock
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -19,7 +18,9 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.Optional
 
 private const val CurrentTime = 1_000_000L
@@ -34,15 +35,13 @@ internal class BotStateServiceTest {
     @MockK
     private lateinit var ignoredSubmissionRepository: IgnoredSubmissionRepository
 
-    @MockK
-    private lateinit var systemClock: SystemClock
+    private val clock: Clock = Clock.fixed(Instant.ofEpochMilli(CurrentTime), ZoneOffset.UTC)
     private lateinit var botStateService: BotStateService
 
     @BeforeEach
     internal fun setUp() {
         MockKAnnotations.init(this)
-        every { systemClock.currentTimeMillis } returns CurrentTime
-        botStateService = BotStateService(lastCheckedRepository, ignoredUserRepository, ignoredSubmissionRepository, systemClock)
+        botStateService = BotStateService(lastCheckedRepository, ignoredUserRepository, ignoredSubmissionRepository, clock)
     }
 
     @Test

@@ -6,10 +6,10 @@ import com.github.mrbean355.zakbot.db.entity.LastCheckedEntity
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
-import com.github.mrbean355.zakbot.util.SystemClock
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.Instant
 
 private const val SubmissionKey = "post"
@@ -21,7 +21,7 @@ class BotStateService(
     private val lastCheckedRepository: LastCheckedRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
-    private val systemClock: SystemClock,
+    private val clock: Clock,
 ) {
 
     fun getLastSubmissionTime(): Instant {
@@ -68,5 +68,5 @@ class BotStateService(
         ignoredSubmissionRepository.deleteById(fullName)
     }
 
-    private fun currentTime(): Instant = Instant.ofEpochMilli(systemClock.currentTimeMillis)
+    private fun currentTime(): Instant = clock.instant()
 }

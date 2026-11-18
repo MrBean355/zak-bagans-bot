@@ -19,7 +19,7 @@ This specification defines the PostgreSQL tables, JPA entities, converters, and 
 1. **Integer Enum Mapping**: The database column `phrase.type` stores the integer ID of `PhraseType`, NOT the string
    name. Mapped via `PhraseTypeConverter: AttributeConverter<PhraseType, Int>`.
 2. **Cold Start Cursors**: In `BotStateService`, if no record exists for `"post"` or `"comment"` in `last_checked`, the cache
-   MUST initialize the value to `currentTime()` (`SystemClock.currentTimeMillis`) to avoid polling from epoch 0.
+   MUST initialize the value to `currentTime()` (`clock.instant()`) to avoid polling from epoch 0.
 3. **Transaction Boundaries**:
   - `BotStateService` is annotated with `@Transactional`. Read-only queries (`isUserIgnored`, `isSubmissionIgnored`) are
     annotated with `@Transactional(readOnly = true)`.

@@ -4,18 +4,18 @@ import com.github.mrbean355.zakbot.BotClientId
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.config.RedditProperties
 import com.github.mrbean355.zakbot.reddit.dto.RedditTokenResponse
-import com.github.mrbean355.zakbot.util.SystemClock
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
+import java.time.Clock
 
 @Service
 class RedditAuthService(
     private val redditProperties: RedditProperties,
-    private val systemClock: SystemClock,
+    private val clock: Clock,
     @Qualifier("redditAuthRestClient") private val authClient: RestClient,
 ) {
     private val logger = LoggerFactory.getLogger(RedditAuthService::class.java)
@@ -28,7 +28,7 @@ class RedditAuthService(
 
     @Synchronized
     fun getAccessToken(): String {
-        val now = systemClock.currentTimeMillis
+        val now = clock.millis()
         val token = cachedToken
         if (token != null && now < expiresAtMillis - REFRESH_BUFFER_MILLIS) {
             return token
