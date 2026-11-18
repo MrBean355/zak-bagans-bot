@@ -3,11 +3,9 @@ package com.github.mrbean355.zakbot.telegram
 import com.github.mrbean355.zakbot.SubredditName
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
-import com.github.mrbean355.zakbot.service.BotStateService
-import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
-import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
-import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.reddit.RedditService
+import com.github.mrbean355.zakbot.service.BotStateService
+import com.github.mrbean355.zakbot.service.PhraseService
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.boot.info.BuildProperties
@@ -44,9 +42,7 @@ private const val CALLBACK_REFRESH_STATUS = "rs"
 @Component
 class TelegramBot(
     private val applicationContext: ApplicationContext,
-    private val phraseRepository: PhraseRepository,
-    private val ignoredUserRepository: IgnoredUserRepository,
-    private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
+    private val phraseService: PhraseService,
     private val botStateService: BotStateService,
     private val redditService: RedditService,
     private val telegramClient: TelegramClient,
@@ -301,9 +297,9 @@ class TelegramBot(
             getMemoryUsage(),
             geminiStatus,
             SubredditName,
-            phraseRepository.count(),
-            ignoredUserRepository.count(),
-            ignoredSubmissionRepository.count(),
+            phraseService.getPhraseCount(),
+            botStateService.getIgnoredUserCount(),
+            botStateService.getIgnoredSubmissionCount(),
         )
     }
 

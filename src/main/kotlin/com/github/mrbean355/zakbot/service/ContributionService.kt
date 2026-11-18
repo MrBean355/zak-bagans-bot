@@ -10,7 +10,8 @@ import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Contribution
 import com.github.mrbean355.zakbot.reddit.model.Submission
-import com.github.mrbean355.zakbot.service.GeminiService.BotSentiment
+import com.github.mrbean355.zakbot.gemini.GeminiService
+import com.github.mrbean355.zakbot.gemini.GeminiService.BotSentiment
 import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.context.MessageSource

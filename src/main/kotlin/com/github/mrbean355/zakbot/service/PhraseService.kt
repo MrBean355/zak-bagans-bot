@@ -41,6 +41,11 @@ class PhraseService(
         return phraseRepository.findAll().toList()
     }
 
+    @Transactional(readOnly = true)
+    fun getPhraseCount(): Long {
+        return phraseRepository.count()
+    }
+
     fun addPhrase(content: String, type: PhraseType, source: String?): PhraseEntity {
         val saved = requireNotNull(
             transactionOperations.execute {

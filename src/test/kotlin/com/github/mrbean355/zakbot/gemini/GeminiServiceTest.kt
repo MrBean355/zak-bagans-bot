@@ -1,11 +1,11 @@
-package com.github.mrbean355.zakbot.service
+package com.github.mrbean355.zakbot.gemini
 
 import com.github.mrbean355.zakbot.telegram.TelegramAction
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
-import com.github.mrbean355.zakbot.service.GeminiService.BotSentiment
+import com.github.mrbean355.zakbot.gemini.GeminiService.BotSentiment
 import io.mockk.MockKAnnotations
 import io.mockk.impl.annotations.MockK
 import io.mockk.justRun

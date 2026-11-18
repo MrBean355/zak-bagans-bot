@@ -2,11 +2,9 @@ package com.github.mrbean355.zakbot.telegram
 
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
-import com.github.mrbean355.zakbot.service.BotStateService
-import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
-import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
-import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.reddit.RedditService
+import com.github.mrbean355.zakbot.service.BotStateService
+import com.github.mrbean355.zakbot.service.PhraseService
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -40,13 +38,7 @@ class TelegramBotTest {
     private lateinit var applicationContext: ApplicationContext
 
     @MockK
-    private lateinit var phraseRepository: PhraseRepository
-
-    @MockK
-    private lateinit var ignoredUserRepository: IgnoredUserRepository
-
-    @MockK
-    private lateinit var ignoredSubmissionRepository: IgnoredSubmissionRepository
+    private lateinit var phraseService: PhraseService
 
     @MockK
     private lateinit var botStateService: BotStateService
@@ -65,9 +57,9 @@ class TelegramBotTest {
         MockKAnnotations.init(this, relaxUnitFun = true)
 
         every { applicationContext.startupDate } returns System.currentTimeMillis() - 3600_000L
-        every { phraseRepository.count() } returns 150L
-        every { ignoredUserRepository.count() } returns 7L
-        every { ignoredSubmissionRepository.count() } returns 3L
+        every { phraseService.getPhraseCount() } returns 150L
+        every { botStateService.getIgnoredUserCount() } returns 7L
+        every { botStateService.getIgnoredSubmissionCount() } returns 3L
         every { telegramClient.execute(any<SendMessage>()) } returns mockk()
         every { telegramClient.execute(any<AnswerCallbackQuery>()) } returns true
         every { telegramClient.execute(any<EditMessageReplyMarkup>()) } returns mockk()
@@ -445,9 +437,7 @@ class TelegramBotTest {
         })
         return TelegramBot(
             applicationContext = applicationContext,
-            phraseRepository = phraseRepository,
-            ignoredUserRepository = ignoredUserRepository,
-            ignoredSubmissionRepository = ignoredSubmissionRepository,
+            phraseService = phraseService,
             botStateService = botStateService,
             redditService = redditService,
             telegramClient = telegramClient,

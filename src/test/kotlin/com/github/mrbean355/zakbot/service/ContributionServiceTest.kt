@@ -6,6 +6,7 @@ import com.github.mrbean355.zakbot.telegram.TelegramAction
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.ZakbotProperties
 import com.github.mrbean355.zakbot.db.PhraseType
+import com.github.mrbean355.zakbot.gemini.GeminiService
 import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission

@@ -43,6 +43,11 @@ class BotStateService(
     }
 
     @Transactional(readOnly = true)
+    fun getIgnoredUserCount(): Long {
+        return ignoredUserRepository.count()
+    }
+
+    @Transactional(readOnly = true)
     fun isUserIgnored(id: String): Boolean {
         return ignoredUserRepository.existsById(id)
     }
@@ -53,6 +58,11 @@ class BotStateService(
 
     fun unignoreUser(id: String) {
         ignoredUserRepository.deleteById(id)
+    }
+
+    @Transactional(readOnly = true)
+    fun getIgnoredSubmissionCount(): Long {
+        return ignoredSubmissionRepository.count()
     }
 
     @Transactional(readOnly = true)

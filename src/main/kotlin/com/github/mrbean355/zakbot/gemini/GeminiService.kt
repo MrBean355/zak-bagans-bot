@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot.service
+package com.github.mrbean355.zakbot.gemini
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
