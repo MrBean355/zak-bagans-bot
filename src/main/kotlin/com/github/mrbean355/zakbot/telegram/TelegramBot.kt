@@ -3,15 +3,14 @@ package com.github.mrbean355.zakbot.telegram
 import com.github.mrbean355.zakbot.SubredditName
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
-import com.github.mrbean355.zakbot.db.BotCache
-import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
-import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
-import com.github.mrbean355.zakbot.db.repo.PhraseRepository
 import com.github.mrbean355.zakbot.reddit.RedditService
+import com.github.mrbean355.zakbot.service.BotStateService
+import com.github.mrbean355.zakbot.service.PhraseService
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
+import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
@@ -27,6 +26,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.Duration
 import java.time.Instant
@@ -42,15 +42,14 @@ private const val CALLBACK_REFRESH_STATUS = "rs"
 @Component
 class TelegramBot(
     private val applicationContext: ApplicationContext,
-    private val phraseRepository: PhraseRepository,
-    private val ignoredUserRepository: IgnoredUserRepository,
-    private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
-    private val botCache: BotCache,
+    private val phraseService: PhraseService,
+    private val botStateService: BotStateService,
     private val redditService: RedditService,
     private val telegramClient: TelegramClient,
     private val buildProperties: BuildProperties,
     private val telegramProperties: TelegramProperties,
     private val geminiProperties: GeminiProperties,
+    private val messageSource: MessageSource,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
     private val logger = LoggerFactory.getLogger(TelegramBot::class.java)
@@ -76,18 +75,38 @@ class TelegramBot(
     }
 
     override fun sendMessage(text: String, actions: List<TelegramAction>) {
+        val keyboard = buildKeyboard(actions)
         try {
-            val builder = SendMessage.builder()
-                .chatId(telegramProperties.chatId)
-                .text(text)
-                .parseMode(ParseMode.MARKDOWN)
-                .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
-
-            buildKeyboard(actions)?.let { builder.replyMarkup(it) }
-            telegramClient.execute(builder.build())
+            executeSendMessage(text, keyboard, ParseMode.MARKDOWN)
+        } catch (ex: TelegramApiRequestException) {
+            if (ex.errorCode == 400) {
+                logger.warn("Telegram Markdown failed, retrying as plain text", ex)
+                try {
+                    executeSendMessage(text, keyboard, parseMode = null)
+                } catch (retryEx: Exception) {
+                    logger.error("Failed to send Telegram message", retryEx)
+                }
+            } else {
+                logger.error("Failed to send Telegram message", ex)
+            }
         } catch (ex: Exception) {
             logger.error("Failed to send Telegram message", ex)
         }
+    }
+
+    private fun executeSendMessage(
+        text: String,
+        keyboard: InlineKeyboardMarkup?,
+        parseMode: String?,
+    ) {
+        val builder = SendMessage.builder()
+            .chatId(telegramProperties.chatId)
+            .text(text)
+            .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
+
+        parseMode?.let { builder.parseMode(it) }
+        keyboard?.let { builder.replyMarkup(it) }
+        telegramClient.execute(builder.build())
     }
 
     private fun handleCallbackQuery(callbackQuery: CallbackQuery) {
@@ -101,28 +120,28 @@ class TelegramBot(
             when {
                 data.startsWith(PREFIX_IGNORE_USER) -> {
                     val username = data.removePrefix(PREFIX_IGNORE_USER)
-                    botCache.ignoreUser(username, "telegram")
+                    botStateService.ignoreUser(username, "telegram")
                     answerCallback(callbackQuery.id, "Ignored u/$username")
                     replaceButton(message as? Message, data, TelegramAction.UnignoreUser(username).toButton())
                 }
 
                 data.startsWith(PREFIX_UNIGNORE_USER) -> {
                     val username = data.removePrefix(PREFIX_UNIGNORE_USER)
-                    botCache.unignoreUser(username)
+                    botStateService.unignoreUser(username)
                     answerCallback(callbackQuery.id, "Unignored u/$username")
                     replaceButton(message as? Message, data, TelegramAction.IgnoreUser(username).toButton())
                 }
 
                 data.startsWith(PREFIX_IGNORE_POST) -> {
                     val fullName = data.removePrefix(PREFIX_IGNORE_POST)
-                    botCache.ignoreSubmission(fullName, "Ignored via Telegram")
+                    botStateService.ignoreSubmission(fullName, "Ignored via Telegram")
                     answerCallback(callbackQuery.id, "Post ignored")
                     replaceButton(message as? Message, data, TelegramAction.UnignoreSubmission(fullName).toButton())
                 }
 
                 data.startsWith(PREFIX_UNIGNORE_POST) -> {
                     val fullName = data.removePrefix(PREFIX_UNIGNORE_POST)
-                    botCache.unignoreSubmission(fullName)
+                    botStateService.unignoreSubmission(fullName)
                     answerCallback(callbackQuery.id, "Post unignored")
                     replaceButton(message as? Message, data, TelegramAction.IgnoreSubmission(fullName).toButton())
                 }
@@ -132,7 +151,7 @@ class TelegramBot(
                     if (redditService.deleteCommentById(fullName)) {
                         answerCallback(callbackQuery.id, "Reply deleted")
                         val deletedButton = InlineKeyboardButton.builder()
-                            .text("✅ Deleted")
+                            .text("Deleted")
                             .callbackData(CALLBACK_COMMENT_DELETED)
                             .build()
                         replaceButton(message as? Message, data, deletedButton)
@@ -217,8 +236,8 @@ class TelegramBot(
         }
         val (urlActions, callbackActions) = actions.partition { it is TelegramAction.OpenUrl }
         val rows = buildList {
-            if (callbackActions.isNotEmpty()) {
-                add(InlineKeyboardRow(callbackActions.map { it.toButton() }))
+            callbackActions.chunked(2).forEach { chunk ->
+                add(InlineKeyboardRow(chunk.map { it.toButton() }))
             }
             if (urlActions.isNotEmpty()) {
                 add(InlineKeyboardRow(urlActions.map { it.toButton() }))
@@ -229,37 +248,37 @@ class TelegramBot(
 
     private fun TelegramAction.toButton(): InlineKeyboardButton = when (this) {
         is TelegramAction.OpenUrl -> InlineKeyboardButton.builder()
-            .text("🔗 View on Reddit")
+            .text("View on Reddit")
             .url(url)
             .build()
 
         is TelegramAction.IgnoreUser -> InlineKeyboardButton.builder()
-            .text("🚫 Ignore User")
+            .text("Ignore User")
             .callbackData("$PREFIX_IGNORE_USER$username")
             .build()
 
         is TelegramAction.UnignoreUser -> InlineKeyboardButton.builder()
-            .text("✅ Unignore User")
+            .text("Unignore User")
             .callbackData("$PREFIX_UNIGNORE_USER$username")
             .build()
 
         is TelegramAction.IgnoreSubmission -> InlineKeyboardButton.builder()
-            .text("🚫 Ignore Post")
+            .text("Ignore Post")
             .callbackData("$PREFIX_IGNORE_POST$fullName")
             .build()
 
         is TelegramAction.UnignoreSubmission -> InlineKeyboardButton.builder()
-            .text("✅ Unignore Post")
+            .text("Unignore Post")
             .callbackData("$PREFIX_UNIGNORE_POST$fullName")
             .build()
 
         is TelegramAction.DeleteComment -> InlineKeyboardButton.builder()
-            .text("🗑️ Delete Reply")
+            .text("Delete Reply")
             .callbackData("$PREFIX_DELETE_COMMENT$fullName")
             .build()
 
         TelegramAction.RefreshStatus -> InlineKeyboardButton.builder()
-            .text("🔄 Refresh")
+            .text("Refresh")
             .callbackData(CALLBACK_REFRESH_STATUS)
             .build()
     }
@@ -271,16 +290,16 @@ class TelegramBot(
             geminiProperties.dryRun -> "Dry run"
             else -> "Enabled"
         }
-        return getString(
+        return messageSource.getString(
             "telegram.bot_status_response",
             buildProperties.version,
             getUptime().ifBlank { "< 1 second" },
             getMemoryUsage(),
             geminiStatus,
             SubredditName,
-            phraseRepository.count(),
-            ignoredUserRepository.count(),
-            ignoredSubmissionRepository.count(),
+            phraseService.getPhraseCount(),
+            botStateService.getIgnoredUserCount(),
+            botStateService.getIgnoredSubmissionCount(),
         )
     }
 
@@ -301,10 +320,10 @@ class TelegramBot(
         val seconds = elapsed.toSecondsPart()
 
         return buildList {
-            if (days > 0) add(getString("telegram.bot_uptime_days", days))
-            if (hours > 0) add(getString("telegram.bot_uptime_hours", hours))
-            if (minutes > 0) add(getString("telegram.bot_uptime_minutes", minutes))
-            if (seconds > 0) add(getString("telegram.bot_uptime_seconds", seconds))
+            if (days > 0) add(messageSource.getString("telegram.bot_uptime_days", days))
+            if (hours > 0) add(messageSource.getString("telegram.bot_uptime_hours", hours))
+            if (minutes > 0) add(messageSource.getString("telegram.bot_uptime_minutes", minutes))
+            if (seconds > 0) add(messageSource.getString("telegram.bot_uptime_seconds", seconds))
         }.joinToString()
     }
 }

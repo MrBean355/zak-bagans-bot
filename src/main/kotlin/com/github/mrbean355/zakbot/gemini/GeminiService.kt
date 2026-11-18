@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot.service
+package com.github.mrbean355.zakbot.gemini
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -7,9 +7,11 @@ import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
+import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.MessageSource
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
@@ -20,6 +22,7 @@ class GeminiService(
     @Qualifier("geminiRestClient") private val client: RestClient,
     private val geminiProperties: GeminiProperties,
     private val telegramNotifier: TelegramNotifier,
+    private val messageSource: MessageSource,
 ) {
     private val logger = LoggerFactory.getLogger(GeminiService::class.java)
     private val jsonMapper = JsonMapper.builder().build()
@@ -121,9 +124,9 @@ class GeminiService(
                 }
             }
             telegramNotifier.sendMessage(
-                getString(
+                messageSource.getString(
                     "telegram.gemini_evaluation_failed",
-                    telegramContextText,
+                    telegramContextText.escapeTelegramMarkdown(),
                     errorSummary,
                 ),
                 listOf(TelegramAction.OpenUrl(telegramContextUrl)),

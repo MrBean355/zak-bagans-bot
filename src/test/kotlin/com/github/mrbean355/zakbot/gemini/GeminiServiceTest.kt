@@ -1,11 +1,11 @@
-package com.github.mrbean355.zakbot.service
+package com.github.mrbean355.zakbot.gemini
 
 import com.github.mrbean355.zakbot.telegram.TelegramAction
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
-import com.github.mrbean355.zakbot.service.GeminiService.BotSentiment
+import com.github.mrbean355.zakbot.gemini.GeminiService.BotSentiment
 import io.mockk.MockKAnnotations
 import io.mockk.impl.annotations.MockK
 import io.mockk.justRun
@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -36,6 +37,13 @@ class GeminiServiceTest {
     @MockK
     private lateinit var telegramNotifier: TelegramNotifier
 
+    private val messageSource = ResourceBundleMessageSource().apply {
+        setBasename("strings")
+        setDefaultEncoding("UTF-8")
+        setUseCodeAsDefaultMessage(true)
+        setAlwaysUseMessageFormat(true)
+    }
+
     private lateinit var service: GeminiService
 
     @BeforeEach
@@ -51,6 +59,7 @@ class GeminiServiceTest {
             client = client,
             geminiProperties = GeminiProperties(apiKey = "test-api-key", model = "gemini-3.5-flash-lite"),
             telegramNotifier = telegramNotifier,
+            messageSource = messageSource,
         )
     }
 
@@ -60,6 +69,7 @@ class GeminiServiceTest {
             client = client,
             geminiProperties = GeminiProperties(apiKey = "test-api-key", enabled = false),
             telegramNotifier = telegramNotifier,
+            messageSource = messageSource,
         )
         val submission = createSubmission(title = "RIP to a great investigator")
 
@@ -77,6 +87,7 @@ class GeminiServiceTest {
             client = client,
             geminiProperties = GeminiProperties(apiKey = ""),
             telegramNotifier = telegramNotifier,
+            messageSource = messageSource,
         )
         val submission = createSubmission(title = "RIP to a great investigator")
 
@@ -288,6 +299,7 @@ class GeminiServiceTest {
             client = client,
             geminiProperties = GeminiProperties(apiKey = "test-api-key", enabled = false),
             telegramNotifier = telegramNotifier,
+            messageSource = messageSource,
         )
         val comment = createComment(body = "My dad passed away last week, I feel so lost")
 
@@ -305,6 +317,7 @@ class GeminiServiceTest {
             client = client,
             geminiProperties = GeminiProperties(apiKey = "test-api-key", enabled = false),
             telegramNotifier = telegramNotifier,
+            messageSource = messageSource,
         )
         val comment = createComment(body = "I love this bot so much!")
 
@@ -321,6 +334,7 @@ class GeminiServiceTest {
             client = client,
             geminiProperties = GeminiProperties(apiKey = ""),
             telegramNotifier = telegramNotifier,
+            messageSource = messageSource,
         )
         val comment = createComment(body = "I love this bot so much!")
 

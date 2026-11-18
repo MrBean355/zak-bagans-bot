@@ -1,6 +1,6 @@
 package com.github.mrbean355.zakbot
 
-import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.service.BotStateService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.RedditFlair
 import com.github.mrbean355.zakbot.reddit.model.Submission
@@ -22,7 +22,7 @@ class ZakBagansBotTest {
     private lateinit var redditService: RedditService
 
     @MockK
-    private lateinit var botCache: BotCache
+    private lateinit var botStateService: BotStateService
 
     @MockK
     private lateinit var contributionService: ContributionService
@@ -32,7 +32,7 @@ class ZakBagansBotTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this, relaxUnitFun = true)
-        bot = ZakBagansBot(redditService, botCache, contributionService)
+        bot = ZakBagansBot(redditService, botStateService, contributionService)
     }
 
     @Test
@@ -47,12 +47,12 @@ class ZakBagansBotTest {
         val submission2 = mockk<Submission> { every { created } returns subTime2 }
         val comment1 = mockk<Comment> { every { created } returns comTime1 }
 
-        every { botCache.getLastSubmissionTime() } returns lastSubmissionTime
-        every { botCache.getLastCommentTime() } returns lastCommentTime
+        every { botStateService.getLastSubmissionTime() } returns lastSubmissionTime
+        every { botStateService.getLastCommentTime() } returns lastCommentTime
         every { redditService.getSubmissionsSince(lastSubmissionTime) } returns listOf(submission1, submission2)
         every { redditService.getCommentsSince(lastCommentTime) } returns listOf(comment1)
-        justRun { botCache.setLastSubmissionTime(any()) }
-        justRun { botCache.setLastCommentTime(any()) }
+        justRun { botStateService.setLastSubmissionTime(any()) }
+        justRun { botStateService.setLastCommentTime(any()) }
         justRun { contributionService.processSubmission(any()) }
         justRun { contributionService.processComment(any()) }
 
@@ -61,9 +61,9 @@ class ZakBagansBotTest {
         verify(ordering = io.mockk.Ordering.ORDERED) {
             contributionService.processSubmission(submission1)
             contributionService.processSubmission(submission2)
-            botCache.setLastSubmissionTime(subTime1)
+            botStateService.setLastSubmissionTime(subTime1)
             contributionService.processComment(comment1)
-            botCache.setLastCommentTime(comTime1)
+            botStateService.setLastCommentTime(comTime1)
             contributionService.checkDownvotedComments()
         }
     }
@@ -74,7 +74,7 @@ class ZakBagansBotTest {
         val subTime1 = Instant.ofEpochMilli(1500L)
         val submission1 = mockk<Submission> { every { created } returns subTime1 }
 
-        every { botCache.getLastSubmissionTime() } returns lastSubmissionTime
+        every { botStateService.getLastSubmissionTime() } returns lastSubmissionTime
         every { redditService.getSubmissionsSince(lastSubmissionTime) } returns listOf(submission1)
         every { contributionService.processSubmission(submission1) } throws RuntimeException("Boom")
 
@@ -83,7 +83,7 @@ class ZakBagansBotTest {
         }
 
         verify(exactly = 0) {
-            botCache.setLastSubmissionTime(any())
+            botStateService.setLastSubmissionTime(any())
         }
     }
 
@@ -92,16 +92,16 @@ class ZakBagansBotTest {
         val lastSubmissionTime = Instant.ofEpochMilli(1000L)
         val lastCommentTime = Instant.ofEpochMilli(2000L)
 
-        every { botCache.getLastSubmissionTime() } returns lastSubmissionTime
-        every { botCache.getLastCommentTime() } returns lastCommentTime
+        every { botStateService.getLastSubmissionTime() } returns lastSubmissionTime
+        every { botStateService.getLastCommentTime() } returns lastCommentTime
         every { redditService.getSubmissionsSince(lastSubmissionTime) } returns emptyList()
         every { redditService.getCommentsSince(lastCommentTime) } returns emptyList()
 
         bot.checkContributions()
 
         verify(exactly = 0) {
-            botCache.setLastSubmissionTime(any())
-            botCache.setLastCommentTime(any())
+            botStateService.setLastSubmissionTime(any())
+            botStateService.setLastCommentTime(any())
             contributionService.processSubmission(any())
             contributionService.processComment(any())
         }

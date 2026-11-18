@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot.db
+package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.db.entity.IgnoredSubmissionEntity
 import com.github.mrbean355.zakbot.db.entity.IgnoredUserEntity
@@ -6,22 +6,22 @@ import com.github.mrbean355.zakbot.db.entity.LastCheckedEntity
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
-import com.github.mrbean355.zakbot.util.SystemClock
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.Instant
 
 private const val SubmissionKey = "post"
 private const val CommentKey = "comment"
 
-@Component
+@Service
 @Transactional
-class BotCache(
+class BotStateService(
     private val lastCheckedRepository: LastCheckedRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
-    private val systemClock: SystemClock,
+    private val clock: Clock,
 ) {
 
     fun getLastSubmissionTime(): Instant {
@@ -43,6 +43,11 @@ class BotCache(
     }
 
     @Transactional(readOnly = true)
+    fun getIgnoredUserCount(): Long {
+        return ignoredUserRepository.count()
+    }
+
+    @Transactional(readOnly = true)
     fun isUserIgnored(id: String): Boolean {
         return ignoredUserRepository.existsById(id)
     }
@@ -53,6 +58,11 @@ class BotCache(
 
     fun unignoreUser(id: String) {
         ignoredUserRepository.deleteById(id)
+    }
+
+    @Transactional(readOnly = true)
+    fun getIgnoredSubmissionCount(): Long {
+        return ignoredSubmissionRepository.count()
     }
 
     @Transactional(readOnly = true)
@@ -68,5 +78,5 @@ class BotCache(
         ignoredSubmissionRepository.deleteById(fullName)
     }
 
-    private fun currentTime(): Instant = Instant.ofEpochMilli(systemClock.currentTimeMillis)
+    private fun currentTime(): Instant = clock.instant()
 }

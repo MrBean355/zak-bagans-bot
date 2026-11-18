@@ -1,6 +1,6 @@
 package com.github.mrbean355.zakbot
 
-import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.service.BotStateService
 import com.github.mrbean355.zakbot.service.ContributionService
 import com.github.mrbean355.zakbot.reddit.RedditService
 import org.springframework.scheduling.annotation.Scheduled
@@ -9,20 +9,20 @@ import org.springframework.stereotype.Component
 @Component
 class ZakBagansBot(
     private val redditService: RedditService,
-    private val botCache: BotCache,
+    private val botStateService: BotStateService,
     private val contributionService: ContributionService,
 ) {
 
     @Scheduled(fixedRate = 15 * 60 * 1000L, initialDelay = 10_000L)
     fun checkContributions() {
-        redditService.getSubmissionsSince(botCache.getLastSubmissionTime()).apply {
+        redditService.getSubmissionsSince(botStateService.getLastSubmissionTime()).apply {
             forEach(contributionService::processSubmission)
-            firstOrNull()?.created?.let(botCache::setLastSubmissionTime)
+            firstOrNull()?.created?.let(botStateService::setLastSubmissionTime)
         }
 
-        redditService.getCommentsSince(botCache.getLastCommentTime()).apply {
+        redditService.getCommentsSince(botStateService.getLastCommentTime()).apply {
             forEach(contributionService::processComment)
-            firstOrNull()?.created?.let(botCache::setLastCommentTime)
+            firstOrNull()?.created?.let(botStateService::setLastCommentTime)
         }
 
         contributionService.checkDownvotedComments()

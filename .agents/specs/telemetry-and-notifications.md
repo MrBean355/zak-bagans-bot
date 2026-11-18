@@ -28,14 +28,14 @@ outbound event catalog.
 
 Implemented in `TelegramBot.consume()`:
 
-- `/status` (from `telegramProperties.chatId`): sends `buildStatusMessage()` with a `🔄 Refresh` (`rs`) inline button.
+- `/status` (from `telegramProperties.chatId`): sends `buildStatusMessage()` with a `Refresh` (`rs`) inline button.
 - Callback queries (from `telegramProperties.chatId`):
-    - `iu:<username>` / `uu:<username>`: ignores or unignores a Reddit user in `BotCache`, answers with a toast, and
+    - `iu:<username>` / `uu:<username>`: ignores or unignores a Reddit user in `BotStateService`, answers with a toast, and
       toggles the button.
-    - `ip:<fullName>` / `up:<fullName>`: ignores or unignores a Reddit post in `BotCache`, answers with a toast, and
+    - `ip:<fullName>` / `up:<fullName>`: ignores or unignores a Reddit post in `BotStateService`, answers with a toast, and
       toggles the button.
     - `dc:<fullName>`: deletes the bot's reply via `RedditService.deleteCommentById()`, answers with a toast, and marks
-      the button `✅ Deleted` (`cd`).
+      the button `Deleted` (`cd`).
     - `rs`: refreshes the `/status` message in place via `EditMessageText` and answers with a toast.
 
 ### 2.1 Telemetry Composition

@@ -54,26 +54,12 @@ There is a 10% chance the bot will respond with appreciation in true Zak Bagans 
 
 ## Special Commands
 
-### Reddit
-
 There are some commands that can be sent to the bot via comments on Reddit, and **only the bot's author can send them**.
 
 - `u/ZakBagansBot ignore_user <username>` - Ignore the user's future posts and comments.
 - `u/ZakBagansBot unignore_user <username>` - Stop ignoring the user.
 - `u/ZakBagansBot ignore_post <reason>` - Ignore all comments on the current post. The reason is optional.
 - `u/ZakBagansBot unignore_post` - Stop ignoring the current post.
-
-### Telegram
-
-The following command can be sent to the bot via Telegram:
-
-- `/status` - View the bot's runtime telemetry (version, uptime, memory usage, Gemini moderation status, and database
-  statistics).
-
-## Specifications
-
-Detailed functional and technical specifications for the bot's architecture, phrase detection pipeline, author commands,
-telemetry, security, and database schema can be found in the [.agents/specs](.agents/specs) directory.
 
 ## Contributing
 
@@ -89,61 +75,8 @@ the issue template to get started. If you're unfamiliar with GitHub, feel free t
 
 ### Other Contributions
 
-- Pull requests are welcome!
+- Pull requests are welcome! See [DEVELOPMENT.md](DEVELOPMENT.md) for local setup, configuration, testing, and
+  technical specifications.
 - [Open an issue on GitHub](https://github.com/MrBean355/zak-bagans-bot/issues/new/choose) for any feedback related to
   the project.
 - [Message me on Reddit](https://www.reddit.com/user/Mr_Bean355) if you'd prefer.
-
-## Local Development
-
-### Prerequisites
-
-- **Java 25** (JDK 25)
-- **PostgreSQL** running locally on port 5432 with a database named `zakbot` (credentials `postgres` / `root`),
-  configurable in `src/main/resources/application-dev.properties`.
-
-### Running Locally
-
-Start the application with the `dev` profile:
-
-```bash
-./gradlew bootRun --args='--spring.profiles.active=dev'
-```
-
-When running in `dev` mode:
-
-- **Reddit replies are disabled** (`zakbot.replies.enabled=false`) to prevent sending live replies.
-- **Telegram notifications remain enabled** and require `TELEGRAM_TOKEN` and `TELEGRAM_CHAT_ID` (`telegram.token` and
-  `telegram.chat-id`).
-- **Admin user**: An initial admin account (`admin` / `password`) is automatically created if no users exist.
-- **Web UI**: Access the phrase viewer at `http://localhost:8080/` and the admin panel at
-  `http://localhost:8080/admin.html`.
-
-### Configuration
-
-The bot can be configured using standard Spring Boot properties or environment variables:
-
-| Property                                  | Environment Variable                      | Default                 | Description                                              |
-|-------------------------------------------|-------------------------------------------|-------------------------|----------------------------------------------------------|
-| `reddit.account-password`                 | `BOT_ACCOUNT_PASSWORD`                    | *(empty)*               | Reddit account password for authentication               |
-| `reddit.client-secret`                    | `BOT_CLIENT_SECRET`                       | *(empty)*               | Reddit script application client secret                  |
-| `telegram.token`                          | `TELEGRAM_TOKEN`                          | *(required)*            | Telegram Bot token for status updates and alerts         |
-| `telegram.chat-id`                        | `TELEGRAM_CHAT_ID`                        | *(required)*            | Telegram chat ID to receive notifications                |
-| `admin.username`                          | `ADMIN_USERNAME`                          | `admin`                 | Username for the admin web dashboard                     |
-| `admin.password`                          | `ADMIN_PASSWORD`                          | *(empty)*               | Password for the admin web dashboard                     |
-| `gemini.api-key`                          | `GEMINI_API_KEY`                          | *(empty)*               | Google Gemini API key for moderation and sentiment       |
-| `gemini.model`                            | `GEMINI_MODEL`                            | `gemini-3.5-flash-lite` | Gemini model identifier used for interactions            |
-| `gemini.enabled`                          | `GEMINI_ENABLED`                          | `true`                  | Toggle Gemini content moderation and sentiment           |
-| `gemini.dry-run`                          | `GEMINI_DRY_RUN`                          | `true`                  | Send Telegram alerts for Gemini decisions without acting |
-| `zakbot.replies.enabled`                  | `ZAKBOT_REPLIES_ENABLED`                  | `true`                  | Toggle posting live replies to Reddit                    |
-| `zakbot.downvotes.enabled`                | `ZAKBOT_DOWNVOTES_ENABLED`                | `true`                  | Toggle automatic deletion of downvoted bot comments      |
-| `zakbot.downvotes.delete-threshold`       | `ZAKBOT_DOWNVOTES_DELETE_THRESHOLD`       | `-3`                    | Score threshold at or below which bot comments delete    |
-| `zakbot.moderation.sensitivity-threshold` | `ZAKBOT_MODERATION_SENSITIVITY_THRESHOLD` | `0.7`                   | Sensitivity score threshold (0.0–1.0) for moderation     |
-
-### Testing
-
-Run unit tests and verify the build:
-
-```bash
-./gradlew check
-```

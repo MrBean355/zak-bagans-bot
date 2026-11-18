@@ -25,4 +25,13 @@ internal class MessagesKtTest {
         assertEquals(2, input.countOccurrences("his"))
         assertEquals(1, input.countOccurrences("tears"))
     }
+
+    @Test
+    fun testEscapeTelegramMarkdown() {
+        assertEquals("plain text 123", "plain text 123".escapeTelegramMarkdown())
+        assertEquals(
+            "a\\_b \\*bold\\* \\`code\\` \\[link](url)",
+            "a_b *bold* `code` [link](url)".escapeTelegramMarkdown(),
+        )
+    }
 }

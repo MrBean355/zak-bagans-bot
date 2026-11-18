@@ -1,6 +1,5 @@
-package com.github.mrbean355.zakbot.db
+package com.github.mrbean355.zakbot.config
 
-import com.github.mrbean355.zakbot.config.AdminProperties
 import com.github.mrbean355.zakbot.db.entity.AppUserEntity
 import com.github.mrbean355.zakbot.db.repo.AppUserRepository
 import org.slf4j.LoggerFactory

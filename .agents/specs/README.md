@@ -28,7 +28,7 @@ graph TD
         RedditClient["RedditService.kt (OAuth2 RestClient)"]
         TeleBot["TelegramBot.kt (Long-Polling / Notifier)"]
         ApiCtrl["PhraseApiController.kt"]
-        Cache["BotCache.kt / Spring Data JPA Repositories"]
+        Cache["BotStateService.kt / Spring Data JPA Repositories"]
     end
 
     DB[("PostgreSQL Database")]
@@ -57,12 +57,12 @@ graph TD
 
 | Subsystem              | Primary Source Files                                                                               | Primary Test Files                                                                                | Specification File                                               |
 |:-----------------------|:---------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------|
-| **Engine & Reddit**    | `ZakBagansBot.kt`<br/>`reddit/RedditService.kt`<br/>`service/ContributionService.kt`<br/>`service/GeminiService.kt` | `ZakBagansBotTest.kt`<br/>`reddit/RedditServiceTest.kt`<br/>`service/ContributionServiceTest.kt`<br/>`service/GeminiServiceTest.kt` | [bot-engine.md](bot-engine.md)                                   |
+| **Engine & Reddit**    | `ZakBagansBot.kt`<br/>`reddit/RedditService.kt`<br/>`service/ContributionService.kt`<br/>`gemini/GeminiService.kt` | `ZakBagansBotTest.kt`<br/>`reddit/RedditServiceTest.kt`<br/>`service/ContributionServiceTest.kt`<br/>`gemini/GeminiServiceTest.kt` | [bot-engine.md](bot-engine.md)                                   |
 | **Phrases & Quotes**   | `service/PhraseService.kt`<br/>`phrases/Phrase.kt`<br/>`phrases/*.kt`                              | `service/PhraseServiceTest.kt`                                                                    | [phrase-system.md](phrase-system.md)                             |
 | **Author Commands**    | `service/CommandService.kt`                                                                        | `service/CommandServiceTest.kt`                                                                   | [commands.md](commands.md)                                       |
 | **Telemetry & Alerts** | `telegram/TelegramBot.kt`<br/>`telegram/TelegramAction.kt`<br/>`telegram/TelegramNotifier.kt`<br/>`config/TelegramProperties.kt` | `telegram/TelegramBotTest.kt`                                                                     | [telemetry-and-notifications.md](telemetry-and-notifications.md) |
-| **Web API & Security** | `controller/PhraseApiController.kt`<br/>`config/SecurityConfig.kt`<br/>`db/UserInitializer.kt`     | `controller/PhraseApiControllerTest.kt`<br/>`controller/GlobalExceptionHandlerTest.kt`<br/>`db/UserInitializerTest.kt` | [api-and-security.md](api-and-security.md)                       |
-| **Data & Persistence** | `db/entity/*.kt`<br/>`db/repo/*.kt`<br/>`db/BotCache.kt`<br/>`db/PhraseType.kt`                    | `db/PhraseTypeTest.kt`<br/>`db/PhraseTypeConverterTest.kt`                                        | [data-models.md](data-models.md)                                 |
+| **Web API & Security** | `controller/PhraseApiController.kt`<br/>`config/SecurityConfig.kt`<br/>`config/UserInitializer.kt`     | `controller/PhraseApiControllerTest.kt`<br/>`controller/GlobalExceptionHandlerTest.kt`<br/>`config/UserInitializerTest.kt` | [api-and-security.md](api-and-security.md)                       |
+| **Data & Persistence** | `db/entity/*.kt`<br/>`db/repo/*.kt`<br/>`service/BotStateService.kt`<br/>`db/PhraseType.kt`                    | `db/PhraseTypeTest.kt`<br/>`db/PhraseTypeConverterTest.kt`                                        | [data-models.md](data-models.md)                                 |
 
 ---
 
@@ -106,7 +106,20 @@ When modifying this repository, AI agents must preserve the following non-negoti
 ### Recipe B: Adding a New Author Command
 
 1. Add command parsing logic in `CommandService.processAuthorCommand()`.
-2. Add necessary repository/cache methods in `BotCache` or `RedditService`.
+2. Add necessary repository/cache methods in `BotStateService` or `RedditService`.
 3. Add response strings to `src/main/resources/strings.properties`.
 4. Document the command in [commands.md](commands.md) and [README.md](../../README.md#special-commands).
 5. Add unit tests in `CommandServiceTest.kt`.
+
+---
+
+## 5. Documentation Split (`README.md` vs `DEVELOPMENT.md`)
+
+- **[README.md](../../README.md)**: High-level, non-developer documentation (overview, how the bot works on Reddit,
+  opting out/praising, Reddit author commands under `#special-commands`, and community contributing).
+- **[DEVELOPMENT.md](../../DEVELOPMENT.md)**: Technical and developer documentation (tech stack, prerequisites, key
+  classes, local `dev` setup, configuration properties, Telegram admin commands, REST API, building/testing, and coding
+  conventions).
+
+When adding or updating configuration properties, Telegram commands, build/test steps, or technical setup, update
+[DEVELOPMENT.md](../../DEVELOPMENT.md) rather than [README.md](../../README.md).

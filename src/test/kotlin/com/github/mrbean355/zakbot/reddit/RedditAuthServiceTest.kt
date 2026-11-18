@@ -1,7 +1,6 @@
 package com.github.mrbean355.zakbot.reddit
 
 import com.github.mrbean355.zakbot.config.RedditProperties
-import com.github.mrbean355.zakbot.util.SystemClock
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -13,15 +12,16 @@ import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.*
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
+import java.time.Clock
 
 class RedditAuthServiceTest {
     private lateinit var server: MockRestServiceServer
-    private lateinit var systemClock: SystemClock
+    private lateinit var clock: Clock
     private lateinit var authService: RedditAuthService
 
     @BeforeEach
     fun setUp() {
-        systemClock = mockk()
+        clock = mockk()
         val builder = RestClient.builder().baseUrl("https://www.reddit.com")
         server = MockRestServiceServer.bindTo(builder).build()
 
@@ -30,14 +30,14 @@ class RedditAuthServiceTest {
                 accountPassword = "test-password",
                 clientSecret = "test-secret",
             ),
-            systemClock = systemClock,
+            clock = clock,
             authClient = builder.build(),
         )
     }
 
     @Test
     fun testGetAccessToken_WhenNoCachedToken_RequestsNewToken() {
-        every { systemClock.currentTimeMillis } returns 1_000_000L
+        every { clock.millis() } returns 1_000_000L
 
         val json = """
             {
@@ -67,7 +67,7 @@ class RedditAuthServiceTest {
 
     @Test
     fun testGetAccessToken_WhenTokenValidInCache_ReturnsCachedWithoutNetworkCall() {
-        every { systemClock.currentTimeMillis } returns 1_000_000L
+        every { clock.millis() } returns 1_000_000L
 
         val json = """
             {
@@ -86,7 +86,7 @@ class RedditAuthServiceTest {
         assertEquals("cached-token", firstToken)
 
         // 10 minutes later (still well within 3600s - 60s buffer)
-        every { systemClock.currentTimeMillis } returns 1_600_000L
+        every { clock.millis() } returns 1_600_000L
         val secondToken = authService.getAccessToken()
         assertEquals("cached-token", secondToken)
 
@@ -95,7 +95,7 @@ class RedditAuthServiceTest {
 
     @Test
     fun testInvalidateToken_ForcesNewTokenFetch() {
-        every { systemClock.currentTimeMillis } returns 1_000_000L
+        every { clock.millis() } returns 1_000_000L
 
         val firstJson = """{"access_token": "token-1", "token_type": "bearer", "expires_in": 3600, "scope": "*"}"""
         val secondJson = """{"access_token": "token-2", "token_type": "bearer", "expires_in": 3600, "scope": "*"}"""
