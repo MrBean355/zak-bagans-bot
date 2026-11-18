@@ -1,6 +1,5 @@
 package com.github.mrbean355.zakbot.service
 
-import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
@@ -8,8 +7,8 @@ import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
-import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,11 +24,17 @@ private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a
  * The returned reply will be a random one with the lowest usage count, from the phrase type.
  * URLs are excluded from the checks, as it could be unclear why a reply was sent.
  */
+data class PhraseAddedEvent(
+    val content: String,
+    val type: PhraseType,
+    val source: String?,
+)
+
 @Service
 class PhraseService(
     private val phraseRepository: PhraseRepository,
     phrases: List<Phrase>,
-    private val telegramNotifier: TelegramNotifier,
+    private val eventPublisher: ApplicationEventPublisher,
     private val transactionOperations: TransactionOperations,
     private val messageSource: MessageSource,
 ) {
@@ -53,14 +58,7 @@ class PhraseService(
                 phraseRepository.save(PhraseEntity(0, content, minUsages, type, source))
             }
         )
-        telegramNotifier.sendMessage(
-            messageSource.getString(
-                "telegram.new_quote",
-                content.escapeTelegramMarkdown(),
-                type.name,
-                source.orEmpty().ifBlank { "None" }.escapeTelegramMarkdown(),
-            )
-        )
+        eventPublisher.publishEvent(PhraseAddedEvent(saved.content, saved.type, saved.source))
         return saved
     }
 

@@ -1,6 +1,5 @@
 package com.github.mrbean355.zakbot.service
 
-import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.db.entity.PhraseEntity
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
@@ -15,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.transaction.support.TransactionOperations
 import java.time.Instant
@@ -27,7 +27,7 @@ class PhraseServiceTest {
     private lateinit var genericPhrase: GenericPhrase
 
     @MockK
-    private lateinit var telegramNotifier: TelegramNotifier
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     private lateinit var service: PhraseService
 
@@ -51,7 +51,7 @@ class PhraseServiceTest {
             setUseCodeAsDefaultMessage(true)
             setAlwaysUseMessageFormat(true)
         }
-        service = PhraseService(phraseRepository, listOf(genericPhrase), telegramNotifier, TransactionOperations.withoutTransaction(), messageSource)
+        service = PhraseService(phraseRepository, listOf(genericPhrase), eventPublisher, TransactionOperations.withoutTransaction(), messageSource)
     }
 
     @Test
@@ -178,7 +178,7 @@ class PhraseServiceTest {
         assertEquals("Source", actual.source)
         verify {
             phraseRepository.save(PhraseEntity(0, "New phrase", 4, PhraseType.Aaron, "Source"))
-            telegramNotifier.sendMessage(match { it.contains("New phrase") && it.contains("Aaron") && it.contains("Source") })
+            eventPublisher.publishEvent(PhraseAddedEvent("New phrase", PhraseType.Aaron, "Source"))
         }
     }
 
@@ -192,7 +192,7 @@ class PhraseServiceTest {
         assertEquals(0, actual.usages)
         verify {
             phraseRepository.save(PhraseEntity(0, "Zozo phrase", 0, PhraseType.Zozo, null))
-            telegramNotifier.sendMessage(match { it.contains("Zozo phrase") && it.contains("Zozo") && it.contains("None") })
+            eventPublisher.publishEvent(PhraseAddedEvent("Zozo phrase", PhraseType.Zozo, null))
         }
     }
 
