@@ -132,7 +132,7 @@ class TelegramBot(
                     if (redditService.deleteCommentById(fullName)) {
                         answerCallback(callbackQuery.id, "Reply deleted")
                         val deletedButton = InlineKeyboardButton.builder()
-                            .text("✅ Deleted")
+                            .text("Deleted")
                             .callbackData(CALLBACK_COMMENT_DELETED)
                             .build()
                         replaceButton(message as? Message, data, deletedButton)
@@ -217,8 +217,8 @@ class TelegramBot(
         }
         val (urlActions, callbackActions) = actions.partition { it is TelegramAction.OpenUrl }
         val rows = buildList {
-            if (callbackActions.isNotEmpty()) {
-                add(InlineKeyboardRow(callbackActions.map { it.toButton() }))
+            callbackActions.chunked(2).forEach { chunk ->
+                add(InlineKeyboardRow(chunk.map { it.toButton() }))
             }
             if (urlActions.isNotEmpty()) {
                 add(InlineKeyboardRow(urlActions.map { it.toButton() }))
@@ -229,37 +229,37 @@ class TelegramBot(
 
     private fun TelegramAction.toButton(): InlineKeyboardButton = when (this) {
         is TelegramAction.OpenUrl -> InlineKeyboardButton.builder()
-            .text("🔗 View on Reddit")
+            .text("View on Reddit")
             .url(url)
             .build()
 
         is TelegramAction.IgnoreUser -> InlineKeyboardButton.builder()
-            .text("🚫 Ignore User")
+            .text("Ignore User")
             .callbackData("$PREFIX_IGNORE_USER$username")
             .build()
 
         is TelegramAction.UnignoreUser -> InlineKeyboardButton.builder()
-            .text("✅ Unignore User")
+            .text("Unignore User")
             .callbackData("$PREFIX_UNIGNORE_USER$username")
             .build()
 
         is TelegramAction.IgnoreSubmission -> InlineKeyboardButton.builder()
-            .text("🚫 Ignore Post")
+            .text("Ignore Post")
             .callbackData("$PREFIX_IGNORE_POST$fullName")
             .build()
 
         is TelegramAction.UnignoreSubmission -> InlineKeyboardButton.builder()
-            .text("✅ Unignore Post")
+            .text("Unignore Post")
             .callbackData("$PREFIX_UNIGNORE_POST$fullName")
             .build()
 
         is TelegramAction.DeleteComment -> InlineKeyboardButton.builder()
-            .text("🗑️ Delete Reply")
+            .text("Delete Reply")
             .callbackData("$PREFIX_DELETE_COMMENT$fullName")
             .build()
 
         TelegramAction.RefreshStatus -> InlineKeyboardButton.builder()
-            .text("🔄 Refresh")
+            .text("Refresh")
             .callbackData(CALLBACK_REFRESH_STATUS)
             .build()
     }

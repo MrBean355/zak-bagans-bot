@@ -105,9 +105,10 @@ class TelegramBotTest {
             telegramClient.execute(
                 match<SendMessage> { message ->
                     val markup = message.replyMarkup as? InlineKeyboardMarkup ?: return@match false
-                    markup.keyboard.size == 2 &&
-                        markup.keyboard[0].map { it.callbackData } == listOf("iu:alice", "ip:t3_abc", "dc:t1_xyz") &&
-                        markup.keyboard[1].map { it.url } == listOf("https://reddit.com/r/GhostAdventures/1")
+                    markup.keyboard.size == 3 &&
+                        markup.keyboard[0].map { it.callbackData } == listOf("iu:alice", "ip:t3_abc") &&
+                        markup.keyboard[1].map { it.callbackData } == listOf("dc:t1_xyz") &&
+                        markup.keyboard[2].map { it.url } == listOf("https://reddit.com/r/GhostAdventures/1")
                 }
             )
         }
@@ -207,11 +208,11 @@ class TelegramBotTest {
             data = "iu:alice",
             buttons = listOf(
                 InlineKeyboardRow(
-                    InlineKeyboardButton.builder().text("🚫 Ignore User").callbackData("iu:alice").build(),
-                    InlineKeyboardButton.builder().text("🚫 Ignore Post").callbackData("ip:t3_abc").build(),
+                    InlineKeyboardButton.builder().text("Ignore User").callbackData("iu:alice").build(),
+                    InlineKeyboardButton.builder().text("Ignore Post").callbackData("ip:t3_abc").build(),
                 ),
                 InlineKeyboardRow(
-                    InlineKeyboardButton.builder().text("🔗 View on Reddit").url("https://reddit.com/1").build(),
+                    InlineKeyboardButton.builder().text("View on Reddit").url("https://reddit.com/1").build(),
                 ),
             ),
         )
@@ -225,7 +226,7 @@ class TelegramBotTest {
                 match<EditMessageReplyMarkup> { edit ->
                     val rows = edit.replyMarkup.keyboard
                     rows[0][0].callbackData == "uu:alice" &&
-                        rows[0][0].text == "✅ Unignore User" &&
+                        rows[0][0].text == "Unignore User" &&
                         rows[0][1].callbackData == "ip:t3_abc" &&
                         rows[1][0].url == "https://reddit.com/1"
                 }
@@ -239,7 +240,7 @@ class TelegramBotTest {
             data = "uu:alice",
             buttons = listOf(
                 InlineKeyboardRow(
-                    InlineKeyboardButton.builder().text("✅ Unignore User").callbackData("uu:alice").build(),
+                    InlineKeyboardButton.builder().text("Unignore User").callbackData("uu:alice").build(),
                 ),
             ),
         )
@@ -263,7 +264,7 @@ class TelegramBotTest {
             data = "ip:t3_abc",
             buttons = listOf(
                 InlineKeyboardRow(
-                    InlineKeyboardButton.builder().text("🚫 Ignore Post").callbackData("ip:t3_abc").build(),
+                    InlineKeyboardButton.builder().text("Ignore Post").callbackData("ip:t3_abc").build(),
                 ),
             ),
         )
@@ -287,7 +288,7 @@ class TelegramBotTest {
             data = "up:t3_abc",
             buttons = listOf(
                 InlineKeyboardRow(
-                    InlineKeyboardButton.builder().text("✅ Unignore Post").callbackData("up:t3_abc").build(),
+                    InlineKeyboardButton.builder().text("Unignore Post").callbackData("up:t3_abc").build(),
                 ),
             ),
         )
@@ -312,7 +313,7 @@ class TelegramBotTest {
             data = "dc:t1_xyz",
             buttons = listOf(
                 InlineKeyboardRow(
-                    InlineKeyboardButton.builder().text("🗑️ Delete Reply").callbackData("dc:t1_xyz").build(),
+                    InlineKeyboardButton.builder().text("Delete Reply").callbackData("dc:t1_xyz").build(),
                 ),
             ),
         )
@@ -325,7 +326,7 @@ class TelegramBotTest {
             telegramClient.execute(
                 match<EditMessageReplyMarkup> { edit ->
                     edit.replyMarkup.keyboard[0][0].callbackData == "cd" &&
-                        edit.replyMarkup.keyboard[0][0].text == "✅ Deleted"
+                        edit.replyMarkup.keyboard[0][0].text == "Deleted"
                 }
             )
         }
@@ -338,7 +339,7 @@ class TelegramBotTest {
             data = "dc:t1_xyz",
             buttons = listOf(
                 InlineKeyboardRow(
-                    InlineKeyboardButton.builder().text("🗑️ Delete Reply").callbackData("dc:t1_xyz").build(),
+                    InlineKeyboardButton.builder().text("Delete Reply").callbackData("dc:t1_xyz").build(),
                 ),
             ),
         )
