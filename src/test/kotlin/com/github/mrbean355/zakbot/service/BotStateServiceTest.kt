@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot.db
+package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.db.entity.IgnoredSubmissionEntity
 import com.github.mrbean355.zakbot.db.entity.IgnoredUserEntity
@@ -24,7 +24,7 @@ import java.util.Optional
 
 private const val CurrentTime = 1_000_000L
 
-internal class BotCacheTest {
+internal class BotStateServiceTest {
     @MockK
     private lateinit var lastCheckedRepository: LastCheckedRepository
 
@@ -36,13 +36,13 @@ internal class BotCacheTest {
 
     @MockK
     private lateinit var systemClock: SystemClock
-    private lateinit var botCache: BotCache
+    private lateinit var botStateService: BotStateService
 
     @BeforeEach
     internal fun setUp() {
         MockKAnnotations.init(this)
         every { systemClock.currentTimeMillis } returns CurrentTime
-        botCache = BotCache(lastCheckedRepository, ignoredUserRepository, ignoredSubmissionRepository, systemClock)
+        botStateService = BotStateService(lastCheckedRepository, ignoredUserRepository, ignoredSubmissionRepository, systemClock)
     }
 
     @Test
@@ -50,7 +50,7 @@ internal class BotCacheTest {
         val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.findById("post") } returns Optional.of(LastCheckedEntity("post", lastChecked))
 
-        val result = botCache.getLastSubmissionTime()
+        val result = botStateService.getLastSubmissionTime()
 
         assertSame(lastChecked, result)
         verify(inverse = true) { lastCheckedRepository.save(any()) }
@@ -62,7 +62,7 @@ internal class BotCacheTest {
         val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.save(any()) } returns LastCheckedEntity("post", lastChecked)
 
-        val result = botCache.getLastSubmissionTime()
+        val result = botStateService.getLastSubmissionTime()
 
         assertSame(lastChecked, result)
         val slot = slot<LastCheckedEntity>()
@@ -76,7 +76,7 @@ internal class BotCacheTest {
         every { lastCheckedRepository.save(any()) } returns mockk()
         val lastChecked = mockk<Instant>()
 
-        botCache.setLastSubmissionTime(lastChecked)
+        botStateService.setLastSubmissionTime(lastChecked)
 
         val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
@@ -89,7 +89,7 @@ internal class BotCacheTest {
         val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.findById("comment") } returns Optional.of(LastCheckedEntity("comment", lastChecked))
 
-        val result = botCache.getLastCommentTime()
+        val result = botStateService.getLastCommentTime()
 
         assertSame(lastChecked, result)
         verify(inverse = true) { lastCheckedRepository.save(any()) }
@@ -101,7 +101,7 @@ internal class BotCacheTest {
         val lastChecked = mockk<Instant>()
         every { lastCheckedRepository.save(any()) } returns LastCheckedEntity("comment", lastChecked)
 
-        val result = botCache.getLastCommentTime()
+        val result = botStateService.getLastCommentTime()
 
         assertSame(lastChecked, result)
         val slot = slot<LastCheckedEntity>()
@@ -115,7 +115,7 @@ internal class BotCacheTest {
         every { lastCheckedRepository.save(any()) } returns mockk()
         val lastChecked = mockk<Instant>()
 
-        botCache.setLastCommentTime(lastChecked)
+        botStateService.setLastCommentTime(lastChecked)
 
         val slot = slot<LastCheckedEntity>()
         verify { lastCheckedRepository.save(capture(slot)) }
@@ -127,7 +127,7 @@ internal class BotCacheTest {
     internal fun testIsUserIgnored_EntityPresent_ReturnsTrue() {
         every { ignoredUserRepository.existsById("123") } returns true
 
-        val result = botCache.isUserIgnored("123")
+        val result = botStateService.isUserIgnored("123")
 
         assertTrue(result)
     }
@@ -136,7 +136,7 @@ internal class BotCacheTest {
     internal fun testIsUserIgnored_EntityNotPresent_ReturnsFalse() {
         every { ignoredUserRepository.existsById("123") } returns false
 
-        val result = botCache.isUserIgnored("123")
+        val result = botStateService.isUserIgnored("123")
 
         assertFalse(result)
     }
@@ -145,7 +145,7 @@ internal class BotCacheTest {
     internal fun testIgnoreUser_SavesEntity() {
         every { ignoredUserRepository.save(any()) } returns mockk()
 
-        botCache.ignoreUser("123", "somewhere")
+        botStateService.ignoreUser("123", "somewhere")
 
         val slot = slot<IgnoredUserEntity>()
         verify { ignoredUserRepository.save(capture(slot)) }
@@ -158,7 +158,7 @@ internal class BotCacheTest {
     internal fun testIsSubmissionIgnored_EntityPresent_ReturnsTrue() {
         every { ignoredSubmissionRepository.existsById("123") } returns true
 
-        val result = botCache.isSubmissionIgnored("123")
+        val result = botStateService.isSubmissionIgnored("123")
 
         assertTrue(result)
     }
@@ -167,7 +167,7 @@ internal class BotCacheTest {
     internal fun testIsSubmissionIgnored_EntityNotPresent_ReturnsFalse() {
         every { ignoredSubmissionRepository.existsById("123") } returns false
 
-        val result = botCache.isSubmissionIgnored("123")
+        val result = botStateService.isSubmissionIgnored("123")
 
         assertFalse(result)
     }
@@ -176,7 +176,7 @@ internal class BotCacheTest {
     internal fun testIgnoreSubmission_SavesEntity() {
         every { ignoredSubmissionRepository.save(any()) } returns mockk()
 
-        botCache.ignoreSubmission("123", "Sensitive topic")
+        botStateService.ignoreSubmission("123", "Sensitive topic")
 
         val slot = slot<IgnoredSubmissionEntity>()
         verify { ignoredSubmissionRepository.save(capture(slot)) }
@@ -189,7 +189,7 @@ internal class BotCacheTest {
     internal fun testUnignoreUser_DeletesEntity() {
         every { ignoredUserRepository.deleteById("123") } returns Unit
 
-        botCache.unignoreUser("123")
+        botStateService.unignoreUser("123")
 
         verify { ignoredUserRepository.deleteById("123") }
     }
@@ -198,7 +198,7 @@ internal class BotCacheTest {
     internal fun testUnignoreSubmission_DeletesEntity() {
         every { ignoredSubmissionRepository.deleteById("123") } returns Unit
 
-        botCache.unignoreSubmission("123")
+        botStateService.unignoreSubmission("123")
 
         verify { ignoredSubmissionRepository.deleteById("123") }
     }

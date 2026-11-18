@@ -3,7 +3,6 @@ package com.github.mrbean355.zakbot.service
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.telegram.TelegramAction
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
-import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.util.asPlainText
@@ -16,7 +15,7 @@ private const val COMMAND_PREFIX = "u/$BotUsername "
 @Service
 class CommandService(
     private val redditService: RedditService,
-    private val botCache: BotCache,
+    private val botStateService: BotStateService,
     private val telegramNotifier: TelegramNotifier,
 ) {
 
@@ -39,12 +38,12 @@ class CommandService(
     }
 
     private fun ignoreUser(id: String, comment: Comment) {
-        if (botCache.isUserIgnored(id)) {
+        if (botStateService.isUserIgnored(id)) {
             redditService.replyToComment(comment, getString("reddit.command.ignoreUser.alreadyIgnored", id))
             return
         }
         if (redditService.userExists(id)) {
-            botCache.ignoreUser(id, comment.fullName)
+            botStateService.ignoreUser(id, comment.fullName)
             redditService.replyToComment(comment, getString("reddit.command.ignoreUser.success", id))
             telegramNotifier.sendMessage(
                 getString("telegram.command_ignore_user", id),
@@ -56,11 +55,11 @@ class CommandService(
     }
 
     private fun unignoreUser(id: String, comment: Comment) {
-        if (!botCache.isUserIgnored(id)) {
+        if (!botStateService.isUserIgnored(id)) {
             redditService.replyToComment(comment, getString("reddit.command.unignoreUser.notIgnored", id))
             return
         }
-        botCache.unignoreUser(id)
+        botStateService.unignoreUser(id)
         redditService.replyToComment(comment, getString("reddit.command.unignoreUser.success", id))
         telegramNotifier.sendMessage(
             getString("telegram.command_unignore_user", id),
@@ -69,11 +68,11 @@ class CommandService(
     }
 
     private fun ignoreSubmission(reason: String, comment: Comment) {
-        if (botCache.isSubmissionIgnored(comment.submissionFullName)) {
+        if (botStateService.isSubmissionIgnored(comment.submissionFullName)) {
             redditService.replyToComment(comment, getString("reddit.command.ignoreSubmission.alreadyIgnored"))
             return
         }
-        botCache.ignoreSubmission(comment.submissionFullName, reason.ifBlank { null })
+        botStateService.ignoreSubmission(comment.submissionFullName, reason.ifBlank { null })
         redditService.replyToComment(comment, getString("reddit.command.ignoreSubmission.success"))
         telegramNotifier.sendMessage(
             getString("telegram.command_ignore_post", reason.ifBlank { "None" }.escapeTelegramMarkdown()),
@@ -85,11 +84,11 @@ class CommandService(
     }
 
     private fun unignoreSubmission(comment: Comment) {
-        if (!botCache.isSubmissionIgnored(comment.submissionFullName)) {
+        if (!botStateService.isSubmissionIgnored(comment.submissionFullName)) {
             redditService.replyToComment(comment, getString("reddit.command.unignoreSubmission.notIgnored"))
             return
         }
-        botCache.unignoreSubmission(comment.submissionFullName)
+        botStateService.unignoreSubmission(comment.submissionFullName)
         redditService.replyToComment(comment, getString("reddit.command.unignoreSubmission.success"))
         telegramNotifier.sendMessage(
             getString("telegram.command_unignore_post"),

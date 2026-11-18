@@ -28,7 +28,7 @@ graph TD
         RedditClient["RedditService.kt (OAuth2 RestClient)"]
         TeleBot["TelegramBot.kt (Long-Polling / Notifier)"]
         ApiCtrl["PhraseApiController.kt"]
-        Cache["BotCache.kt / Spring Data JPA Repositories"]
+        Cache["BotStateService.kt / Spring Data JPA Repositories"]
     end
 
     DB[("PostgreSQL Database")]
@@ -62,7 +62,7 @@ graph TD
 | **Author Commands**    | `service/CommandService.kt`                                                                        | `service/CommandServiceTest.kt`                                                                   | [commands.md](commands.md)                                       |
 | **Telemetry & Alerts** | `telegram/TelegramBot.kt`<br/>`telegram/TelegramAction.kt`<br/>`telegram/TelegramNotifier.kt`<br/>`config/TelegramProperties.kt` | `telegram/TelegramBotTest.kt`                                                                     | [telemetry-and-notifications.md](telemetry-and-notifications.md) |
 | **Web API & Security** | `controller/PhraseApiController.kt`<br/>`config/SecurityConfig.kt`<br/>`db/UserInitializer.kt`     | `controller/PhraseApiControllerTest.kt`<br/>`controller/GlobalExceptionHandlerTest.kt`<br/>`db/UserInitializerTest.kt` | [api-and-security.md](api-and-security.md)                       |
-| **Data & Persistence** | `db/entity/*.kt`<br/>`db/repo/*.kt`<br/>`db/BotCache.kt`<br/>`db/PhraseType.kt`                    | `db/PhraseTypeTest.kt`<br/>`db/PhraseTypeConverterTest.kt`                                        | [data-models.md](data-models.md)                                 |
+| **Data & Persistence** | `db/entity/*.kt`<br/>`db/repo/*.kt`<br/>`service/BotStateService.kt`<br/>`db/PhraseType.kt`                    | `db/PhraseTypeTest.kt`<br/>`db/PhraseTypeConverterTest.kt`                                        | [data-models.md](data-models.md)                                 |
 
 ---
 
@@ -106,7 +106,7 @@ When modifying this repository, AI agents must preserve the following non-negoti
 ### Recipe B: Adding a New Author Command
 
 1. Add command parsing logic in `CommandService.processAuthorCommand()`.
-2. Add necessary repository/cache methods in `BotCache` or `RedditService`.
+2. Add necessary repository/cache methods in `BotStateService` or `RedditService`.
 3. Add response strings to `src/main/resources/strings.properties`.
 4. Document the command in [commands.md](commands.md) and [README.md](../../README.md#special-commands).
 5. Add unit tests in `CommandServiceTest.kt`.

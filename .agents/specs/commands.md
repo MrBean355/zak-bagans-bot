@@ -20,7 +20,7 @@ This specification defines the author command parsing, authentication boundary, 
 3. **Markdown Pre-Rendering**: The raw comment body MUST be converted to plain text using CommonMark `asPlainText()`
    before checking the prefix. This eliminates escaped markdown characters (e.g. `ignore\_user` -> `ignore_user`).
 4. **User Verification Before Ignore**: When `ignore_user` is executed, the bot MUST verify that the user exists on
-   Reddit via `redditService.userExists(id)` before adding to `BotCache`.
+   Reddit via `redditService.userExists(id)` before adding to `BotStateService`.
 5. **Contextual Scope for Posts**: For `ignore_post` and `unignore_post`, the target submission is always
    `comment.submissionFullName`.
 
@@ -58,12 +58,12 @@ fun processAuthorCommand(comment: Comment) {
 
 - **Args**: Target Reddit username.
 - **Branch 1: Already Ignored**:
-  - Check: `botCache.isUserIgnored(id) == true`
+  - Check: `botStateService.isUserIgnored(id) == true`
   - Action: No DB change.
   - Reply: `getString("reddit.command.ignoreUser.alreadyIgnored", id)`
 - **Branch 2: Valid User**:
   - Check: `redditService.userExists(id) == true`
-  - Action: `botCache.ignoreUser(id, comment.fullName)`
+  - Action: `botStateService.ignoreUser(id, comment.fullName)`
   - Reply: `getString("reddit.command.ignoreUser.success", id)`
   - Telegram: `getString("telegram.command_ignore_user", id, comment.url)`
 - **Branch 3: User Not Found**:
@@ -74,11 +74,11 @@ fun processAuthorCommand(comment: Comment) {
 
 - **Args**: Target Reddit username.
 - **Branch 1: Not Ignored**:
-  - Check: `!botCache.isUserIgnored(id)`
+  - Check: `!botStateService.isUserIgnored(id)`
   - Action: No DB change.
   - Reply: `getString("reddit.command.unignoreUser.notIgnored", id)`
 - **Branch 2: Currently Ignored**:
-  - Action: `botCache.unignoreUser(id)`
+  - Action: `botStateService.unignoreUser(id)`
   - Reply: `getString("reddit.command.unignoreUser.success", id)`
   - Telegram: `getString("telegram.command_unignore_user", id, comment.url)`
 
@@ -87,11 +87,11 @@ fun processAuthorCommand(comment: Comment) {
 - **Args**: Optional reason string.
 - **Target**: `comment.submissionFullName`
 - **Branch 1: Already Ignored**:
-  - Check: `botCache.isSubmissionIgnored(submissionFullName) == true`
+  - Check: `botStateService.isSubmissionIgnored(submissionFullName) == true`
   - Action: No DB change.
   - Reply: `getString("reddit.command.ignoreSubmission.alreadyIgnored")`
 - **Branch 2: Not Ignored**:
-  - Action: `botCache.ignoreSubmission(submissionFullName, args.ifBlank { null })`
+  - Action: `botStateService.ignoreSubmission(submissionFullName, args.ifBlank { null })`
   - Reply: `getString("reddit.command.ignoreSubmission.success")`
   - Telegram: `getString("telegram.command_ignore_post", args.ifBlank { "None" }, comment.url)`
 
@@ -99,11 +99,11 @@ fun processAuthorCommand(comment: Comment) {
 
 - **Target**: `comment.submissionFullName`
 - **Branch 1: Not Ignored**:
-  - Check: `!botCache.isSubmissionIgnored(submissionFullName)`
+  - Check: `!botStateService.isSubmissionIgnored(submissionFullName)`
   - Action: No DB change.
   - Reply: `getString("reddit.command.unignoreSubmission.notIgnored")`
 - **Branch 2: Currently Ignored**:
-  - Action: `botCache.unignoreSubmission(submissionFullName)`
+  - Action: `botStateService.unignoreSubmission(submissionFullName)`
   - Reply: `getString("reddit.command.unignoreSubmission.success")`
   - Telegram: `getString("telegram.command_unignore_post", comment.url)`
 

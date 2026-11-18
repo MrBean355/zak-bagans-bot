@@ -3,7 +3,7 @@ package com.github.mrbean355.zakbot.telegram
 import com.github.mrbean355.zakbot.SubredditName
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
-import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.service.BotStateService
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
@@ -46,7 +46,7 @@ class TelegramBot(
     private val phraseRepository: PhraseRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,
-    private val botCache: BotCache,
+    private val botStateService: BotStateService,
     private val redditService: RedditService,
     private val telegramClient: TelegramClient,
     private val buildProperties: BuildProperties,
@@ -122,28 +122,28 @@ class TelegramBot(
             when {
                 data.startsWith(PREFIX_IGNORE_USER) -> {
                     val username = data.removePrefix(PREFIX_IGNORE_USER)
-                    botCache.ignoreUser(username, "telegram")
+                    botStateService.ignoreUser(username, "telegram")
                     answerCallback(callbackQuery.id, "Ignored u/$username")
                     replaceButton(message as? Message, data, TelegramAction.UnignoreUser(username).toButton())
                 }
 
                 data.startsWith(PREFIX_UNIGNORE_USER) -> {
                     val username = data.removePrefix(PREFIX_UNIGNORE_USER)
-                    botCache.unignoreUser(username)
+                    botStateService.unignoreUser(username)
                     answerCallback(callbackQuery.id, "Unignored u/$username")
                     replaceButton(message as? Message, data, TelegramAction.IgnoreUser(username).toButton())
                 }
 
                 data.startsWith(PREFIX_IGNORE_POST) -> {
                     val fullName = data.removePrefix(PREFIX_IGNORE_POST)
-                    botCache.ignoreSubmission(fullName, "Ignored via Telegram")
+                    botStateService.ignoreSubmission(fullName, "Ignored via Telegram")
                     answerCallback(callbackQuery.id, "Post ignored")
                     replaceButton(message as? Message, data, TelegramAction.UnignoreSubmission(fullName).toButton())
                 }
 
                 data.startsWith(PREFIX_UNIGNORE_POST) -> {
                     val fullName = data.removePrefix(PREFIX_UNIGNORE_POST)
-                    botCache.unignoreSubmission(fullName)
+                    botStateService.unignoreSubmission(fullName)
                     answerCallback(callbackQuery.id, "Post unignored")
                     replaceButton(message as? Message, data, TelegramAction.IgnoreSubmission(fullName).toButton())
                 }

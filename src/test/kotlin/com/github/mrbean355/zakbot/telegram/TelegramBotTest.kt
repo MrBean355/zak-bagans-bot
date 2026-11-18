@@ -2,7 +2,7 @@ package com.github.mrbean355.zakbot.telegram
 
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
-import com.github.mrbean355.zakbot.db.BotCache
+import com.github.mrbean355.zakbot.service.BotStateService
 import com.github.mrbean355.zakbot.db.repo.IgnoredSubmissionRepository
 import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.PhraseRepository
@@ -48,7 +48,7 @@ class TelegramBotTest {
     private lateinit var ignoredSubmissionRepository: IgnoredSubmissionRepository
 
     @MockK
-    private lateinit var botCache: BotCache
+    private lateinit var botStateService: BotStateService
 
     @MockK
     private lateinit var redditService: RedditService
@@ -222,7 +222,7 @@ class TelegramBotTest {
         bot.consume(listOf(update))
 
         verify {
-            botCache.ignoreUser("alice", "telegram")
+            botStateService.ignoreUser("alice", "telegram")
             telegramClient.execute(match<AnswerCallbackQuery> { it.callbackQueryId == "cb-1" && it.text == "Ignored u/alice" })
             telegramClient.execute(
                 match<EditMessageReplyMarkup> { edit ->
@@ -250,7 +250,7 @@ class TelegramBotTest {
         bot.consume(listOf(update))
 
         verify {
-            botCache.unignoreUser("alice")
+            botStateService.unignoreUser("alice")
             telegramClient.execute(match<AnswerCallbackQuery> { it.text == "Unignored u/alice" })
             telegramClient.execute(
                 match<EditMessageReplyMarkup> { edit ->
@@ -274,7 +274,7 @@ class TelegramBotTest {
         bot.consume(listOf(update))
 
         verify {
-            botCache.ignoreSubmission("t3_abc", "Ignored via Telegram")
+            botStateService.ignoreSubmission("t3_abc", "Ignored via Telegram")
             telegramClient.execute(match<AnswerCallbackQuery> { it.text == "Post ignored" })
             telegramClient.execute(
                 match<EditMessageReplyMarkup> { edit ->
@@ -298,7 +298,7 @@ class TelegramBotTest {
         bot.consume(listOf(update))
 
         verify {
-            botCache.unignoreSubmission("t3_abc")
+            botStateService.unignoreSubmission("t3_abc")
             telegramClient.execute(match<AnswerCallbackQuery> { it.text == "Post unignored" })
             telegramClient.execute(
                 match<EditMessageReplyMarkup> { edit ->
@@ -447,7 +447,7 @@ class TelegramBotTest {
             phraseRepository = phraseRepository,
             ignoredUserRepository = ignoredUserRepository,
             ignoredSubmissionRepository = ignoredSubmissionRepository,
-            botCache = botCache,
+            botStateService = botStateService,
             redditService = redditService,
             telegramClient = telegramClient,
             buildProperties = buildProperties,

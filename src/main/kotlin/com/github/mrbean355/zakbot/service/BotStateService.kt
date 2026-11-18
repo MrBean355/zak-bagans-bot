@@ -1,4 +1,4 @@
-package com.github.mrbean355.zakbot.db
+package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.db.entity.IgnoredSubmissionEntity
 import com.github.mrbean355.zakbot.db.entity.IgnoredUserEntity
@@ -8,16 +8,16 @@ import com.github.mrbean355.zakbot.db.repo.IgnoredUserRepository
 import com.github.mrbean355.zakbot.db.repo.LastCheckedRepository
 import com.github.mrbean355.zakbot.util.SystemClock
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 private const val SubmissionKey = "post"
 private const val CommentKey = "comment"
 
-@Component
+@Service
 @Transactional
-class BotCache(
+class BotStateService(
     private val lastCheckedRepository: LastCheckedRepository,
     private val ignoredUserRepository: IgnoredUserRepository,
     private val ignoredSubmissionRepository: IgnoredSubmissionRepository,

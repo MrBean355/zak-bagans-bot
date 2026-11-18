@@ -18,7 +18,7 @@ specifications documented in `.agents/specs/`:
 6. **API & Security**: Consult [.agents/specs/api-and-security.md](../specs/api-and-security.md) for REST endpoints
    (`/api/phrases`), DTO validation, CSRF cookie handling, Basic Auth, and Content Security Policy.
 7. **Data Models**: Consult [.agents/specs/data-models.md](../specs/data-models.md) for PostgreSQL table schemas, JPA
-   entities, converters, and `BotCache` persistence.
+   entities, converters, and `BotStateService` persistence.
 8. **Project Documentation**: Keep user-facing, non-developer docs in [README.md](../../README.md) and technical/setup
    docs (local development, configuration, Telegram admin commands, API, testing) in
    [DEVELOPMENT.md](../../DEVELOPMENT.md).

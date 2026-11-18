@@ -5,7 +5,6 @@ import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.telegram.TelegramAction
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.ZakbotProperties
-import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
@@ -31,7 +30,7 @@ class ContributionService(
     private val phraseService: PhraseService,
     private val commandService: CommandService,
     private val geminiService: GeminiService,
-    private val botCache: BotCache,
+    private val botStateService: BotStateService,
     private val telegramNotifier: TelegramNotifier,
     private val zakbotProperties: ZakbotProperties,
     private val randomRoll: () -> Float = { Random.nextFloat() },
@@ -88,7 +87,7 @@ class ContributionService(
 
         checkForBotMention(submission)
 
-        if (submission.isAuthorIgnored() || botCache.isSubmissionIgnored(submission.fullName)) {
+        if (submission.isAuthorIgnored() || botStateService.isSubmissionIgnored(submission.fullName)) {
             return
         }
 
@@ -111,7 +110,7 @@ class ContributionService(
                     ),
                 )
             } else {
-                botCache.ignoreSubmission(submission.fullName, reason)
+                botStateService.ignoreSubmission(submission.fullName, reason)
                 telegramNotifier.sendMessage(
                     getString(
                         "telegram.sensitive_submission_ignored",
@@ -160,7 +159,7 @@ class ContributionService(
 
         if (comment.author == BotUsername ||
             comment.isAuthorIgnored() ||
-            botCache.isSubmissionIgnored(comment.submissionFullName) ||
+            botStateService.isSubmissionIgnored(comment.submissionFullName) ||
             redditService.getCommentSubmission(comment)?.isAuthorIgnored() == true
         ) {
             return
@@ -169,7 +168,7 @@ class ContributionService(
         if (redditService.findParentComment(comment)?.author == BotUsername) {
             when (evaluateBotReplySentiment(comment, mentionsBot)) {
                 BotSentiment.BAD_BOT -> {
-                    botCache.ignoreUser(comment.author, comment.fullName)
+                    botStateService.ignoreUser(comment.author, comment.fullName)
                     redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
                     telegramNotifier.sendMessage(
                         getString("telegram.new_ignored_user", comment.author),
@@ -340,7 +339,7 @@ class ContributionService(
     }
 
     private fun Contribution.isAuthorIgnored(): Boolean {
-        return botCache.isUserIgnored(author)
+        return botStateService.isUserIgnored(author)
     }
 
     private fun String.isGoodBot(): Boolean {

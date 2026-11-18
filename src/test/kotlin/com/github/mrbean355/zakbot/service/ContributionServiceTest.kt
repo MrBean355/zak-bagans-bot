@@ -5,7 +5,6 @@ import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.telegram.TelegramAction
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.ZakbotProperties
-import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
@@ -35,7 +34,7 @@ class ContributionServiceTest {
     private lateinit var geminiService: GeminiService
 
     @MockK
-    private lateinit var botCache: BotCache
+    private lateinit var botStateService: BotStateService
 
     @MockK
     private lateinit var telegramNotifier: TelegramNotifier
@@ -49,8 +48,8 @@ class ContributionServiceTest {
         justRun { telegramNotifier.sendMessage(any(), any()) }
         every { redditService.replyToSubmission(any(), any()) } returns "t1_reply"
         every { redditService.replyToComment(any(), any()) } returns "t1_reply"
-        every { botCache.isUserIgnored(any()) } returns false
-        every { botCache.isSubmissionIgnored(any()) } returns false
+        every { botStateService.isUserIgnored(any()) } returns false
+        every { botStateService.isSubmissionIgnored(any()) } returns false
         every { geminiService.isDryRun } returns false
         every { geminiService.evaluateSubmission(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
         every { geminiService.evaluateComment(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
@@ -66,7 +65,7 @@ class ContributionServiceTest {
             phraseService = phraseService,
             commandService = commandService,
             geminiService = geminiService,
-            botCache = botCache,
+            botStateService = botStateService,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(),
             randomRoll = { 0f },
@@ -88,7 +87,7 @@ class ContributionServiceTest {
     @Test
     fun testProcessSubmission_WhenAuthorIgnored_DoesNothing() {
         val submission = createSubmission(author = "bad_user", title = "Title")
-        every { botCache.isUserIgnored("bad_user") } returns true
+        every { botStateService.isUserIgnored("bad_user") } returns true
 
         service.processSubmission(submission)
 
@@ -101,7 +100,7 @@ class ContributionServiceTest {
     @Test
     fun testProcessSubmission_WhenAlreadyIgnored_DoesNothing() {
         val submission = createSubmission(author = "user1", title = "Title")
-        every { botCache.isSubmissionIgnored(submission.fullName) } returns true
+        every { botStateService.isSubmissionIgnored(submission.fullName) } returns true
 
         service.processSubmission(submission)
 
@@ -123,7 +122,7 @@ class ContributionServiceTest {
 
         verify {
             geminiService.evaluateSubmission(submission)
-            botCache.ignoreSubmission(submission.fullName, "Crew member obituary")
+            botStateService.ignoreSubmission(submission.fullName, "Crew member obituary")
             telegramNotifier.sendMessage(
                 match {
                     it.contains("Sensitive Post Ignored") &&
@@ -153,7 +152,7 @@ class ContributionServiceTest {
         service.processSubmission(submission)
 
         verify(exactly = 0) {
-            botCache.ignoreSubmission(any(), any())
+            botStateService.ignoreSubmission(any(), any())
         }
         verify {
             telegramNotifier.sendMessage(
@@ -181,7 +180,7 @@ class ContributionServiceTest {
         service.processSubmission(submission)
 
         verify(exactly = 0) {
-            botCache.ignoreSubmission(any(), any())
+            botStateService.ignoreSubmission(any(), any())
         }
         verify {
             redditService.replyToSubmission(submission, "We want answers")
@@ -199,7 +198,7 @@ class ContributionServiceTest {
         service.processSubmission(submission)
 
         verify {
-            botCache.ignoreSubmission(submission.fullName, null)
+            botStateService.ignoreSubmission(submission.fullName, null)
             telegramNotifier.sendMessage(
                 match {
                     it.contains("Sensitive Post Ignored") &&
@@ -264,7 +263,7 @@ class ContributionServiceTest {
         service.processComment(comment)
 
         verify {
-            botCache.ignoreUser("critic", comment.fullName)
+            botStateService.ignoreUser("critic", comment.fullName)
             telegramNotifier.sendMessage(
                 match { it.contains("critic") },
                 listOf(TelegramAction.UnignoreUser("critic"), TelegramAction.OpenUrl(comment.url)),
@@ -298,7 +297,7 @@ class ContributionServiceTest {
             redditService.replyToComment(comment, "Thank you, fan!\n\n^(Thank you ❤️)")
         }
         verify(exactly = 0) {
-            botCache.ignoreUser(any(), any())
+            botStateService.ignoreUser(any(), any())
             geminiService.evaluateBotReply(any())
         }
     }
@@ -314,7 +313,7 @@ class ContributionServiceTest {
 
         verify {
             geminiService.evaluateBotReply(comment)
-            botCache.ignoreUser("critic", comment.fullName)
+            botStateService.ignoreUser("critic", comment.fullName)
             telegramNotifier.sendMessage(
                 match { it.contains("User Ignored") && it.contains("critic") },
                 listOf(TelegramAction.UnignoreUser("critic"), TelegramAction.OpenUrl(comment.url)),
@@ -342,7 +341,7 @@ class ContributionServiceTest {
             redditService.replyToComment(comment, "Thank you, fan!\n\n^(Thank you ❤️)")
         }
         verify(exactly = 0) {
-            botCache.ignoreUser(any(), any())
+            botStateService.ignoreUser(any(), any())
         }
     }
 
@@ -356,7 +355,7 @@ class ContributionServiceTest {
 
         verify(exactly = 0) {
             geminiService.evaluateBotReply(any())
-            botCache.ignoreUser(any(), any())
+            botStateService.ignoreUser(any(), any())
             redditService.replyToComment(any(), any())
             telegramNotifier.sendMessage(any())
         }
@@ -376,7 +375,7 @@ class ContributionServiceTest {
             telegramNotifier.sendMessage(match { it.contains("Bot Mentioned in Comment") }, any())
         }
         verify(exactly = 0) {
-            botCache.ignoreUser(any(), any())
+            botStateService.ignoreUser(any(), any())
             redditService.replyToComment(any(), any())
         }
     }
@@ -404,7 +403,7 @@ class ContributionServiceTest {
             )
         }
         verify(exactly = 0) {
-            botCache.ignoreUser(any(), any())
+            botStateService.ignoreUser(any(), any())
             redditService.replyToComment(any(), any())
         }
     }
@@ -432,7 +431,7 @@ class ContributionServiceTest {
             )
         }
         verify(exactly = 0) {
-            botCache.ignoreUser(any(), any())
+            botStateService.ignoreUser(any(), any())
             redditService.replyToComment(any(), any())
             phraseService.getPhrase(any())
         }
@@ -460,7 +459,7 @@ class ContributionServiceTest {
             phraseService = phraseService,
             commandService = commandService,
             geminiService = geminiService,
-            botCache = botCache,
+            botStateService = botStateService,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(),
             randomRoll = { 0.5f },
@@ -599,7 +598,7 @@ class ContributionServiceTest {
     @Test
     fun testProcessComment_WhenSubmissionIsIgnored_DoesNothing() {
         val comment = createComment(author = "commenter", body = "Hello there")
-        every { botCache.isSubmissionIgnored(comment.submissionFullName) } returns true
+        every { botStateService.isSubmissionIgnored(comment.submissionFullName) } returns true
 
         service.processComment(comment)
 
@@ -613,7 +612,7 @@ class ContributionServiceTest {
         val comment = createComment(author = "commenter", body = "Hello there")
         val submission = createSubmission(author = "ignored_author")
         every { redditService.getCommentSubmission(comment) } returns submission
-        every { botCache.isUserIgnored("ignored_author") } returns true
+        every { botStateService.isUserIgnored("ignored_author") } returns true
 
         service.processComment(comment)
 
@@ -705,7 +704,7 @@ class ContributionServiceTest {
             phraseService = phraseService,
             commandService = commandService,
             geminiService = geminiService,
-            botCache = botCache,
+            botStateService = botStateService,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(downvotes = ZakbotProperties.Downvotes(enabled = false)),
         )

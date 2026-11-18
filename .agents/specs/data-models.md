@@ -6,7 +6,7 @@ This specification defines the PostgreSQL tables, JPA entities, converters, and 
 - **Primary Implementation**:
   - Entities: `src/main/kotlin/com/github/mrbean355/zakbot/db/entity/*`
   - Repositories: `src/main/kotlin/com/github/mrbean355/zakbot/db/repo/*`
-  - Cache Layer: `src/main/kotlin/com/github/mrbean355/zakbot/db/BotCache.kt`
+  - Cache Layer: `src/main/kotlin/com/github/mrbean355/zakbot/service/BotStateService.kt`
   - Enum & Converter: `src/main/kotlin/com/github/mrbean355/zakbot/db/PhraseType.kt`, `PhraseTypeConverter.kt`
 - **Unit Tests**:
   - `src/test/kotlin/com/github/mrbean355/zakbot/db/PhraseTypeTest.kt`
@@ -18,10 +18,10 @@ This specification defines the PostgreSQL tables, JPA entities, converters, and 
 
 1. **Integer Enum Mapping**: The database column `phrase.type` stores the integer ID of `PhraseType`, NOT the string
    name. Mapped via `PhraseTypeConverter: AttributeConverter<PhraseType, Int>`.
-2. **Cold Start Cursors**: In `BotCache`, if no record exists for `"post"` or `"comment"` in `last_checked`, the cache
+2. **Cold Start Cursors**: In `BotStateService`, if no record exists for `"post"` or `"comment"` in `last_checked`, the cache
    MUST initialize the value to `currentTime()` (`SystemClock.currentTimeMillis`) to avoid polling from epoch 0.
 3. **Transaction Boundaries**:
-  - `BotCache` is annotated with `@Transactional`. Read-only queries (`isUserIgnored`, `isSubmissionIgnored`) are
+  - `BotStateService` is annotated with `@Transactional`. Read-only queries (`isUserIgnored`, `isSubmissionIgnored`) are
     annotated with `@Transactional(readOnly = true)`.
 4. **Primary Key Constraints**:
   - `ignored_user.id` is the Reddit username.

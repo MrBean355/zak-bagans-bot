@@ -21,7 +21,7 @@ This specification defines the scheduled polling, API pagination, contribution i
    allow Spring context, database connections, and caches to initialize.
 2. **Fixed Polling Rate**: Polling occurs strictly every 15 minutes (`fixedRate = 15 * 60 * 1000L`).
 3. **Cursor Ordering**: Submissions and comments returned by Reddit API must be sorted descending by creation time; the
-   timestamp of the first (newest) item is persisted in `BotCache` as the cursor for the next poll only after all
+   timestamp of the first (newest) item is persisted in `BotStateService` as the cursor for the next poll only after all
    items in the batch have been processed.
 4. **Safety Page Bounding**: Paging backwards via Reddit API `after` token must be capped at `10` pages
    (`PageHistoryLimit = 10`) with `5` items per page (`PageSizeLimit = 5`).
@@ -49,12 +49,12 @@ This specification defines the scheduled polling, API pagination, contribution i
 fun checkContributions()
 ```
 
-- Calls `redditService.getSubmissionsSince(botCache.getLastSubmissionTime())`.
+- Calls `redditService.getSubmissionsSince(botStateService.getLastSubmissionTime())`.
 - For each submission: invokes `contributionService.processSubmission(it)`.
-- If non-empty: sets `botCache.setLastSubmissionTime(first.created)`.
-- Calls `redditService.getCommentsSince(botCache.getLastCommentTime())`.
+- If non-empty: sets `botStateService.setLastSubmissionTime(first.created)`.
+- Calls `redditService.getCommentsSince(botStateService.getLastCommentTime())`.
 - For each comment: invokes `contributionService.processComment(it)`.
-- If non-empty: sets `botCache.setLastCommentTime(first.created)`.
+- If non-empty: sets `botStateService.setLastCommentTime(first.created)`.
 - Calls `contributionService.checkDownvotedComments()`.
 
 ### 2.2 `updateBotFlair()`
@@ -75,12 +75,12 @@ fun updateBotFlair()
 
 1. If `submission.author == AuthorUsername` -> `return` (ignore author's posts).
 2. Call `checkForBotMention(submission)`.
-3. If `botCache.isUserIgnored(submission.author)` or `botCache.isSubmissionIgnored(submission.fullName)` -> `return`.
+3. If `botStateService.isUserIgnored(submission.author)` or `botStateService.isSubmissionIgnored(submission.fullName)` -> `return`.
 4. Evaluate sensitivity via `geminiService.evaluateSubmission(submission)`. If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
     - If `geminiService.isDryRun` is `true`:
         - Send `telegram.sensitive_submission_dry_run` notification (proceeding to step 5 without ignoring).
     - Otherwise:
-        - `botCache.ignoreSubmission(submission.fullName, reason)`
+        - `botStateService.ignoreSubmission(submission.fullName, reason)`
         - Send `telegram.sensitive_submission_ignored` notification
         - `return`
 5. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
@@ -94,9 +94,9 @@ fun updateBotFlair()
 2. Call `val mentionsBot = checkForBotMention(comment)`.
 3. Skip conditions (return immediately if any is true):
     - `comment.author == BotUsername`
-    - `botCache.isUserIgnored(comment.author)`
-    - `botCache.isSubmissionIgnored(comment.submissionFullName)`
-    - `redditService.getCommentSubmission(comment)?.let { botCache.isUserIgnored(it.author) } == true`
+    - `botStateService.isUserIgnored(comment.author)`
+    - `botStateService.isSubmissionIgnored(comment.submissionFullName)`
+    - `redditService.getCommentSubmission(comment)?.let { botStateService.isUserIgnored(it.author) } == true`
 4. Reply-to-Bot Check:
     - If `redditService.findParentComment(comment)?.author == BotUsername`:
         - Determine `BotSentiment`:
@@ -105,7 +105,7 @@ fun updateBotFlair()
             - `!mentionsBot` -> `NEUTRAL`
             - Otherwise -> `geminiService.evaluateBotReply(comment)` (returns `NEUTRAL` if disabled or on error; if `geminiService.isDryRun` is `true`, non-`NEUTRAL` results send `telegram.bot_reply_sentiment_dry_run` while returning `NEUTRAL`)
         - If `sentiment == BAD_BOT`:
-            - `botCache.ignoreUser(comment.author, comment.fullName)`
+            - `botStateService.ignoreUser(comment.author, comment.fullName)`
             - Reply with `reddit.new_user_ignored`
             - Send `telegram.new_ignored_user`
         - Else if `sentiment == GOOD_BOT && randomRoll() <= GOOD_BOT_REPLY_CHANCE`:

@@ -35,7 +35,7 @@ Key classes under `src/main/kotlin/com/github/mrbean355/zakbot/`:
 - `reddit/RedditService.kt` — Reddit OAuth2 API client
 - `telegram/TelegramBot.kt` — Telegram long-polling listener, inline action callbacks, and notifications
 - `service/PhraseService.kt` & `controller/PhraseApiController.kt` — quote rotation and REST API
-- `db/BotCache.kt` — database cache and persistence layer
+- `service/BotStateService.kt` — persisted bot state (polling cursors and ignored users/posts)
 
 Resources under `src/main/resources/` include `application.properties`, `application-dev.properties`,
 `strings.properties` (message templates), and `static/` (`index.html`, `admin.html`).
