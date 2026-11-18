@@ -5,12 +5,15 @@ import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
 import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.service.BotStateService
+import com.github.mrbean355.zakbot.service.PhraseAddedEvent
 import com.github.mrbean355.zakbot.service.PhraseService
+import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
 import org.springframework.context.MessageSource
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
@@ -72,6 +75,18 @@ class TelegramBot(
                 }
             }
         }
+    }
+
+    @EventListener
+    fun onPhraseAdded(event: PhraseAddedEvent) {
+        sendMessage(
+            messageSource.getString(
+                "telegram.new_quote",
+                event.content.escapeTelegramMarkdown(),
+                event.type.name,
+                event.source.orEmpty().ifBlank { "None" }.escapeTelegramMarkdown(),
+            )
+        )
     }
 
     override fun sendMessage(text: String, actions: List<TelegramAction>) {
