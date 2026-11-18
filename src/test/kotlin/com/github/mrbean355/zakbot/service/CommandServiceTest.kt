@@ -11,6 +11,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.context.support.ResourceBundleMessageSource
 import java.time.Instant
 
 class CommandServiceTest {
@@ -29,7 +30,13 @@ class CommandServiceTest {
     fun setUp() {
         MockKAnnotations.init(this, relaxUnitFun = true)
         every { redditService.replyToComment(any(), any()) } returns "t1_reply"
-        service = CommandService(redditService, botStateService, telegramNotifier)
+        val messageSource = ResourceBundleMessageSource().apply {
+            setBasename("strings")
+            setDefaultEncoding("UTF-8")
+            setUseCodeAsDefaultMessage(true)
+            setAlwaysUseMessageFormat(true)
+        }
+        service = CommandService(redditService, botStateService, telegramNotifier, messageSource)
     }
 
     @Test

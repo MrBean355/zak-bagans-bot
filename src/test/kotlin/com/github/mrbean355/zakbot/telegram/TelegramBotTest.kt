@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
+import org.springframework.context.support.ResourceBundleMessageSource
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
@@ -453,6 +454,12 @@ class TelegramBotTest {
             buildProperties = buildProperties,
             telegramProperties = TelegramProperties(token = "dummy-token", chatId = "123456"),
             geminiProperties = geminiProperties,
+            messageSource = ResourceBundleMessageSource().apply {
+                setBasename("strings")
+                setDefaultEncoding("UTF-8")
+                setUseCodeAsDefaultMessage(true)
+                setAlwaysUseMessageFormat(true)
+            },
         )
     }
 

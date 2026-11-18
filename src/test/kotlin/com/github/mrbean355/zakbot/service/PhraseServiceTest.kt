@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.transaction.support.TransactionOperations
 import java.time.Instant
 
@@ -44,7 +45,13 @@ class PhraseServiceTest {
         )
         every { phraseRepository.save<PhraseEntity>(any()) } answers { firstArg() }
 
-        service = PhraseService(phraseRepository, listOf(genericPhrase), telegramNotifier, TransactionOperations.withoutTransaction())
+        val messageSource = ResourceBundleMessageSource().apply {
+            setBasename("strings")
+            setDefaultEncoding("UTF-8")
+            setUseCodeAsDefaultMessage(true)
+            setAlwaysUseMessageFormat(true)
+        }
+        service = PhraseService(phraseRepository, listOf(genericPhrase), telegramNotifier, TransactionOperations.withoutTransaction(), messageSource)
     }
 
     @Test

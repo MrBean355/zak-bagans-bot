@@ -12,6 +12,7 @@ import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
+import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
@@ -52,6 +53,7 @@ class TelegramBot(
     private val buildProperties: BuildProperties,
     private val telegramProperties: TelegramProperties,
     private val geminiProperties: GeminiProperties,
+    private val messageSource: MessageSource,
 ) : SpringLongPollingBot, LongPollingUpdateConsumer, TelegramNotifier {
 
     private val logger = LoggerFactory.getLogger(TelegramBot::class.java)
@@ -292,7 +294,7 @@ class TelegramBot(
             geminiProperties.dryRun -> "Dry run"
             else -> "Enabled"
         }
-        return getString(
+        return messageSource.getString(
             "telegram.bot_status_response",
             buildProperties.version,
             getUptime().ifBlank { "< 1 second" },
@@ -322,10 +324,10 @@ class TelegramBot(
         val seconds = elapsed.toSecondsPart()
 
         return buildList {
-            if (days > 0) add(getString("telegram.bot_uptime_days", days))
-            if (hours > 0) add(getString("telegram.bot_uptime_hours", hours))
-            if (minutes > 0) add(getString("telegram.bot_uptime_minutes", minutes))
-            if (seconds > 0) add(getString("telegram.bot_uptime_seconds", seconds))
+            if (days > 0) add(messageSource.getString("telegram.bot_uptime_days", days))
+            if (hours > 0) add(messageSource.getString("telegram.bot_uptime_hours", hours))
+            if (minutes > 0) add(messageSource.getString("telegram.bot_uptime_minutes", minutes))
+            if (seconds > 0) add(messageSource.getString("telegram.bot_uptime_seconds", seconds))
         }.joinToString()
     }
 }

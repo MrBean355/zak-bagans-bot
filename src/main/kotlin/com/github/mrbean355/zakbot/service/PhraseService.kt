@@ -10,6 +10,7 @@ import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
+import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionOperations
@@ -30,6 +31,7 @@ class PhraseService(
     phrases: List<Phrase>,
     private val telegramNotifier: TelegramNotifier,
     private val transactionOperations: TransactionOperations,
+    private val messageSource: MessageSource,
 ) {
 
     private val phrases = phrases.sortedByDescending { it.priority }
@@ -47,7 +49,7 @@ class PhraseService(
             }
         )
         telegramNotifier.sendMessage(
-            getString(
+            messageSource.getString(
                 "telegram.new_quote",
                 content.escapeTelegramMarkdown(),
                 type.name,
@@ -82,7 +84,7 @@ class PhraseService(
                 phraseRepository.save(entity)
                 val source = entity.source
                 if (source != null) {
-                    getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())
+                    messageSource.getString("reddit.quote_source_prefix", entity.content, source.escapeParentheses())
                 } else {
                     entity.content
                 }

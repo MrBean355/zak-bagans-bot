@@ -13,6 +13,7 @@ import com.github.mrbean355.zakbot.reddit.model.Submission
 import com.github.mrbean355.zakbot.service.GeminiService.BotSentiment
 import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
+import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import java.util.Collections
 import kotlin.math.roundToInt
@@ -33,6 +34,7 @@ class ContributionService(
     private val botStateService: BotStateService,
     private val telegramNotifier: TelegramNotifier,
     private val zakbotProperties: ZakbotProperties,
+    private val messageSource: MessageSource,
     private val randomRoll: () -> Float = { Random.nextFloat() },
 ) {
 
@@ -62,7 +64,7 @@ class ContributionService(
             ) {
                 deletedCommentIds += comment.fullName
                 telegramNotifier.sendMessage(
-                    getString(
+                    messageSource.getString(
                         "telegram.deleted_downvoted_comment",
                         comment.score,
                         comment.body.escapeTelegramMarkdown(),
@@ -97,7 +99,7 @@ class ContributionService(
             val sensitivityPercent = (moderation.sensitivity * 100).roundToInt()
             if (geminiService.isDryRun) {
                 telegramNotifier.sendMessage(
-                    getString(
+                    messageSource.getString(
                         "telegram.sensitive_submission_dry_run",
                         submission.title.escapeTelegramMarkdown(),
                         sensitivityPercent,
@@ -112,7 +114,7 @@ class ContributionService(
             } else {
                 botStateService.ignoreSubmission(submission.fullName, reason)
                 telegramNotifier.sendMessage(
-                    getString(
+                    messageSource.getString(
                         "telegram.sensitive_submission_ignored",
                         submission.title.escapeTelegramMarkdown(),
                         sensitivityPercent,
@@ -134,7 +136,7 @@ class ContributionService(
 
         val replyId = redditService.replyToSubmission(submission, response)
         telegramNotifier.sendMessage(
-            getString("telegram.new_submission", submission.title.escapeTelegramMarkdown(), response.escapeTelegramMarkdown()),
+            messageSource.getString("telegram.new_submission", submission.title.escapeTelegramMarkdown(), response.escapeTelegramMarkdown()),
             replyActions(submission.author, submission.fullName, submission.url, replyId),
         )
     }
@@ -169,9 +171,9 @@ class ContributionService(
             when (evaluateBotReplySentiment(comment, mentionsBot)) {
                 BotSentiment.BAD_BOT -> {
                     botStateService.ignoreUser(comment.author, comment.fullName)
-                    redditService.replyToComment(comment, getString("reddit.new_user_ignored"))
+                    redditService.replyToComment(comment, messageSource.getString("reddit.new_user_ignored"))
                     telegramNotifier.sendMessage(
-                        getString("telegram.new_ignored_user", comment.author),
+                        messageSource.getString("telegram.new_ignored_user", comment.author),
                         listOf(TelegramAction.UnignoreUser(comment.author), TelegramAction.OpenUrl(comment.url)),
                     )
                 }
@@ -181,10 +183,10 @@ class ContributionService(
                         val phrase = phraseService.getPhrase(PhraseType.GoodBot)
                             ?.substitute(comment)
                         if (phrase != null) {
-                            val response = getString("reddit.good_bot_footer", phrase)
+                            val response = messageSource.getString("reddit.good_bot_footer", phrase)
                             val replyId = redditService.replyToComment(comment, response)
                             telegramNotifier.sendMessage(
-                                getString("telegram.good_bot_praise", comment.author, response.escapeTelegramMarkdown()),
+                                messageSource.getString("telegram.good_bot_praise", comment.author, response.escapeTelegramMarkdown()),
                                 buildList {
                                     add(TelegramAction.IgnoreUser(comment.author))
                                     if (replyId != null) {
@@ -212,7 +214,7 @@ class ContributionService(
             val sensitivityPercent = (moderation.sensitivity * 100).roundToInt()
             if (geminiService.isDryRun) {
                 telegramNotifier.sendMessage(
-                    getString(
+                    messageSource.getString(
                         "telegram.sensitive_comment_dry_run",
                         comment.body.escapeTelegramMarkdown(),
                         sensitivityPercent,
@@ -226,7 +228,7 @@ class ContributionService(
                 )
             } else {
                 telegramNotifier.sendMessage(
-                    getString(
+                    messageSource.getString(
                         "telegram.sensitive_comment_skipped",
                         comment.body.escapeTelegramMarkdown(),
                         sensitivityPercent,
@@ -244,7 +246,7 @@ class ContributionService(
 
         val replyId = redditService.replyToComment(comment, response)
         telegramNotifier.sendMessage(
-            getString("telegram.new_comment", comment.body.escapeTelegramMarkdown(), response.escapeTelegramMarkdown()),
+            messageSource.getString("telegram.new_comment", comment.body.escapeTelegramMarkdown(), response.escapeTelegramMarkdown()),
             replyActions(comment.author, comment.submissionFullName, comment.url, replyId),
         )
     }
@@ -263,7 +265,7 @@ class ContributionService(
         if (geminiService.isDryRun) {
             if (sentiment != BotSentiment.NEUTRAL) {
                 telegramNotifier.sendMessage(
-                    getString(
+                    messageSource.getString(
                         "telegram.bot_reply_sentiment_dry_run",
                         comment.author,
                         comment.body.escapeTelegramMarkdown(),
@@ -298,7 +300,7 @@ class ContributionService(
         ) {
             when (contribution) {
                 is Submission -> telegramNotifier.sendMessage(
-                    getString("telegram.new_bot_mention_submission", contribution.title.escapeTelegramMarkdown()),
+                    messageSource.getString("telegram.new_bot_mention_submission", contribution.title.escapeTelegramMarkdown()),
                     buildList {
                         if (contribution.author != BotUsername) {
                             add(TelegramAction.IgnoreUser(contribution.author))
@@ -309,7 +311,7 @@ class ContributionService(
                 )
 
                 is Comment -> telegramNotifier.sendMessage(
-                    getString("telegram.new_bot_mention_comment", contribution.body.escapeTelegramMarkdown()),
+                    messageSource.getString("telegram.new_bot_mention_comment", contribution.body.escapeTelegramMarkdown()),
                     buildList {
                         if (contribution.author != BotUsername) {
                             add(TelegramAction.IgnoreUser(contribution.author))

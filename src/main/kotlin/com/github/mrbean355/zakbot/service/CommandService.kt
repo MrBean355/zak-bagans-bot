@@ -8,6 +8,7 @@ import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.util.asPlainText
 import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
+import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 
 private const val COMMAND_PREFIX = "u/$BotUsername "
@@ -17,6 +18,7 @@ class CommandService(
     private val redditService: RedditService,
     private val botStateService: BotStateService,
     private val telegramNotifier: TelegramNotifier,
+    private val messageSource: MessageSource,
 ) {
 
     fun processAuthorCommand(comment: Comment) {
@@ -39,43 +41,43 @@ class CommandService(
 
     private fun ignoreUser(id: String, comment: Comment) {
         if (botStateService.isUserIgnored(id)) {
-            redditService.replyToComment(comment, getString("reddit.command.ignoreUser.alreadyIgnored", id))
+            redditService.replyToComment(comment, messageSource.getString("reddit.command.ignoreUser.alreadyIgnored", id))
             return
         }
         if (redditService.userExists(id)) {
             botStateService.ignoreUser(id, comment.fullName)
-            redditService.replyToComment(comment, getString("reddit.command.ignoreUser.success", id))
+            redditService.replyToComment(comment, messageSource.getString("reddit.command.ignoreUser.success", id))
             telegramNotifier.sendMessage(
-                getString("telegram.command_ignore_user", id),
+                messageSource.getString("telegram.command_ignore_user", id),
                 listOf(TelegramAction.UnignoreUser(id), TelegramAction.OpenUrl(comment.url)),
             )
         } else {
-            redditService.replyToComment(comment, getString("reddit.command.ignoreUser.notFound", id))
+            redditService.replyToComment(comment, messageSource.getString("reddit.command.ignoreUser.notFound", id))
         }
     }
 
     private fun unignoreUser(id: String, comment: Comment) {
         if (!botStateService.isUserIgnored(id)) {
-            redditService.replyToComment(comment, getString("reddit.command.unignoreUser.notIgnored", id))
+            redditService.replyToComment(comment, messageSource.getString("reddit.command.unignoreUser.notIgnored", id))
             return
         }
         botStateService.unignoreUser(id)
-        redditService.replyToComment(comment, getString("reddit.command.unignoreUser.success", id))
+        redditService.replyToComment(comment, messageSource.getString("reddit.command.unignoreUser.success", id))
         telegramNotifier.sendMessage(
-            getString("telegram.command_unignore_user", id),
+            messageSource.getString("telegram.command_unignore_user", id),
             listOf(TelegramAction.IgnoreUser(id), TelegramAction.OpenUrl(comment.url)),
         )
     }
 
     private fun ignoreSubmission(reason: String, comment: Comment) {
         if (botStateService.isSubmissionIgnored(comment.submissionFullName)) {
-            redditService.replyToComment(comment, getString("reddit.command.ignoreSubmission.alreadyIgnored"))
+            redditService.replyToComment(comment, messageSource.getString("reddit.command.ignoreSubmission.alreadyIgnored"))
             return
         }
         botStateService.ignoreSubmission(comment.submissionFullName, reason.ifBlank { null })
-        redditService.replyToComment(comment, getString("reddit.command.ignoreSubmission.success"))
+        redditService.replyToComment(comment, messageSource.getString("reddit.command.ignoreSubmission.success"))
         telegramNotifier.sendMessage(
-            getString("telegram.command_ignore_post", reason.ifBlank { "None" }.escapeTelegramMarkdown()),
+            messageSource.getString("telegram.command_ignore_post", reason.ifBlank { "None" }.escapeTelegramMarkdown()),
             listOf(
                 TelegramAction.UnignoreSubmission(comment.submissionFullName),
                 TelegramAction.OpenUrl(comment.url),
@@ -85,13 +87,13 @@ class CommandService(
 
     private fun unignoreSubmission(comment: Comment) {
         if (!botStateService.isSubmissionIgnored(comment.submissionFullName)) {
-            redditService.replyToComment(comment, getString("reddit.command.unignoreSubmission.notIgnored"))
+            redditService.replyToComment(comment, messageSource.getString("reddit.command.unignoreSubmission.notIgnored"))
             return
         }
         botStateService.unignoreSubmission(comment.submissionFullName)
-        redditService.replyToComment(comment, getString("reddit.command.unignoreSubmission.success"))
+        redditService.replyToComment(comment, messageSource.getString("reddit.command.unignoreSubmission.success"))
         telegramNotifier.sendMessage(
-            getString("telegram.command_unignore_post"),
+            messageSource.getString("telegram.command_unignore_post"),
             listOf(
                 TelegramAction.IgnoreSubmission(comment.submissionFullName),
                 TelegramAction.OpenUrl(comment.url),

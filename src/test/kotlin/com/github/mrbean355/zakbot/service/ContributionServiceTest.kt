@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.context.support.ResourceBundleMessageSource
 import java.time.Instant
 
 class ContributionServiceTest {
@@ -40,6 +41,13 @@ class ContributionServiceTest {
     private lateinit var telegramNotifier: TelegramNotifier
 
     private lateinit var service: ContributionService
+
+    private val messageSource = ResourceBundleMessageSource().apply {
+        setBasename("strings")
+        setDefaultEncoding("UTF-8")
+        setUseCodeAsDefaultMessage(true)
+        setAlwaysUseMessageFormat(true)
+    }
 
     @BeforeEach
     fun setUp() {
@@ -68,6 +76,7 @@ class ContributionServiceTest {
             botStateService = botStateService,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(),
+            messageSource = messageSource,
             randomRoll = { 0f },
         )
     }
@@ -462,6 +471,7 @@ class ContributionServiceTest {
             botStateService = botStateService,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(),
+            messageSource = messageSource,
             randomRoll = { 0.5f },
         )
         val botComment = createComment(author = BotUsername, body = "I am Zak")
@@ -707,6 +717,7 @@ class ContributionServiceTest {
             botStateService = botStateService,
             telegramNotifier = telegramNotifier,
             zakbotProperties = ZakbotProperties(downvotes = ZakbotProperties.Downvotes(enabled = false)),
+            messageSource = messageSource,
         )
         val downvoted = createComment(id = "down1", author = BotUsername, body = "Terrible quote", score = -3)
         every { redditService.getOwnRecentComments() } returns listOf(downvoted)
