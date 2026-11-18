@@ -110,3 +110,16 @@ When modifying this repository, AI agents must preserve the following non-negoti
 3. Add response strings to `src/main/resources/strings.properties`.
 4. Document the command in [commands.md](commands.md) and [README.md](../../README.md#special-commands).
 5. Add unit tests in `CommandServiceTest.kt`.
+
+---
+
+## 5. Documentation Split (`README.md` vs `DEVELOPMENT.md`)
+
+- **[README.md](../../README.md)**: High-level, non-developer documentation (overview, how the bot works on Reddit,
+  opting out/praising, Reddit author commands under `#special-commands`, and community contributing).
+- **[DEVELOPMENT.md](../../DEVELOPMENT.md)**: Technical and developer documentation (tech stack, prerequisites, key
+  classes, local `dev` setup, configuration properties, Telegram admin commands, REST API, building/testing, and coding
+  conventions).
+
+When adding or updating configuration properties, Telegram commands, build/test steps, or technical setup, update
+[DEVELOPMENT.md](../../DEVELOPMENT.md) rather than [README.md](../../README.md).
