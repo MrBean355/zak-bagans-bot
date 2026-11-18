@@ -5,6 +5,7 @@ import org.commonmark.renderer.text.TextContentRenderer
 
 private val parser = Parser.builder().build()
 private val renderer = TextContentRenderer.builder().build()
+private val telegramMarkdownSpecialChars = Regex("([_*`\\[])")
 
 /**
  * Converts a Markdown-formatted string into plain text.
@@ -14,6 +15,13 @@ private val renderer = TextContentRenderer.builder().build()
  */
 fun String.asPlainText(): String {
     return renderer.render(parser.parse(this))
+}
+
+/**
+ * Escapes special characters for Telegram's legacy Markdown parse mode (`_`, `*`, `` ` ``, `[`).
+ */
+fun String.escapeTelegramMarkdown(): String {
+    return replace(telegramMarkdownSpecialChars, "\\\\$1")
 }
 
 fun String.countOccurrences(word: String): Int =

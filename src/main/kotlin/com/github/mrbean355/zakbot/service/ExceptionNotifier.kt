@@ -1,6 +1,7 @@
 package com.github.mrbean355.zakbot.service
 
 import com.github.mrbean355.zakbot.telegram.TelegramNotifier
+import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -21,16 +22,17 @@ class ExceptionNotifier(
 
     internal fun formatMessage(source: String, throwable: Throwable): String {
         val rootCause = generateSequence(throwable) { it.cause }.last()
-        val exceptionName = rootCause::class.simpleName ?: "Exception"
-        val message = rootCause.message?.take(200) ?: "No message"
+        val exceptionName = (rootCause::class.simpleName ?: "Exception").escapeTelegramMarkdown()
+        val message = (rootCause.message?.take(200) ?: "No message").escapeTelegramMarkdown()
         val stackTrace = throwable.stackTraceToString()
             .lines()
             .take(8)
             .joinToString("\n")
             .take(800)
+            .replace("```", "'''")
 
         return buildString {
-            append("*⚠️ Uncaught Exception* ($source)\n\n")
+            append("*⚠️ Uncaught Exception* (${source.escapeTelegramMarkdown()})\n\n")
             append("*$exceptionName*: $message\n\n")
             append("```\n")
             append(stackTrace)

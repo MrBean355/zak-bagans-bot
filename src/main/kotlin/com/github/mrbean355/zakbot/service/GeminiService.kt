@@ -7,6 +7,7 @@ import com.github.mrbean355.zakbot.telegram.TelegramNotifier
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
+import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
@@ -123,7 +124,7 @@ class GeminiService(
             telegramNotifier.sendMessage(
                 getString(
                     "telegram.gemini_evaluation_failed",
-                    telegramContextText,
+                    telegramContextText.escapeTelegramMarkdown(),
                     errorSummary,
                 ),
                 listOf(TelegramAction.OpenUrl(telegramContextUrl)),

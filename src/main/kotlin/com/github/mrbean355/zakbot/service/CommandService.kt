@@ -7,6 +7,7 @@ import com.github.mrbean355.zakbot.db.BotCache
 import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.util.asPlainText
+import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
 
@@ -75,7 +76,7 @@ class CommandService(
         botCache.ignoreSubmission(comment.submissionFullName, reason.ifBlank { null })
         redditService.replyToComment(comment, getString("reddit.command.ignoreSubmission.success"))
         telegramNotifier.sendMessage(
-            getString("telegram.command_ignore_post", reason.ifBlank { "None" }),
+            getString("telegram.command_ignore_post", reason.ifBlank { "None" }.escapeTelegramMarkdown()),
             listOf(
                 TelegramAction.UnignoreSubmission(comment.submissionFullName),
                 TelegramAction.OpenUrl(comment.url),

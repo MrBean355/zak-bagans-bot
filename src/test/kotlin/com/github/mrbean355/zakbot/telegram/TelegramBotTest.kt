@@ -23,12 +23,14 @@ import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.api.objects.ApiResponse
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.util.Properties
 
@@ -414,6 +416,25 @@ class TelegramBotTest {
 
         assertDoesNotThrow {
             bot.sendMessage("Test message")
+        }
+    }
+
+    @Test
+    fun testSendMessage_WhenMarkdownFailsWith400_RetriesAsPlainText() {
+        val badRequest = TelegramApiRequestException(
+            "Bad Request",
+            ApiResponse.builder<Any>().errorCode(400).build(),
+        )
+        every { telegramClient.execute(match<SendMessage> { it.parseMode == "Markdown" }) } throws badRequest
+        every { telegramClient.execute(match<SendMessage> { it.parseMode == null }) } returns mockk()
+
+        assertDoesNotThrow {
+            bot.sendMessage("Bad *markdown")
+        }
+
+        verify(exactly = 1) {
+            telegramClient.execute(match<SendMessage> { it.parseMode == "Markdown" && it.text == "Bad *markdown" })
+            telegramClient.execute(match<SendMessage> { it.parseMode == null && it.text == "Bad *markdown" })
         }
     }
 

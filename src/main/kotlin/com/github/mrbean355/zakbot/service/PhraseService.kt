@@ -8,6 +8,7 @@ import com.github.mrbean355.zakbot.db.type
 import com.github.mrbean355.zakbot.phrases.Phrase
 import com.github.mrbean355.zakbot.reddit.model.Comment
 import com.github.mrbean355.zakbot.reddit.model.Submission
+import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -43,9 +44,9 @@ class PhraseService(
             telegramNotifier.sendMessage(
                 getString(
                     "telegram.new_quote",
-                    content,
+                    content.escapeTelegramMarkdown(),
                     type.name,
-                    source.orEmpty().ifBlank { "None" }
+                    source.orEmpty().ifBlank { "None" }.escapeTelegramMarkdown(),
                 )
             )
         }

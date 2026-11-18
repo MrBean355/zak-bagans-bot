@@ -27,6 +27,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.Duration
 import java.time.Instant
@@ -76,18 +77,38 @@ class TelegramBot(
     }
 
     override fun sendMessage(text: String, actions: List<TelegramAction>) {
+        val keyboard = buildKeyboard(actions)
         try {
-            val builder = SendMessage.builder()
-                .chatId(telegramProperties.chatId)
-                .text(text)
-                .parseMode(ParseMode.MARKDOWN)
-                .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
-
-            buildKeyboard(actions)?.let { builder.replyMarkup(it) }
-            telegramClient.execute(builder.build())
+            executeSendMessage(text, keyboard, ParseMode.MARKDOWN)
+        } catch (ex: TelegramApiRequestException) {
+            if (ex.errorCode == 400) {
+                logger.warn("Telegram Markdown failed, retrying as plain text", ex)
+                try {
+                    executeSendMessage(text, keyboard, parseMode = null)
+                } catch (retryEx: Exception) {
+                    logger.error("Failed to send Telegram message", retryEx)
+                }
+            } else {
+                logger.error("Failed to send Telegram message", ex)
+            }
         } catch (ex: Exception) {
             logger.error("Failed to send Telegram message", ex)
         }
+    }
+
+    private fun executeSendMessage(
+        text: String,
+        keyboard: InlineKeyboardMarkup?,
+        parseMode: String?,
+    ) {
+        val builder = SendMessage.builder()
+            .chatId(telegramProperties.chatId)
+            .text(text)
+            .linkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build())
+
+        parseMode?.let { builder.parseMode(it) }
+        keyboard?.let { builder.replyMarkup(it) }
+        telegramClient.execute(builder.build())
     }
 
     private fun handleCallbackQuery(callbackQuery: CallbackQuery) {
