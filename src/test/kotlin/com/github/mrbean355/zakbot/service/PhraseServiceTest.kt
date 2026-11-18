@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.transaction.support.TransactionOperations
 import java.time.Instant
 
 class PhraseServiceTest {
@@ -43,7 +44,7 @@ class PhraseServiceTest {
         )
         every { phraseRepository.save<PhraseEntity>(any()) } answers { firstArg() }
 
-        service = PhraseService(phraseRepository, listOf(genericPhrase), telegramNotifier)
+        service = PhraseService(phraseRepository, listOf(genericPhrase), telegramNotifier, TransactionOperations.withoutTransaction())
     }
 
     @Test

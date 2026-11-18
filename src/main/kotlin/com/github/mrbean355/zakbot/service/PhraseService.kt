@@ -12,6 +12,7 @@ import com.github.mrbean355.zakbot.util.escapeTelegramMarkdown
 import com.github.mrbean355.zakbot.util.getString
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionOperations
 import kotlin.random.Random
 
 private val UrlRegex = """[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)""".toRegex()
@@ -28,6 +29,7 @@ class PhraseService(
     private val phraseRepository: PhraseRepository,
     phrases: List<Phrase>,
     private val telegramNotifier: TelegramNotifier,
+    private val transactionOperations: TransactionOperations,
 ) {
 
     private val phrases = phrases.sortedByDescending { it.priority }
@@ -37,19 +39,22 @@ class PhraseService(
         return phraseRepository.findAll().toList()
     }
 
-    @Transactional
     fun addPhrase(content: String, type: PhraseType, source: String?): PhraseEntity {
-        val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
-        return phraseRepository.save(PhraseEntity(0, content, minUsages, type, source)).also {
-            telegramNotifier.sendMessage(
-                getString(
-                    "telegram.new_quote",
-                    content.escapeTelegramMarkdown(),
-                    type.name,
-                    source.orEmpty().ifBlank { "None" }.escapeTelegramMarkdown(),
-                )
+        val saved = requireNotNull(
+            transactionOperations.execute {
+                val minUsages = phraseRepository.findMinUsagesByType(type) ?: 0
+                phraseRepository.save(PhraseEntity(0, content, minUsages, type, source))
+            }
+        )
+        telegramNotifier.sendMessage(
+            getString(
+                "telegram.new_quote",
+                content.escapeTelegramMarkdown(),
+                type.name,
+                source.orEmpty().ifBlank { "None" }.escapeTelegramMarkdown(),
             )
-        }
+        )
+        return saved
     }
 
     @Transactional
