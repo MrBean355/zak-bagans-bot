@@ -2,8 +2,10 @@ package com.github.mrbean355.zakbot.telegram
 
 import com.github.mrbean355.zakbot.config.GeminiProperties
 import com.github.mrbean355.zakbot.config.TelegramProperties
+import com.github.mrbean355.zakbot.db.PhraseType
 import com.github.mrbean355.zakbot.reddit.RedditService
 import com.github.mrbean355.zakbot.service.BotStateService
+import com.github.mrbean355.zakbot.service.PhraseAddedEvent
 import com.github.mrbean355.zakbot.service.PhraseService
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -79,6 +81,22 @@ class TelegramBotTest {
                     message.chatId == "123456" &&
                         message.text == "Hello test" &&
                         message.replyMarkup == null
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testOnPhraseAdded_SendsFormattedTelegramNotification() {
+        bot.onPhraseAdded(PhraseAddedEvent("New quote", PhraseType.Aaron, null))
+
+        verify {
+            telegramClient.execute(
+                match<SendMessage> { message ->
+                    message.chatId == "123456" &&
+                        message.text.contains("New quote") &&
+                        message.text.contains("Aaron") &&
+                        message.text.contains("None")
                 }
             )
         }
