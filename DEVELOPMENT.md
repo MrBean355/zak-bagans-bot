@@ -68,8 +68,8 @@ The bot can be configured using standard Spring Boot properties or environment v
 
 | Property                                  | Environment Variable                      | Default                 | Description                                              |
 |-------------------------------------------|-------------------------------------------|-------------------------|----------------------------------------------------------|
-| `reddit.account-password`                 | `BOT_ACCOUNT_PASSWORD`                    | *(empty)*               | Reddit account password for authentication               |
-| `reddit.client-secret`                    | `BOT_CLIENT_SECRET`                       | *(empty)*               | Reddit script application client secret                  |
+| `reddit.account-password`                 | `BOT_ACCOUNT_PASSWORD`                    | *(required)*            | Reddit account password for authentication               |
+| `reddit.client-secret`                    | `BOT_CLIENT_SECRET`                       | *(required)*            | Reddit script application client secret                  |
 | `telegram.token`                          | `TELEGRAM_TOKEN`                          | *(required)*            | Telegram Bot token for status updates and alerts         |
 | `telegram.chat-id`                        | `TELEGRAM_CHAT_ID`                        | *(required)*            | Telegram chat ID to receive notifications                |
 | `admin.username`                          | `ADMIN_USERNAME`                          | `admin`                 | Username for the admin web dashboard                     |
