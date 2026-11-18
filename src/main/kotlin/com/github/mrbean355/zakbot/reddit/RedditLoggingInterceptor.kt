@@ -25,11 +25,7 @@ class RedditLoggingInterceptor : ClientHttpRequestInterceptor {
         if (body.isNotEmpty()) {
             val bodyString = String(body, StandardCharsets.UTF_8)
             val sanitized = sanitize(bodyString)
-            if (logger.isDebugEnabled) {
-                logger.debug("[HTTP] --> Body: {}", sanitized)
-            } else {
-                logger.info("[HTTP] --> Body: {}", sanitized)
-            }
+            logger.info("[HTTP] --> Body: {}", sanitized)
         }
 
         val response = execution.execute(request, body)
@@ -47,16 +43,12 @@ class RedditLoggingInterceptor : ClientHttpRequestInterceptor {
         } else {
             logger.info("[HTTP] <-- {} {} ({}ms)", response.statusCode.value(), response.statusText, duration)
             if (responseBody.isNotBlank()) {
-                if (logger.isDebugEnabled) {
-                    logger.debug("[HTTP] <-- Body: {}", responseBody)
+                val preview = if (responseBody.length > 300) {
+                    "${responseBody.take(300)}... [truncated ${responseBody.length} chars]"
                 } else {
-                    val preview = if (responseBody.length > 300) {
-                        "${responseBody.take(300)}... [truncated ${responseBody.length} chars]"
-                    } else {
-                        responseBody
-                    }
-                    logger.info("[HTTP] <-- Body: {}", preview)
+                    responseBody
                 }
+                logger.info("[HTTP] <-- Body: {}", preview)
             }
         }
 

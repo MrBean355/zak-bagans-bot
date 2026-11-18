@@ -187,6 +187,10 @@ class RedditService(
     }
 
     fun setBotFlair(flair: RedditFlair) {
+        if (!zakbotProperties.replies.enabled) {
+            logger.info("Set bot flair to: {}", flair.text)
+            return
+        }
         try {
             val body = LinkedMultiValueMap<String, String>().apply {
                 add("api_type", "json")

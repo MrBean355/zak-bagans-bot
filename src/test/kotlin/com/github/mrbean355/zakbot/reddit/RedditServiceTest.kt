@@ -495,6 +495,13 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testSetBotFlair_WhenRepliesDisabled_DoesNotCallApi() {
+        serviceWithoutReplies.setBotFlair(RedditFlair("flair-1", "Flair One"))
+
+        server.verify()
+    }
+
+    @Test
     fun testGetSubmissionsSince_PaginatesWhenMoreResultsAvailable() {
         val page1Json = """
             {

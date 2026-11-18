@@ -4,7 +4,6 @@ import com.github.mrbean355.zakbot.BotClientId
 import com.github.mrbean355.zakbot.BotUsername
 import com.github.mrbean355.zakbot.config.RedditProperties
 import com.github.mrbean355.zakbot.reddit.dto.RedditTokenResponse
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
@@ -18,8 +17,6 @@ class RedditAuthService(
     private val clock: Clock,
     @Qualifier("redditAuthRestClient") private val authClient: RestClient,
 ) {
-    private val logger = LoggerFactory.getLogger(RedditAuthService::class.java)
-
     @Volatile
     private var cachedToken: String? = null
 
@@ -34,7 +31,6 @@ class RedditAuthService(
             return token
         }
 
-        logger.info("Requesting new Reddit OAuth access token...")
         val body = LinkedMultiValueMap<String, String>().apply {
             add("grant_type", "password")
             add("username", BotUsername)
@@ -52,13 +48,11 @@ class RedditAuthService(
 
         cachedToken = response.accessToken
         expiresAtMillis = now + (response.expiresIn * 1000)
-        logger.info("Successfully acquired Reddit access token (expires in {}s)", response.expiresIn)
         return response.accessToken
     }
 
     @Synchronized
     fun invalidateToken() {
-        logger.info("Invalidating cached Reddit access token")
         cachedToken = null
         expiresAtMillis = 0L
     }

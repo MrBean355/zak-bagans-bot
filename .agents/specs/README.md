@@ -89,6 +89,11 @@ When modifying this repository, AI agents must preserve the following non-negoti
 9. **Explicit Dependency Injection**: Spring components and services must NEVER declare default parameter values for
    dependencies in their constructors (e.g. `zakbotProperties = ZakbotProperties()`). Dependencies must be strictly
    required, and unit tests must explicitly supply mocks, fakes, or configured instances.
+10. **Caught Exception Logging**: All caught exceptions MUST be logged (`logger.warn` or `logger.error`), except for
+    expected HTTP status checks used as control flow (such as `404 Not Found` in `RedditService.userExists`).
+11. **Dry-Run Guard on Mutable Reddit Calls**: Every mutable Reddit API call (posting replies, deleting comments,
+    updating flair, etc.) MUST check `zakbotProperties.replies.enabled` and log the intended action via `logger.info`
+    when disabled instead of calling Reddit.
 
 ---
 
