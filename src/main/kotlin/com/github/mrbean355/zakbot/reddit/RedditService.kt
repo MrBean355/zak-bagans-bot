@@ -28,6 +28,9 @@ private const val PageSizeLimit = 25
 /** Max number of pages to look back through that haven't been checked before. */
 private const val PageHistoryLimit = 10
 
+/** Max number of fullnames Reddit's /api/info endpoint accepts per request. */
+private const val InfoBatchLimit = 100
+
 @Service
 class RedditService(
     private val client: RestClient,
@@ -122,6 +125,61 @@ class RedditService(
                 override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, V>?) = size > maxSize
             }
         )
+
+    private inline fun <DTO, DOMAIN : Any> prefetchBatch(
+        ids: List<String>,
+        typeRef: ParameterizedTypeReference<RedditListing<DTO>>,
+        cache: MutableMap<String, DOMAIN>,
+        crossinline keySelector: (DOMAIN) -> String,
+        crossinline transform: (DTO) -> DOMAIN,
+    ) {
+        if (ids.isEmpty()) return
+
+        ids.chunked(InfoBatchLimit).forEach { batch ->
+            try {
+                val response = client.get()
+                    .uri("/api/info?id={ids}", batch.joinToString(","))
+                    .retrieve()
+                    .body(typeRef)
+
+                response?.data?.children.orEmpty().forEach { child ->
+                    val domain = transform(child.data)
+                    cache[keySelector(domain)] = domain
+                }
+            } catch (ex: Exception) {
+                logger.warn("Failed to prefetch info for {} item(s)", batch.size, ex)
+            }
+        }
+    }
+
+    /** Prefetch uncached submissions and parent comments for [comments] in batches. */
+    fun prefetchInfo(comments: List<Comment>) {
+        val missingSubmissions = comments.asSequence()
+            .map { it.submissionFullName }
+            .filter { it.startsWith("t3_") && it !in submissionCache }
+            .distinct()
+            .toList()
+        prefetchBatch(
+            ids = missingSubmissions,
+            typeRef = object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {},
+            cache = submissionCache,
+            keySelector = { it.fullName },
+            transform = { it.toDomain() },
+        )
+
+        val missingComments = comments.asSequence()
+            .map { it.parentFullName }
+            .filter { it.startsWith("t1_") && it !in commentCache }
+            .distinct()
+            .toList()
+        prefetchBatch(
+            ids = missingComments,
+            typeRef = object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {},
+            cache = commentCache,
+            keySelector = { it.fullName },
+            transform = { it.toDomain() },
+        )
+    }
 
     /** @return the submission that the [comment] belongs to, or null if not found. */
     fun getCommentSubmission(comment: Comment): Submission? {

@@ -526,6 +526,97 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testPrefetchInfo_BatchesUniqueUncachedSubmissionsAndParentComments() {
+        val submissionsJson = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "user1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/",
+                      "title": "Post 1",
+                      "selftext": ""
+                    }
+                  },
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub2",
+                      "name": "t3_sub2",
+                      "author": "user2",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/$SubredditName/comments/sub2/",
+                      "title": "Post 2",
+                      "selftext": ""
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+        val commentsJson = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "p1",
+                      "name": "t1_p1",
+                      "author": "parent1",
+                      "body": "Parent 1",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/title/p1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1%2Ct3_sub2"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(submissionsJson, MediaType.APPLICATION_JSON))
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_p1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(commentsJson, MediaType.APPLICATION_JSON))
+
+        val c1 = Comment("c1", "t1_c1", "a1", Instant.now(), "u1", "b1", "t3_sub1", "t1_p1")
+        val c2 = Comment("c2", "t1_c2", "a2", Instant.now(), "u2", "b2", "t3_sub1", "t3_sub1")
+        val c3 = Comment("c3", "t1_c3", "a3", Instant.now(), "u3", "b3", "t3_sub2", "t1_p1")
+
+        serviceWithReplies.prefetchInfo(listOf(c1, c2, c3))
+
+        assertEquals("Post 1", serviceWithReplies.getCommentSubmission(c1)?.title)
+        assertEquals("Post 2", serviceWithReplies.getCommentSubmission(c3)?.title)
+        assertEquals("Parent 1", serviceWithReplies.findParentComment(c1)?.body)
+        assertNull(serviceWithReplies.findParentComment(c2))
+        server.verify()
+    }
+
+    @Test
+    fun testPrefetchInfo_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val c1 = Comment("c1", "t1_c1", "a1", Instant.now(), "u1", "b1", "t3_sub1", "t3_sub1")
+        serviceWithReplies.prefetchInfo(listOf(c1))
+
+        server.verify()
+    }
+
+    @Test
     fun testFindParentComment_WhenApiFails_ReturnsNull() {
         server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_error"))
             .andExpect(method(HttpMethod.GET))
