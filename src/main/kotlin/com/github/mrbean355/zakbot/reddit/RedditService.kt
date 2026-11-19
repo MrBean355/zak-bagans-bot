@@ -42,7 +42,7 @@ class RedditService(
             typeRef = object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {},
             since = since,
             transform = { it.toDomain() },
-        )
+        ).onEach { submissionCache[it.fullName] = it }
 
     /** Get all comments created after the given instant. */
     fun getCommentsSince(since: Instant): List<Comment> =
@@ -51,7 +51,7 @@ class RedditService(
             typeRef = object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {},
             since = since,
             transform = { it.toDomain() },
-        )
+        ).onEach { commentCache[it.fullName] = it }
 
     private inline fun <DTO, DOMAIN : Contribution> fetchContributionsSince(
         path: String,
@@ -113,11 +113,15 @@ class RedditService(
         }
     }
 
-    private val submissionCache = java.util.Collections.synchronizedMap(
-        object : java.util.LinkedHashMap<String, Submission>(64, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Submission>?) = size > 100
-        }
-    )
+    private val submissionCache = lruCache<Submission>(100)
+    private val commentCache = lruCache<Comment>(200)
+
+    private fun <V> lruCache(maxSize: Int): MutableMap<String, V> =
+        java.util.Collections.synchronizedMap(
+            object : java.util.LinkedHashMap<String, V>(64, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, V>?) = size > maxSize
+            }
+        )
 
     /** @return the submission that the [comment] belongs to, or null if not found. */
     fun getCommentSubmission(comment: Comment): Submission? {
@@ -143,13 +147,17 @@ class RedditService(
         if (!comment.parentFullName.startsWith("t1_")) {
             return null
         }
+        commentCache[comment.parentFullName]?.let { return it }
+
         return try {
             val response = client.get()
                 .uri("/api/info?id={id}", comment.parentFullName)
                 .retrieve()
                 .body(object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {})
 
-            response?.data?.children?.firstOrNull()?.data?.toDomain()
+            response?.data?.children?.firstOrNull()?.data?.toDomain()?.also {
+                commentCache[comment.parentFullName] = it
+            }
         } catch (ex: Exception) {
             logger.warn("Failed to find parent comment: {}", comment.parentFullName, ex)
             null
@@ -224,6 +232,7 @@ class RedditService(
                 .body(object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {})
 
             response?.data?.children?.map { it.data.toDomain() }.orEmpty()
+                .onEach { commentCache[it.fullName] = it }
         } catch (ex: Exception) {
             logger.warn("Failed to fetch bot comments for downvote check", ex)
             emptyList()

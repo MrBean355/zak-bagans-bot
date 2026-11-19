@@ -327,6 +327,43 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testGetCommentSubmission_AfterGetSubmissionsSince_UsesSeededCache() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "user1",
+                      "created_utc": 1700000100.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/",
+                      "title": "Seeded Post",
+                      "selftext": ""
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val submissions = serviceWithReplies.getSubmissionsSince(Instant.ofEpochSecond(1700000000))
+        val comment = Comment("com1", "t1_com1", "author1", Instant.now(), "url1", "body1", "t3_sub1", "t3_sub1")
+        val cached = serviceWithReplies.getCommentSubmission(comment)
+
+        assertEquals(submissions.single(), cached)
+        server.verify()
+    }
+
+    @Test
     fun testFindParentComment_WhenParentIsPost_ReturnsNullWithoutCallingApi() {
         val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t3_sub1")
         val result = serviceWithReplies.findParentComment(comment)
@@ -370,6 +407,121 @@ class RedditServiceTest {
         assertNotNull(result)
         assertEquals("parent1", result?.id)
         assertEquals("Parent body", result?.body)
+        server.verify()
+    }
+
+    @Test
+    fun testFindParentComment_CachesSubsequentRequestsForSameParent() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "parent1",
+                      "name": "t1_parent1",
+                      "author": "parent_author",
+                      "body": "Parent body",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/title/parent1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_parent1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comment1 = Comment("com1", "t1_com1", "author1", Instant.now(), "url1", "body1", "t3_sub1", "t1_parent1")
+        val comment2 = Comment("com2", "t1_com2", "author2", Instant.now(), "url2", "body2", "t3_sub1", "t1_parent1")
+
+        val result1 = serviceWithReplies.findParentComment(comment1)
+        val result2 = serviceWithReplies.findParentComment(comment2)
+
+        assertNotNull(result1)
+        assertEquals(result1, result2)
+        server.verify()
+    }
+
+    @Test
+    fun testFindParentComment_AfterGetCommentsSince_UsesSeededCache() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "parent1",
+                      "name": "t1_parent1",
+                      "author": "parent_author",
+                      "body": "Parent body",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000100.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/title/parent1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/comments?limit=25"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comments = serviceWithReplies.getCommentsSince(Instant.ofEpochSecond(1700000000))
+        val reply = Comment("com2", "t1_com2", "author2", Instant.now(), "url2", "body2", "t3_sub1", "t1_parent1")
+        val cached = serviceWithReplies.findParentComment(reply)
+
+        assertEquals(comments.single(), cached)
+        server.verify()
+    }
+
+    @Test
+    fun testFindParentComment_AfterGetOwnRecentComments_UsesSeededCache() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "bot1",
+                      "name": "t1_bot1",
+                      "author": "ZakBagansBot",
+                      "body": "Bot quote",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000100.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/title/bot1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/user/ZakBagansBot/comments?limit=100&sort=new"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val ownComments = serviceWithReplies.getOwnRecentComments()
+        val reply = Comment("com2", "t1_com2", "fan", Instant.now(), "url2", "good bot", "t3_sub1", "t1_bot1")
+        val cached = serviceWithReplies.findParentComment(reply)
+
+        assertEquals(ownComments.single(), cached)
         server.verify()
     }
 
