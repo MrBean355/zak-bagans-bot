@@ -24,7 +24,7 @@ This specification defines the scheduled polling, API pagination, contribution i
    timestamp of the first (newest) item is persisted in `BotStateService` as the cursor for the next poll only after all
    items in the batch have been processed.
 4. **Safety Page Bounding**: Paging backwards via Reddit API `after` token must be capped at `10` pages
-   (`PageHistoryLimit = 10`) with `5` items per page (`PageSizeLimit = 5`).
+   (`PageHistoryLimit = 10`) with `25` items per page (`PageSizeLimit = 25`).
 5. **No Self-Replies**: Comments authored by `BotUsername` must never be evaluated for quote matching.
 6. **No Command Mixing**: Comments authored by `AuthorUsername` are routed exclusively to
    `commandService.processAuthorCommand()` and immediately returned.

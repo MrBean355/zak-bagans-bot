@@ -80,7 +80,7 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
@@ -135,7 +135,7 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/comments?limit=5"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/comments?limit=25"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
@@ -551,11 +551,11 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(page1Json, MediaType.APPLICATION_JSON))
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5&after=t3_sub1"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25&after=t3_sub1"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(page2Json, MediaType.APPLICATION_JSON))
 

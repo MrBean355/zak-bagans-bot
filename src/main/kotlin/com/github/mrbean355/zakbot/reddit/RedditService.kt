@@ -23,7 +23,7 @@ import org.springframework.web.client.RestClient
 import java.time.Instant
 
 /** Number of posts/comments per page. */
-private const val PageSizeLimit = 5
+private const val PageSizeLimit = 25
 
 /** Max number of pages to look back through that haven't been checked before. */
 private const val PageHistoryLimit = 10
