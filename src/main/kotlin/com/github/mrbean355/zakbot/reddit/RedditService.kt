@@ -23,10 +23,13 @@ import org.springframework.web.client.RestClient
 import java.time.Instant
 
 /** Number of posts/comments per page. */
-private const val PageSizeLimit = 5
+private const val PageSizeLimit = 25
 
 /** Max number of pages to look back through that haven't been checked before. */
 private const val PageHistoryLimit = 10
+
+/** Max number of fullnames Reddit's /api/info endpoint accepts per request. */
+private const val InfoBatchLimit = 100
 
 @Service
 class RedditService(
@@ -42,7 +45,7 @@ class RedditService(
             typeRef = object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {},
             since = since,
             transform = { it.toDomain() },
-        )
+        ).onEach { submissionCache[it.fullName] = it }
 
     /** Get all comments created after the given instant. */
     fun getCommentsSince(since: Instant): List<Comment> =
@@ -51,7 +54,7 @@ class RedditService(
             typeRef = object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {},
             since = since,
             transform = { it.toDomain() },
-        )
+        ).onEach { commentCache[it.fullName] = it }
 
     private inline fun <DTO, DOMAIN : Contribution> fetchContributionsSince(
         path: String,
@@ -113,11 +116,70 @@ class RedditService(
         }
     }
 
-    private val submissionCache = java.util.Collections.synchronizedMap(
-        object : java.util.LinkedHashMap<String, Submission>(64, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Submission>?) = size > 100
+    private val submissionCache = lruCache<Submission>(100)
+    private val commentCache = lruCache<Comment>(200)
+
+    private fun <V> lruCache(maxSize: Int): MutableMap<String, V> =
+        java.util.Collections.synchronizedMap(
+            object : java.util.LinkedHashMap<String, V>(64, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, V>?) = size > maxSize
+            }
+        )
+
+    private inline fun <DTO, DOMAIN : Any> prefetchBatch(
+        ids: List<String>,
+        typeRef: ParameterizedTypeReference<RedditListing<DTO>>,
+        cache: MutableMap<String, DOMAIN>,
+        crossinline keySelector: (DOMAIN) -> String,
+        crossinline transform: (DTO) -> DOMAIN,
+    ) {
+        if (ids.isEmpty()) return
+
+        ids.chunked(InfoBatchLimit).forEach { batch ->
+            try {
+                val response = client.get()
+                    .uri("/api/info?id=${batch.joinToString(",")}")
+                    .retrieve()
+                    .body(typeRef)
+
+                response?.data?.children.orEmpty().forEach { child ->
+                    val domain = transform(child.data)
+                    cache[keySelector(domain)] = domain
+                }
+            } catch (ex: Exception) {
+                logger.warn("Failed to prefetch info for {} item(s)", batch.size, ex)
+            }
         }
-    )
+    }
+
+    /** Prefetch uncached submissions and parent comments for [comments] in batches. */
+    fun prefetchInfo(comments: List<Comment>) {
+        val missingSubmissions = comments.asSequence()
+            .map { it.submissionFullName }
+            .filter { it.startsWith("t3_") && it !in submissionCache }
+            .distinct()
+            .toList()
+        prefetchBatch(
+            ids = missingSubmissions,
+            typeRef = object : ParameterizedTypeReference<RedditListing<RedditSubmissionDto>>() {},
+            cache = submissionCache,
+            keySelector = { it.fullName },
+            transform = { it.toDomain() },
+        )
+
+        val missingComments = comments.asSequence()
+            .map { it.parentFullName }
+            .filter { it.startsWith("t1_") && it !in commentCache }
+            .distinct()
+            .toList()
+        prefetchBatch(
+            ids = missingComments,
+            typeRef = object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {},
+            cache = commentCache,
+            keySelector = { it.fullName },
+            transform = { it.toDomain() },
+        )
+    }
 
     /** @return the submission that the [comment] belongs to, or null if not found. */
     fun getCommentSubmission(comment: Comment): Submission? {
@@ -143,13 +205,17 @@ class RedditService(
         if (!comment.parentFullName.startsWith("t1_")) {
             return null
         }
+        commentCache[comment.parentFullName]?.let { return it }
+
         return try {
             val response = client.get()
                 .uri("/api/info?id={id}", comment.parentFullName)
                 .retrieve()
                 .body(object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {})
 
-            response?.data?.children?.firstOrNull()?.data?.toDomain()
+            response?.data?.children?.firstOrNull()?.data?.toDomain()?.also {
+                commentCache[comment.parentFullName] = it
+            }
         } catch (ex: Exception) {
             logger.warn("Failed to find parent comment: {}", comment.parentFullName, ex)
             null
@@ -187,6 +253,10 @@ class RedditService(
     }
 
     fun setBotFlair(flair: RedditFlair) {
+        if (!zakbotProperties.replies.enabled) {
+            logger.info("Set bot flair to: {}", flair.text)
+            return
+        }
         try {
             val body = LinkedMultiValueMap<String, String>().apply {
                 add("api_type", "json")
@@ -220,6 +290,7 @@ class RedditService(
                 .body(object : ParameterizedTypeReference<RedditListing<RedditCommentDto>>() {})
 
             response?.data?.children?.map { it.data.toDomain() }.orEmpty()
+                .onEach { commentCache[it.fullName] = it }
         } catch (ex: Exception) {
             logger.warn("Failed to fetch bot comments for downvote check", ex)
             emptyList()

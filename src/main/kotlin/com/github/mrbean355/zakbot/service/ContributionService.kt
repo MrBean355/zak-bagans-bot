@@ -94,40 +94,55 @@ class ContributionService(
             return
         }
 
-        val moderation = geminiService.evaluateSubmission(submission)
-        if (moderation.sensitivity >= zakbotProperties.moderation.sensitivityThreshold) {
+        if (geminiService.isEnabled) {
+            val moderation = geminiService.evaluateSubmission(submission)
             val reason = moderation.reason?.ifBlank { null }
+            val escapedReason = (reason ?: "None").escapeTelegramMarkdown()
             val sensitivityPercent = (moderation.sensitivity * 100).roundToInt()
-            if (geminiService.isDryRun) {
+            val actions = listOf(
+                TelegramAction.IgnoreUser(submission.author),
+                TelegramAction.IgnoreSubmission(submission.fullName),
+                TelegramAction.OpenUrl(submission.url),
+            )
+
+            if (moderation.sensitivity >= zakbotProperties.moderation.sensitivityThreshold) {
+                if (geminiService.isDryRun) {
+                    telegramNotifier.sendMessage(
+                        messageSource.getString(
+                            "telegram.sensitive_submission_dry_run",
+                            submission.title.escapeTelegramMarkdown(),
+                            sensitivityPercent,
+                            escapedReason,
+                        ),
+                        actions,
+                    )
+                } else {
+                    botStateService.ignoreSubmission(submission.fullName, reason)
+                    telegramNotifier.sendMessage(
+                        messageSource.getString(
+                            "telegram.sensitive_submission_ignored",
+                            submission.title.escapeTelegramMarkdown(),
+                            sensitivityPercent,
+                            escapedReason,
+                        ),
+                        listOf(
+                            TelegramAction.IgnoreUser(submission.author),
+                            TelegramAction.UnignoreSubmission(submission.fullName),
+                            TelegramAction.OpenUrl(submission.url),
+                        ),
+                    )
+                    return
+                }
+            } else if (!moderation.failed) {
                 telegramNotifier.sendMessage(
                     messageSource.getString(
-                        "telegram.sensitive_submission_dry_run",
+                        "telegram.submission_moderated",
                         submission.title.escapeTelegramMarkdown(),
                         sensitivityPercent,
-                        (reason ?: "None").escapeTelegramMarkdown(),
+                        escapedReason,
                     ),
-                    listOf(
-                        TelegramAction.IgnoreUser(submission.author),
-                        TelegramAction.IgnoreSubmission(submission.fullName),
-                        TelegramAction.OpenUrl(submission.url),
-                    ),
+                    actions,
                 )
-            } else {
-                botStateService.ignoreSubmission(submission.fullName, reason)
-                telegramNotifier.sendMessage(
-                    messageSource.getString(
-                        "telegram.sensitive_submission_ignored",
-                        submission.title.escapeTelegramMarkdown(),
-                        sensitivityPercent,
-                        (reason ?: "None").escapeTelegramMarkdown(),
-                    ),
-                    listOf(
-                        TelegramAction.IgnoreUser(submission.author),
-                        TelegramAction.UnignoreSubmission(submission.fullName),
-                        TelegramAction.OpenUrl(submission.url),
-                    ),
-                )
-                return
             }
         }
 

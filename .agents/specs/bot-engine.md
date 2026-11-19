@@ -24,7 +24,7 @@ This specification defines the scheduled polling, API pagination, contribution i
    timestamp of the first (newest) item is persisted in `BotStateService` as the cursor for the next poll only after all
    items in the batch have been processed.
 4. **Safety Page Bounding**: Paging backwards via Reddit API `after` token must be capped at `10` pages
-   (`PageHistoryLimit = 10`) with `5` items per page (`PageSizeLimit = 5`).
+   (`PageHistoryLimit = 10`) with `25` items per page (`PageSizeLimit = 25`).
 5. **No Self-Replies**: Comments authored by `BotUsername` must never be evaluated for quote matching.
 6. **No Command Mixing**: Comments authored by `AuthorUsername` are routed exclusively to
    `commandService.processAuthorCommand()` and immediately returned.
@@ -76,13 +76,16 @@ fun updateBotFlair()
 1. If `submission.author == AuthorUsername` -> `return` (ignore author's posts).
 2. Call `checkForBotMention(submission)`.
 3. If `botStateService.isUserIgnored(submission.author)` or `botStateService.isSubmissionIgnored(submission.fullName)` -> `return`.
-4. Evaluate sensitivity via `geminiService.evaluateSubmission(submission)`. If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
-    - If `geminiService.isDryRun` is `true`:
-        - Send `telegram.sensitive_submission_dry_run` notification (proceeding to step 5 without ignoring).
-    - Otherwise:
-        - `botStateService.ignoreSubmission(submission.fullName, reason)`
-        - Send `telegram.sensitive_submission_ignored` notification
-        - `return`
+4. If `geminiService.isEnabled` is `true`, evaluate sensitivity via `geminiService.evaluateSubmission(submission)`.
+    - If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
+        - If `geminiService.isDryRun` is `true`:
+            - Send `telegram.sensitive_submission_dry_run` notification (proceeding to step 5 without ignoring).
+        - Otherwise:
+            - `botStateService.ignoreSubmission(submission.fullName, reason)`
+            - Send `telegram.sensitive_submission_ignored` notification
+            - `return`
+    - Otherwise (`sensitivity < sensitivityThreshold`):
+        - Send `telegram.submission_moderated` notification (with `IgnoreUser`, `IgnoreSubmission`, `OpenUrl` actions) and proceed to step 5.
 5. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
 6. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
 7. Send Telegram alert:

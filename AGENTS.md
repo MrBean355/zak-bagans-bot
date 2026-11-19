@@ -8,7 +8,7 @@ in [.agents/specs/](.agents/specs/README.md).
 1. **Architecture & File Map**: See [.agents/specs/README.md](.agents/specs/README.md) for source file mapping and
    global system invariants.
 2. **Reddit Bot Engine**: See [.agents/specs/bot-engine.md](.agents/specs/bot-engine.md) for 15-minute polling
-   schedules, Reddit pagination bounding (max 10 pages of 5 items), and contribution filtering rules.
+   schedules, Reddit pagination bounding (max 10 pages of 25 items), and contribution filtering rules.
 3. **Phrase Matching & Quotes**: See [.agents/specs/phrase-system.md](.agents/specs/phrase-system.md) for priority
    hierarchy (Zozo=11 down to Generic=0), least-used rotation algorithms, `{author}` placeholder replacement, quote
    source escaping, and "Good Bot" footer formatting.

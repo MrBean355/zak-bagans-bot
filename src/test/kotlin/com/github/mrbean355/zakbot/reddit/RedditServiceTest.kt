@@ -80,7 +80,7 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
@@ -135,7 +135,7 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/comments?limit=5"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/comments?limit=25"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
 
@@ -327,6 +327,43 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testGetCommentSubmission_AfterGetSubmissionsSince_UsesSeededCache() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "user1",
+                      "created_utc": 1700000100.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/",
+                      "title": "Seeded Post",
+                      "selftext": ""
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val submissions = serviceWithReplies.getSubmissionsSince(Instant.ofEpochSecond(1700000000))
+        val comment = Comment("com1", "t1_com1", "author1", Instant.now(), "url1", "body1", "t3_sub1", "t3_sub1")
+        val cached = serviceWithReplies.getCommentSubmission(comment)
+
+        assertEquals(submissions.single(), cached)
+        server.verify()
+    }
+
+    @Test
     fun testFindParentComment_WhenParentIsPost_ReturnsNullWithoutCallingApi() {
         val comment = Comment("com1", "t1_com1", "author", Instant.now(), "url", "body", "t3_sub1", "t3_sub1")
         val result = serviceWithReplies.findParentComment(comment)
@@ -370,6 +407,212 @@ class RedditServiceTest {
         assertNotNull(result)
         assertEquals("parent1", result?.id)
         assertEquals("Parent body", result?.body)
+        server.verify()
+    }
+
+    @Test
+    fun testFindParentComment_CachesSubsequentRequestsForSameParent() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "parent1",
+                      "name": "t1_parent1",
+                      "author": "parent_author",
+                      "body": "Parent body",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/GhostAdventures/comments/sub1/title/parent1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_parent1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comment1 = Comment("com1", "t1_com1", "author1", Instant.now(), "url1", "body1", "t3_sub1", "t1_parent1")
+        val comment2 = Comment("com2", "t1_com2", "author2", Instant.now(), "url2", "body2", "t3_sub1", "t1_parent1")
+
+        val result1 = serviceWithReplies.findParentComment(comment1)
+        val result2 = serviceWithReplies.findParentComment(comment2)
+
+        assertNotNull(result1)
+        assertEquals(result1, result2)
+        server.verify()
+    }
+
+    @Test
+    fun testFindParentComment_AfterGetCommentsSince_UsesSeededCache() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "after": null,
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "parent1",
+                      "name": "t1_parent1",
+                      "author": "parent_author",
+                      "body": "Parent body",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000100.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/title/parent1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/comments?limit=25"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val comments = serviceWithReplies.getCommentsSince(Instant.ofEpochSecond(1700000000))
+        val reply = Comment("com2", "t1_com2", "author2", Instant.now(), "url2", "body2", "t3_sub1", "t1_parent1")
+        val cached = serviceWithReplies.findParentComment(reply)
+
+        assertEquals(comments.single(), cached)
+        server.verify()
+    }
+
+    @Test
+    fun testFindParentComment_AfterGetOwnRecentComments_UsesSeededCache() {
+        val json = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "bot1",
+                      "name": "t1_bot1",
+                      "author": "ZakBagansBot",
+                      "body": "Bot quote",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000100.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/title/bot1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/user/ZakBagansBot/comments?limit=100&sort=new"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(json, MediaType.APPLICATION_JSON))
+
+        val ownComments = serviceWithReplies.getOwnRecentComments()
+        val reply = Comment("com2", "t1_com2", "fan", Instant.now(), "url2", "good bot", "t3_sub1", "t1_bot1")
+        val cached = serviceWithReplies.findParentComment(reply)
+
+        assertEquals(ownComments.single(), cached)
+        server.verify()
+    }
+
+    @Test
+    fun testPrefetchInfo_BatchesUniqueUncachedSubmissionsAndParentComments() {
+        val submissionsJson = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub1",
+                      "name": "t3_sub1",
+                      "author": "user1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/",
+                      "title": "Post 1",
+                      "selftext": ""
+                    }
+                  },
+                  {
+                    "kind": "t3",
+                    "data": {
+                      "id": "sub2",
+                      "name": "t3_sub2",
+                      "author": "user2",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/$SubredditName/comments/sub2/",
+                      "title": "Post 2",
+                      "selftext": ""
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+        val commentsJson = """
+            {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "p1",
+                      "name": "t1_p1",
+                      "author": "parent1",
+                      "body": "Parent 1",
+                      "link_id": "t3_sub1",
+                      "parent_id": "t3_sub1",
+                      "created_utc": 1700000000.0,
+                      "permalink": "/r/$SubredditName/comments/sub1/title/p1/"
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1,t3_sub2"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(submissionsJson, MediaType.APPLICATION_JSON))
+
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t1_p1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(commentsJson, MediaType.APPLICATION_JSON))
+
+        val c1 = Comment("c1", "t1_c1", "a1", Instant.now(), "u1", "b1", "t3_sub1", "t1_p1")
+        val c2 = Comment("c2", "t1_c2", "a2", Instant.now(), "u2", "b2", "t3_sub1", "t3_sub1")
+        val c3 = Comment("c3", "t1_c3", "a3", Instant.now(), "u3", "b3", "t3_sub2", "t1_p1")
+
+        serviceWithReplies.prefetchInfo(listOf(c1, c2, c3))
+
+        assertEquals("Post 1", serviceWithReplies.getCommentSubmission(c1)?.title)
+        assertEquals("Post 2", serviceWithReplies.getCommentSubmission(c3)?.title)
+        assertEquals("Parent 1", serviceWithReplies.findParentComment(c1)?.body)
+        assertNull(serviceWithReplies.findParentComment(c2))
+        server.verify()
+    }
+
+    @Test
+    fun testPrefetchInfo_WhenApiFails_DoesNotThrow() {
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+
+        val c1 = Comment("c1", "t1_c1", "a1", Instant.now(), "u1", "b1", "t3_sub1", "t3_sub1")
+        serviceWithReplies.prefetchInfo(listOf(c1))
+
         server.verify()
     }
 
@@ -495,6 +738,13 @@ class RedditServiceTest {
     }
 
     @Test
+    fun testSetBotFlair_WhenRepliesDisabled_DoesNotCallApi() {
+        serviceWithoutReplies.setBotFlair(RedditFlair("flair-1", "Flair One"))
+
+        server.verify()
+    }
+
+    @Test
     fun testGetSubmissionsSince_PaginatesWhenMoreResultsAvailable() {
         val page1Json = """
             {
@@ -544,11 +794,11 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(page1Json, MediaType.APPLICATION_JSON))
 
-        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=5&after=t3_sub1"))
+        server.expect(requestTo("https://oauth.reddit.com/r/$SubredditName/new?limit=25&after=t3_sub1"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(page2Json, MediaType.APPLICATION_JSON))
 

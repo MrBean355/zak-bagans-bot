@@ -21,6 +21,9 @@ class ZakBagansBot(
         }
 
         redditService.getCommentsSince(botStateService.getLastCommentTime()).apply {
+            if (isNotEmpty()) {
+                redditService.prefetchInfo(this)
+            }
             forEach(contributionService::processComment)
             firstOrNull()?.created?.let(botStateService::setLastCommentTime)
         }

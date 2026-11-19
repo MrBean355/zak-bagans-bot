@@ -51,6 +51,7 @@ class ZakBagansBotTest {
         every { botStateService.getLastCommentTime() } returns lastCommentTime
         every { redditService.getSubmissionsSince(lastSubmissionTime) } returns listOf(submission1, submission2)
         every { redditService.getCommentsSince(lastCommentTime) } returns listOf(comment1)
+        justRun { redditService.prefetchInfo(any()) }
         justRun { botStateService.setLastSubmissionTime(any()) }
         justRun { botStateService.setLastCommentTime(any()) }
         justRun { contributionService.processSubmission(any()) }
@@ -62,6 +63,7 @@ class ZakBagansBotTest {
             contributionService.processSubmission(submission1)
             contributionService.processSubmission(submission2)
             botStateService.setLastSubmissionTime(subTime1)
+            redditService.prefetchInfo(listOf(comment1))
             contributionService.processComment(comment1)
             botStateService.setLastCommentTime(comTime1)
             contributionService.checkDownvotedComments()

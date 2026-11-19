@@ -27,7 +27,6 @@ class UserInitializer(
         when {
             password != null -> {
                 createOrUpdateUser(username, password)
-                logger.info("Admin user configured: $username")
             }
             environment.matchesProfiles("dev") && appUserRepository.count() == 0L -> {
                 createOrUpdateUser(username, "password")
