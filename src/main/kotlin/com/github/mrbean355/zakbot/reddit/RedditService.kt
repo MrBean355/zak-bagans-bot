@@ -138,7 +138,7 @@ class RedditService(
         ids.chunked(InfoBatchLimit).forEach { batch ->
             try {
                 val response = client.get()
-                    .uri("/api/info?id={ids}", batch.joinToString(","))
+                    .uri("/api/info?id=${batch.joinToString(",")}")
                     .retrieve()
                     .body(typeRef)
 

@@ -583,7 +583,7 @@ class RedditServiceTest {
             }
         """.trimIndent()
 
-        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1%2Ct3_sub2"))
+        server.expect(requestTo("https://oauth.reddit.com/api/info?id=t3_sub1,t3_sub2"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(submissionsJson, MediaType.APPLICATION_JSON))
 

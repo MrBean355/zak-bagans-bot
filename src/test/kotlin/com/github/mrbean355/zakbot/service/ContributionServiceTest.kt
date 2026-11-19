@@ -253,6 +253,22 @@ class ContributionServiceTest {
     }
 
     @Test
+    fun testProcessSubmission_WhenGeminiFails_DoesNotSendModerationNotification() {
+        val submission = createSubmission(author = "user1", title = "Fun ghost meme")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0f,
+            reason = null,
+            failed = true,
+        )
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            telegramNotifier.sendMessage(any(), any())
+        }
+    }
+
+    @Test
     fun testProcessSubmission_WhenGeminiDisabled_SkipsEvaluationAndNotification() {
         every { geminiService.isEnabled } returns false
         val submission = createSubmission(author = "user1", title = "Fun ghost meme")

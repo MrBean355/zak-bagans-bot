@@ -133,7 +133,7 @@ class ContributionService(
                     )
                     return
                 }
-            } else {
+            } else if (!moderation.failed) {
                 telegramNotifier.sendMessage(
                     messageSource.getString(
                         "telegram.submission_moderated",

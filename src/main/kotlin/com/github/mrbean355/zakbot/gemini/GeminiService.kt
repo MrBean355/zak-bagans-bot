@@ -1,5 +1,6 @@
 package com.github.mrbean355.zakbot.gemini
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.mrbean355.zakbot.telegram.TelegramAction
@@ -49,7 +50,7 @@ class GeminiService(
             logDescription = "submission sensitivity (${submission.fullName})",
             telegramContextText = submission.title,
             telegramContextUrl = submission.url,
-        ) ?: ModerationResult(sensitivity = 0f, reason = null)
+        ) ?: ModerationResult(sensitivity = 0f, reason = null, failed = true)
     }
 
     fun evaluateComment(comment: Comment): ModerationResult {
@@ -61,7 +62,7 @@ class GeminiService(
             logDescription = "comment sensitivity (${comment.fullName})",
             telegramContextText = comment.body,
             telegramContextUrl = comment.url,
-        ) ?: ModerationResult(sensitivity = 0f, reason = null)
+        ) ?: ModerationResult(sensitivity = 0f, reason = null, failed = true)
     }
 
     fun evaluateBotReply(comment: Comment): BotSentiment {
@@ -148,7 +149,14 @@ class GeminiService(
     data class ModerationResult(
         val sensitivity: Float,
         val reason: String?,
-    )
+        val failed: Boolean,
+    ) {
+        @JsonCreator
+        constructor(
+            @JsonProperty("sensitivity") sensitivity: Float,
+            @JsonProperty("reason") reason: String?,
+        ) : this(sensitivity, reason, failed = false)
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class SentimentResult(
