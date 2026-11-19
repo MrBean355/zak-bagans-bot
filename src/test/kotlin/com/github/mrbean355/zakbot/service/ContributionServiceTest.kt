@@ -59,6 +59,7 @@ class ContributionServiceTest {
         every { redditService.replyToComment(any(), any()) } returns "t1_reply"
         every { botStateService.isUserIgnored(any()) } returns false
         every { botStateService.isSubmissionIgnored(any()) } returns false
+        every { geminiService.isEnabled } returns true
         every { geminiService.isDryRun } returns false
         every { geminiService.evaluateSubmission(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
         every { geminiService.evaluateComment(any()) } returns GeminiService.ModerationResult(sensitivity = 0f, reason = null)
@@ -221,6 +222,46 @@ class ContributionServiceTest {
         }
         verify(exactly = 0) {
             redditService.replyToSubmission(any(), any())
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenNotSensitiveAndGeminiEnabled_SendsModerationNotification() {
+        val submission = createSubmission(author = "user1", title = "Fun ghost meme")
+        every { geminiService.evaluateSubmission(submission) } returns GeminiService.ModerationResult(
+            sensitivity = 0.15f,
+            reason = null,
+        )
+
+        service.processSubmission(submission)
+
+        verify {
+            telegramNotifier.sendMessage(
+                match {
+                    it.contains("Post Checked by Gemini") &&
+                        it.contains("Fun ghost meme") &&
+                        it.contains("15%") &&
+                        it.contains("None")
+                },
+                listOf(
+                    TelegramAction.IgnoreUser("user1"),
+                    TelegramAction.IgnoreSubmission(submission.fullName),
+                    TelegramAction.OpenUrl(submission.url),
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun testProcessSubmission_WhenGeminiDisabled_SkipsEvaluationAndNotification() {
+        every { geminiService.isEnabled } returns false
+        val submission = createSubmission(author = "user1", title = "Fun ghost meme")
+
+        service.processSubmission(submission)
+
+        verify(exactly = 0) {
+            geminiService.evaluateSubmission(any())
+            telegramNotifier.sendMessage(any(), any())
         }
     }
 
@@ -591,7 +632,7 @@ class ContributionServiceTest {
         service.processSubmission(submission)
 
         verify(exactly = 0) {
-            telegramNotifier.sendMessage(match { it.contains(praise) }, any())
+            telegramNotifier.sendMessage(match { it.contains("Bot Mentioned") }, any())
         }
     }
 

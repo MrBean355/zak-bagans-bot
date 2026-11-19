@@ -76,13 +76,16 @@ fun updateBotFlair()
 1. If `submission.author == AuthorUsername` -> `return` (ignore author's posts).
 2. Call `checkForBotMention(submission)`.
 3. If `botStateService.isUserIgnored(submission.author)` or `botStateService.isSubmissionIgnored(submission.fullName)` -> `return`.
-4. Evaluate sensitivity via `geminiService.evaluateSubmission(submission)`. If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
-    - If `geminiService.isDryRun` is `true`:
-        - Send `telegram.sensitive_submission_dry_run` notification (proceeding to step 5 without ignoring).
-    - Otherwise:
-        - `botStateService.ignoreSubmission(submission.fullName, reason)`
-        - Send `telegram.sensitive_submission_ignored` notification
-        - `return`
+4. If `geminiService.isEnabled` is `true`, evaluate sensitivity via `geminiService.evaluateSubmission(submission)`.
+    - If `sensitivity >= zakbotProperties.moderation.sensitivityThreshold` (default `0.7f`):
+        - If `geminiService.isDryRun` is `true`:
+            - Send `telegram.sensitive_submission_dry_run` notification (proceeding to step 5 without ignoring).
+        - Otherwise:
+            - `botStateService.ignoreSubmission(submission.fullName, reason)`
+            - Send `telegram.sensitive_submission_ignored` notification
+            - `return`
+    - Otherwise (`sensitivity < sensitivityThreshold`):
+        - Send `telegram.submission_moderated` notification (with `IgnoreUser`, `IgnoreSubmission`, `OpenUrl` actions) and proceed to step 5.
 5. Search phrase: `val response = phraseService.findPhrase(submission)?.substitute(submission) ?: return`.
 6. Post Reddit reply: `redditService.replyToSubmission(submission, response)`.
 7. Send Telegram alert:

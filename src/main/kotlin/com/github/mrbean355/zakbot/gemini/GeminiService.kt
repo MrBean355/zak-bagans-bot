@@ -27,6 +27,9 @@ class GeminiService(
     private val logger = LoggerFactory.getLogger(GeminiService::class.java)
     private val jsonMapper = JsonMapper.builder().build()
 
+    val isEnabled: Boolean
+        get() = geminiProperties.enabled && geminiProperties.apiKey.isNotBlank()
+
     val isDryRun: Boolean
         get() = geminiProperties.dryRun
 
